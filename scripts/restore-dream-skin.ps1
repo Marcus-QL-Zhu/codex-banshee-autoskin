@@ -1,16 +1,24 @@
 [CmdletBinding()]
 param(
-  [int]$Port = 9335,
+  [int]$Port = 0,
   [switch]$Uninstall,
   [switch]$RestoreBaseTheme
 )
 
 $ErrorActionPreference = 'Stop'
+if ($Uninstall) { $RestoreBaseTheme = $true }
 $node = (Get-Command node -ErrorAction Stop).Source
 $injector = Join-Path $PSScriptRoot 'injector.mjs'
 $StateRoot = Join-Path $env:LOCALAPPDATA 'CodexDreamSkin'
+. (Join-Path $PSScriptRoot 'runtime-state.ps1')
+$Port = Get-DreamSkinPersistedPort -StateRoot $StateRoot -RequestedPort $Port
 $StatePath = Join-Path $StateRoot 'state.json'
 $WatcherStatePath = Join-Path $StateRoot 'watcher-state.json'
+$TransactionPath = Join-Path $StateRoot 'install-transaction.json'
+$transaction = $null
+if (Test-Path -LiteralPath $TransactionPath) {
+  $transaction = Get-Content -LiteralPath $TransactionPath -Raw | ConvertFrom-Json
+}
 
 if (Test-Path -LiteralPath $WatcherStatePath) {
   try {
@@ -31,40 +39,52 @@ Start-Sleep -Milliseconds 250
 try { & $node $injector --remove --port $Port --timeout-ms 3000 } catch {}
 
 if ($Uninstall) {
-  $desktop = [Environment]::GetFolderPath('Desktop')
-  $startMenu = Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs'
-  @(
-    (Join-Path $desktop 'Codex Dream Skin.lnk'),
-    (Join-Path $desktop 'Codex Dream Skin - Restore.lnk'),
-    (Join-Path $startMenu 'Codex Dream Skin.lnk'),
-    (Join-Path ([Environment]::GetFolderPath('Startup')) 'Codex Dream Skin Watcher.lnk')
-  ) | ForEach-Object { Remove-Item -LiteralPath $_ -Force -ErrorAction SilentlyContinue }
+  if (-not $transaction -or -not $transaction.shortcuts) {
+    Write-Warning 'No shortcut ownership hashes are available; preserving all shortcuts.'
+  } else {
+    foreach ($record in @($transaction.shortcuts)) {
+      $shortcutPath = [string]$record.path
+      $createdHash = [string]$record.createdHash
+      $backup = [string]$record.backupPath
+      if (Test-Path -LiteralPath $shortcutPath) {
+        $currentHash = (Get-FileHash -LiteralPath $shortcutPath -Algorithm SHA256).Hash.ToLowerInvariant()
+        if ($currentHash -ne $createdHash.ToLowerInvariant()) {
+          Write-Warning "Preserved user-modified shortcut: $shortcutPath"
+          continue
+        }
+        Remove-Item -LiteralPath $shortcutPath -Force
+      }
+      if ($backup -and (Test-Path -LiteralPath $backup)) {
+        Copy-Item -LiteralPath $backup -Destination $shortcutPath
+      }
+    }
+  }
 }
 
 if ($RestoreBaseTheme) {
-  $backup = Join-Path $StateRoot 'config.before-dream-skin.toml'
-  $config = Join-Path $HOME '.codex\config.toml'
-  if (-not (Test-Path -LiteralPath $backup)) { throw 'No pre-install config backup is available.' }
-  $backupContent = Get-Content -LiteralPath $backup -Raw
-  $currentContent = Get-Content -LiteralPath $config -Raw
-  foreach ($key in @('appearanceTheme', 'appearanceLightCodeThemeId', 'appearanceLightChromeTheme')) {
-    $pattern = "(?m)^$([regex]::Escape($key))\s*=.*(?:\r?\n)?"
-    $saved = [regex]::Match($backupContent, $pattern)
-    if ([regex]::IsMatch($currentContent, $pattern)) {
-      $replacement = if ($saved.Success) { $saved.Value.TrimEnd("`r", "`n") + "`r`n" } else { '' }
-      $currentContent = [regex]::Replace($currentContent, $pattern, $replacement, 1)
-    } elseif ($saved.Success) {
-      $desktop = [regex]::Match($currentContent, '(?ms)^\[desktop\]\s*\r?\n(?<body>.*?)(?=^\[|\z)')
-      if (-not $desktop.Success) {
-        $currentContent = $currentContent.TrimEnd() + "`r`n`r`n[desktop]`r`n"
-        $desktop = [regex]::Match($currentContent, '(?ms)^\[desktop\]\s*\r?\n(?<body>.*?)(?=^\[|\z)')
-      }
-      $body = $desktop.Groups['body'].Value.TrimEnd() + "`r`n" + $saved.Value.TrimEnd("`r", "`n") + "`r`n"
-      $currentContent = $currentContent.Substring(0, $desktop.Groups['body'].Index) + $body +
-        $currentContent.Substring($desktop.Groups['body'].Index + $desktop.Groups['body'].Length)
-    }
+  if (-not $transaction) {
+    throw 'No transactional install record is available; refusing an unsafe whole-file theme restore.'
   }
-  Set-Content -LiteralPath $config -Value $currentContent -Encoding utf8
+  $config = [string]$transaction.configPath
+  if (-not (Test-Path -LiteralPath $config)) { throw "Codex config not found: $config" }
+  $currentContent = Get-Content -LiteralPath $config -Raw
+  foreach ($change in @($transaction.changes)) {
+    $key = [string]$change.key
+    $pattern = "(?m)^$([regex]::Escape($key))\s*=.*(?:\r?\n)?"
+    $current = [regex]::Match($currentContent, $pattern)
+    $currentLine = if ($current.Success) { $current.Value.TrimEnd([char]13, [char]10) } else { $null }
+    if ($currentLine -ne [string]$change.installedValue) {
+      Write-Warning "Preserved user-modified setting: $key"
+      continue
+    }
+    $replacement = if ([bool]$change.existed) { [string]$change.beforeValue + [Environment]::NewLine } else { '' }
+    $currentContent = [regex]::Replace($currentContent, $pattern, $replacement, 1)
+  }
+  Write-DreamSkinTextAtomic -Path $config -Content $currentContent
+}
+
+if ($Uninstall -and (Test-Path -LiteralPath $StateRoot)) {
+  Remove-Item -LiteralPath $StateRoot -Recurse -Force
 }
 
 Write-Host 'The live Dream Skin was removed.'

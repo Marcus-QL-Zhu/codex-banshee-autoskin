@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-  [int]$Port = 9335,
+  [int]$Port = 0,
   [int]$PollSeconds = 2,
   [int]$LaunchGraceSeconds = 15,
   [int]$MaxConsecutiveFailures = 3,
@@ -12,6 +12,8 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $StateRoot = Join-Path $env:LOCALAPPDATA 'CodexDreamSkin'
+. (Join-Path $PSScriptRoot 'runtime-state.ps1')
+$Port = Get-DreamSkinPersistedPort -StateRoot $StateRoot -RequestedPort $Port
 $StatePath = Join-Path $StateRoot 'state.json'
 $WatcherStatePath = Join-Path $StateRoot 'watcher-state.json'
 $LogPath = Join-Path $StateRoot 'watcher.log'
@@ -28,13 +30,28 @@ function Write-WatcherLog([string]$Message) {
   } catch {}
 }
 
+function Test-CodexPortOwner([int]$CandidatePort) {
+  try {
+    $listeners = @(Get-NetTCPConnection -State Listen -LocalPort $CandidatePort -ErrorAction Stop | Where-Object {
+      $_.LocalAddress -in @('127.0.0.1', '::1')
+    })
+    foreach ($listener in $listeners) {
+      $owner = Get-CimInstance Win32_Process -Filter "ProcessId = $([int]$listener.OwningProcess)" -ErrorAction Stop
+      $path = [string]$owner.ExecutablePath
+      if ($owner.Name -eq 'ChatGPT.exe' -and $path -match 'OpenAI\.Codex_' -and $path -match '\\app\\ChatGPT\.exe$') {
+        return $true
+      }
+    }
+  } catch {}
+  return $false
+}
 function Test-DreamDebugPort {
   # Chromium may bind DevTools to either loopback stack depending on boot state;
   # accept whichever answers.
   foreach ($loopback in @('127.0.0.1', '[::1]')) {
     try {
       $targets = Invoke-RestMethod "http://$($loopback):$($Port)/json/list" -TimeoutSec 3
-      if ($targets | Where-Object { $_.type -eq 'page' -and $_.url -like 'app://*' }) { return $true }
+      if (($targets | Where-Object { $_.type -eq 'page' -and $_.url -like 'app://*' }) -and (Test-CodexPortOwner $Port)) { return $true }
     } catch {}
   }
   return $false
@@ -57,7 +74,7 @@ function Test-InjectorHealthy {
   port = $Port
   startedAt = (Get-Date).ToString('o')
   scriptPath = $PSCommandPath
-} | ConvertTo-Json | Set-Content -LiteralPath $WatcherStatePath -Encoding utf8
+} | ForEach-Object { Write-DreamSkinJsonAtomic -Path $WatcherStatePath -Value $_ }
 Write-WatcherLog "Watcher started (PID $PID, port $Port)."
 
 $consecutiveFailures = 0

@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-  [int]$Port = 9335,
+  [int]$Port = 0,
   [switch]$RestartExisting,
   [string]$ProfilePath,
   [switch]$ForegroundInjector
@@ -10,18 +10,35 @@ $ErrorActionPreference = 'Stop'
 $SkillRoot = Split-Path -Parent $PSScriptRoot
 $Injector = Join-Path $PSScriptRoot 'injector.mjs'
 $StateRoot = Join-Path $env:LOCALAPPDATA 'CodexDreamSkin'
+. (Join-Path $PSScriptRoot 'runtime-state.ps1')
+$Port = Get-DreamSkinPersistedPort -StateRoot $StateRoot -RequestedPort $Port
 $StatePath = Join-Path $StateRoot 'state.json'
 $StdoutPath = Join-Path $StateRoot 'injector.log'
 $StderrPath = Join-Path $StateRoot 'injector-error.log'
 New-Item -ItemType Directory -Force -Path $StateRoot | Out-Null
 
+function Test-CodexPortOwner([int]$CandidatePort) {
+  try {
+    $listeners = @(Get-NetTCPConnection -State Listen -LocalPort $CandidatePort -ErrorAction Stop | Where-Object {
+      $_.LocalAddress -in @('127.0.0.1', '::1')
+    })
+    foreach ($listener in $listeners) {
+      $owner = Get-CimInstance Win32_Process -Filter "ProcessId = $([int]$listener.OwningProcess)" -ErrorAction Stop
+      $path = [string]$owner.ExecutablePath
+      if ($owner.Name -eq 'ChatGPT.exe' -and $path -match 'OpenAI\.Codex_' -and $path -match '\\app\\ChatGPT\.exe$') {
+        return $true
+      }
+    }
+  } catch {}
+  return $false
+}
 function Test-CodexDebugPort([int]$CandidatePort) {
   # Chromium may bind DevTools to either loopback stack depending on boot state;
   # accept whichever answers.
   foreach ($loopback in @('127.0.0.1', '[::1]')) {
     try {
       $targets = Invoke-RestMethod "http://$($loopback):$($CandidatePort)/json/list" -TimeoutSec 1
-      if ($targets | Where-Object { $_.type -eq 'page' -and $_.url -like 'app://*' }) { return $true }
+      if (($targets | Where-Object { $_.type -eq 'page' -and $_.url -like 'app://*' }) -and (Test-CodexPortOwner $CandidatePort)) { return $true }
     } catch {}
   }
   return $false
@@ -61,6 +78,8 @@ function Start-CodexWithDebugPort {
   if (-not $package) { throw 'The OpenAI.Codex Store package is not installed.' }
   $exe = Join-Path $package.InstallLocation 'app\ChatGPT.exe'
   if (-not (Test-Path -LiteralPath $exe)) { throw "Codex executable not found: $exe" }
+  $signature = Get-AuthenticodeSignature -LiteralPath $exe
+  if ($signature.Status -ne 'Valid') { throw "Codex executable signature is not valid: $($signature.Status)" }
   $arguments = @("--remote-debugging-port=$Port")
   if ($ProfilePath) {
     New-Item -ItemType Directory -Force -Path $ProfilePath | Out-Null
@@ -112,7 +131,7 @@ $daemon = Start-Process -FilePath $node -ArgumentList $injectorArgs -WindowStyle
   startedAt = (Get-Date).ToString('o')
   skillRoot = $SkillRoot
   profilePath = $ProfilePath
-} | ConvertTo-Json | Set-Content -LiteralPath $StatePath -Encoding utf8
+} | ForEach-Object { Write-DreamSkinJsonAtomic -Path $StatePath -Value $_ }
 
 $verified = $false
 for ($attempt = 0; $attempt -lt 45; $attempt++) {

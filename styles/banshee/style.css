@@ -1,0 +1,253 @@
+/* Banshee structure pack. Every selector is pack-scoped; native controls stay native. */
+
+html.codex-dream-skin.dream-pack-banshee {
+  color-scheme: dark;
+  --dream-banshee-wave-travel: 1700ms;
+  background: var(--dream-banshee-armor-950) !important;
+}
+
+html.codex-dream-skin.dream-pack-banshee body {
+  color: var(--dream-banshee-text-primary) !important;
+  background:
+    radial-gradient(ellipse at 50% -8%, rgba(38, 58, 89, .48), transparent 42%),
+    linear-gradient(135deg, var(--dream-banshee-armor-950), var(--dream-banshee-armor-900)) !important;
+}
+
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="sidebar"] {
+  background:
+    linear-gradient(118deg, rgba(27, 42, 66, .92) 0 18%, transparent 18.2%),
+    linear-gradient(180deg, var(--dream-banshee-armor-800), var(--dream-banshee-armor-950)) !important;
+  border-right: 1px solid var(--dream-banshee-seam-strong) !important;
+  box-shadow: inset -5px 0 0 var(--dream-banshee-gap), inset -6px 0 0 rgba(96, 128, 174, .18) !important;
+}
+
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="sidebar"]::after {
+  content: "";
+  position: absolute;
+  z-index: 20;
+  pointer-events: none;
+  top: 13%;
+  right: 2px;
+  width: 2px;
+  height: 74%;
+  background: linear-gradient(180deg, transparent, var(--dream-banshee-energy-low) 28%, var(--dream-banshee-energy-core) 50%, var(--dream-banshee-energy-low) 72%, transparent);
+  opacity: .28;
+  animation: dream-banshee-wave var(--dream-banshee-wave-cycle) linear infinite;
+  animation-delay: 400ms;
+}
+
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="sidebar"] button,
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="sidebar"] a {
+  color: var(--dream-banshee-text-secondary) !important;
+}
+
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="sidebar"] button:hover,
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="sidebar"] a:hover,
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="sidebar"] [aria-current="page"] {
+  color: var(--dream-banshee-text-primary) !important;
+  background: linear-gradient(100deg, rgba(217, 162, 62, .13), rgba(28, 42, 65, .78) 68%) !important;
+}
+
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="sidebar"] [aria-current="page"] {
+  box-shadow: inset 1px 0 var(--dream-banshee-energy-core), inset 0 -1px var(--dream-banshee-seam) !important;
+}
+
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="main"] {
+  position: relative;
+  isolation: isolate;
+  color: var(--dream-banshee-text-primary) !important;
+  background:
+    linear-gradient(135deg, rgba(31, 48, 74, .34) 0 11%, transparent 11.1%),
+    linear-gradient(225deg, rgba(20, 33, 53, .52) 0 9%, transparent 9.1%),
+    linear-gradient(180deg, var(--dream-banshee-armor-900), var(--dream-banshee-armor-950)) !important;
+  border: 1px solid var(--dream-banshee-seam) !important;
+  box-shadow: inset 0 4px 0 var(--dream-banshee-gap), inset 0 5px 0 rgba(100, 132, 176, .18) !important;
+}
+
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="main"]::before,
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="main"]::after {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+  opacity: .35;
+}
+
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="main"]::before {
+  top: 4px;
+  left: 16%;
+  right: 16%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--dream-banshee-energy-low) 24%, var(--dream-banshee-energy-core) 50%, var(--dream-banshee-energy-low) 76%, transparent);
+  animation: dream-banshee-wave var(--dream-banshee-wave-cycle) linear infinite;
+  animation-delay: 0ms;
+}
+
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="main"]::after {
+  inset: 20px 18px;
+  border: 1px solid rgba(94, 123, 165, .22);
+  clip-path: polygon(28px 0, calc(100% - 28px) 0, 100% 28px, 100% calc(100% - 28px), calc(100% - 28px) 100%, 28px 100%, 0 calc(100% - 28px), 0 28px);
+}
+
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="main"] > * {
+  position: relative;
+  z-index: 3;
+}
+
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="cards"] button {
+  position: relative;
+  overflow: visible;
+  color: var(--dream-banshee-text-primary) !important;
+  background: linear-gradient(145deg, rgba(26, 41, 65, .94), rgba(7, 14, 26, .96)) !important;
+  border: 1px solid var(--dream-banshee-seam-strong) !important;
+  border-radius: 2px !important;
+  box-shadow: inset 0 1px rgba(125, 153, 194, .14), 0 9px 24px rgba(0, 0, 0, .22) !important;
+}
+
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="cards"] button::before {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  top: -1px;
+  left: -1px;
+  width: 30px;
+  height: 16px;
+  background: linear-gradient(135deg, var(--dream-banshee-armor-950) 0 46%, var(--dream-banshee-seam-strong) 48% 52%, transparent 54%);
+}
+
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="cards"] button::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  left: 38%;
+  right: 38%;
+  bottom: -1px;
+  height: 2px;
+  background: var(--dream-banshee-energy-core);
+  box-shadow: 0 0 9px var(--dream-banshee-energy-low);
+  opacity: .26;
+  animation: dream-banshee-wave var(--dream-banshee-wave-cycle) linear infinite;
+  animation-delay: 800ms;
+}
+
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="composer"] {
+  position: relative;
+  color: var(--dream-banshee-text-primary) !important;
+  background: linear-gradient(160deg, rgba(22, 36, 57, .98), rgba(6, 12, 22, .98)) !important;
+  border: 1px solid var(--dream-banshee-seam-strong) !important;
+  border-radius: 2px !important;
+  box-shadow: inset 0 3px 0 var(--dream-banshee-gap), 0 12px 34px rgba(0, 0, 0, .3) !important;
+}
+
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="composer"]::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+  top: -1px;
+  left: 10%;
+  right: 10%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--dream-banshee-energy-core), transparent);
+  opacity: .3;
+  animation: dream-banshee-wave var(--dream-banshee-wave-cycle) linear infinite;
+  animation-delay: 1300ms;
+}
+
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="composer"] > * {
+  position: relative;
+  z-index: 1;
+}
+
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] :focus-visible {
+  outline: 2px solid var(--dream-banshee-focus) !important;
+  outline-offset: 2px !important;
+}
+
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] #codex-dream-skin-chrome {
+  pointer-events: none !important;
+  position: fixed;
+  z-index: 4;
+  overflow: hidden;
+}
+
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] #codex-dream-skin-chrome *,
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] #codex-dream-skin-chrome *::before,
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] #codex-dream-skin-chrome *::after {
+  pointer-events: none !important;
+}
+
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] #codex-dream-skin-chrome .dream-banshee-frame {
+  position: absolute;
+  inset: 7px;
+  border: 1px solid rgba(91, 122, 166, .28);
+  clip-path: polygon(24px 0, calc(100% - 24px) 0, 100% 24px, 100% calc(100% - 24px), calc(100% - 24px) 100%, 24px 100%, 0 calc(100% - 24px), 0 24px);
+}
+
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] #codex-dream-skin-chrome .dream-banshee-rail {
+  position: absolute;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--dream-banshee-energy-low), var(--dream-banshee-energy-core), var(--dream-banshee-energy-low), transparent);
+  opacity: .26;
+  animation: dream-banshee-wave var(--dream-banshee-wave-cycle) linear infinite;
+  animation-delay: 0ms;
+}
+
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] #codex-dream-skin-chrome .dream-banshee-rail-top {
+  top: 9px;
+  left: 22%;
+  right: 22%;
+}
+
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] #codex-dream-skin-chrome .dream-banshee-rail-bottom {
+  bottom: 9px;
+  left: 31%;
+  right: 31%;
+  animation-delay: 1700ms;
+}
+
+@keyframes dream-banshee-wave {
+  0%, 58%, 100% { opacity: .18; filter: brightness(.75); }
+  66% { opacity: .36; filter: brightness(1); }
+  72% { opacity: .88; filter: brightness(1.45) drop-shadow(0 0 5px var(--dream-banshee-energy-low)); }
+  80% { opacity: .28; filter: brightness(.88); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="sidebar"]::after,
+  html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="main"]::before,
+  html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="cards"] button::after,
+  html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="composer"]::after,
+  html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] #codex-dream-skin-chrome .dream-banshee-rail {
+    animation: none !important;
+    filter: none !important;
+    opacity: .28 !important;
+  }
+}
+
+@media (forced-colors: active) {
+  html.codex-dream-skin.dream-pack-banshee body,
+  html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="sidebar"],
+  html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="main"],
+  html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="cards"] button,
+  html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="composer"] {
+    background: Canvas !important;
+    color: CanvasText !important;
+    border-color: CanvasText !important;
+    box-shadow: none !important;
+  }
+
+  html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="sidebar"]::after,
+  html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="main"]::before,
+  html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="main"]::after,
+  html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="cards"] button::before,
+  html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="cards"] button::after,
+  html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="composer"]::after,
+  html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] #codex-dream-skin-chrome {
+    display: none !important;
+    content: none !important;
+    animation: none !important;
+    filter: none !important;
+    box-shadow: none !important;
+  }
+}

@@ -1,6 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { isLoopbackEndpoint, isMainRendererTarget } from "./lib/target-selection.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "..");
@@ -15,6 +16,7 @@ function parseArgs(argv) {
     else if (arg === "--verify") options.mode = "verify";
     else if (arg === "--remove") options.mode = "remove";
     else if (arg === "--themes") options.mode = "themes";
+    else if (arg === "--check") options.mode = "check";
     else if (arg === "--timeout-ms") options.timeoutMs = Number(argv[++i]);
     else if (arg === "--screenshot") options.screenshot = path.resolve(argv[++i]);
     else if (arg === "--reload") options.reload = true;
@@ -100,15 +102,6 @@ class CdpSession {
   }
 }
 
-function isMainRendererTarget(target) {
-  try {
-    const url = new URL(target.url);
-    return target.type === "page" && url.protocol === "app:" && url.hostname === "-" &&
-      url.pathname === "/index.html" && !url.searchParams.has("initialRoute");
-  } catch {
-    return false;
-  }
-}
 
 // Chromium binds the DevTools server to a single loopback address, and which
 // stack it picks can change between boots (observed: 127.0.0.1 before a reboot,
@@ -167,6 +160,13 @@ async function waitForTargets(port, timeoutMs, { includeAuxiliary = false } = {}
 // ---------------------------------------------------------------------------
 
 const THEME_DIRS = ["themes", "themes-private"];
+const PACK_REGISTRY = Object.freeze({
+  dream: { file: path.join("styles", "dream", "style.css"), scope: "dream-pack-dream" },
+  banshee: { file: path.join("styles", "banshee", "style.css"), scope: "dream-pack-banshee" },
+});
+const SCHEMA_VERSIONS = new Set([1, 2]);
+const ART_MODES = new Set(["image", "none"]);
+const MAX_PACK_CSS_BYTES = 512 * 1024;
 const DEFAULT_LAYOUT = "fullscreen";
 const THEME_NAME_PATTERN = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
 const TOKEN_KEY_PATTERN = /^--dream-[a-z0-9-]+$/;
@@ -429,26 +429,51 @@ async function loadThemeDir(baseName, dirName) {
     warn(`theme "${name}" skipped because of invalid tokens`);
     return null;
   }
+  const schemaVersion = config.schemaVersion ?? 1;
+  if (!SCHEMA_VERSIONS.has(schemaVersion)) {
+    warn(`theme "${name}" skipped: unsupported schemaVersion "${schemaVersion}"`);
+    return null;
+  }
+  const stylePack = config.stylePack ?? "dream";
+  const artMode = config.artMode ?? "image";
+  if (schemaVersion === 1 && (config.stylePack !== undefined || config.artMode !== undefined)) {
+    warn(`theme "${name}" skipped: stylePack/artMode require schemaVersion 2`);
+    return null;
+  }
+  if (!Object.hasOwn(PACK_REGISTRY, stylePack)) {
+    warn(`theme "${name}" skipped: unknown stylePack "${stylePack}"`);
+    return null;
+  }
+  if (!ART_MODES.has(artMode)) {
+    warn(`theme "${name}" skipped: unknown artMode "${artMode}"`);
+    return null;
+  }
   const art = config.art ?? {};
-  const homeFile = art.home ?? "art.png";
-  const chatFile = art.chat ?? homeFile;
-  const artUrls = {};
-  for (const [role, file] of Object.entries({ home: homeFile, chat: chatFile })) {
-    if (typeof file !== "string" || !ART_FILE_PATTERN.test(file)) {
-      warn(`theme "${name}" skipped: art.${role} ("${file}") must be a plain png/jpg/webp filename inside the theme folder`);
-      return null;
-    }
-    if (role === "chat" && file === homeFile && artUrls.home) {
-      artUrls.chat = artUrls.home;
-      continue;
-    }
-    try {
-      const buffer = await fs.readFile(path.join(dir, file));
-      const mime = MIME_BY_EXT[path.extname(file).toLowerCase()] ?? "image/png";
-      artUrls[role] = `data:${mime};base64,${buffer.toString("base64")}`;
-    } catch {
-      warn(`theme "${name}" skipped: art file not found: ${path.join(baseName, dirName, file)}`);
-      return null;
+  let artUrls = null;
+  if (artMode === "image") {
+    const homeFile = art.home ?? "art.png";
+    const chatFile = art.chat ?? homeFile;
+    artUrls = {};
+    for (const [role, file] of Object.entries({ home: homeFile, chat: chatFile })) {
+      if (typeof file !== "string" || !ART_FILE_PATTERN.test(file) || path.basename(file) !== file) {
+        warn(`theme "${name}" skipped: art.${role} ("${file}") must be a plain png/jpg/webp filename inside the theme folder`);
+        return null;
+      }
+      if (role === "chat" && file === homeFile && artUrls.home) {
+        artUrls.chat = artUrls.home;
+        continue;
+      }
+      try {
+        const assetPath = path.join(dir, file);
+        const stat = await fs.lstat(assetPath);
+        if (!stat.isFile() || stat.isSymbolicLink()) throw new Error("not a regular file");
+        const buffer = await fs.readFile(assetPath);
+        const mime = MIME_BY_EXT[path.extname(file).toLowerCase()] ?? "image/png";
+        artUrls[role] = `data:${mime};base64,${buffer.toString("base64")}`;
+      } catch {
+        warn(`theme "${name}" skipped: art file not found or unsafe: ${path.join(baseName, dirName, file)}`);
+        return null;
+      }
     }
   }
   let extraCss = null;
@@ -466,6 +491,9 @@ async function loadThemeDir(baseName, dirName) {
   return {
     name,
     source: baseName,
+    schemaVersion,
+    stylePack,
+    artMode,
     order: Number.isFinite(config.order) ? config.order : 100,
     isDefault: config.default === true,
     meta: {
@@ -509,6 +537,45 @@ async function loadThemes() {
   return { themes, defaultTheme };
 }
 
+function validatePackCss(name, css) {
+  const errors = [];
+  const scope = `html.codex-dream-skin.${PACK_REGISTRY[name].scope}`;
+  if (Buffer.byteLength(css, "utf8") > MAX_PACK_CSS_BYTES) errors.push("CSS exceeds size limit");
+  if (/@import\b/i.test(css)) errors.push("@import is forbidden");
+  if (/url\(\s*['"]?https?:/i.test(css)) errors.push("network URLs are forbidden");
+  if (name === "banshee") {
+    const stripped = css.replace(/\/\*[\s\S]*?\*\//g, "");
+    const check = (block) => {
+      for (const rule of extractTopLevelRules(block)) {
+        if (/^@(media|supports)\b/.test(rule.prelude)) { check(rule.body); continue; }
+        if (/^@keyframes\s+dream-banshee-[a-z0-9-]+$/i.test(rule.prelude)) continue;
+        if (rule.prelude.startsWith("@")) { errors.push(`unsupported at-rule: ${rule.prelude}`); continue; }
+        for (const selector of rule.prelude.split(",").map((part) => part.trim()).filter(Boolean)) {
+          if (!selector.startsWith(scope)) errors.push(`unscoped selector: ${selector.slice(0, 100)}`);
+        }
+      }
+    };
+    try { check(stripped); } catch (error) { errors.push(error.message); }
+  }
+  return errors;
+}
+
+async function loadPackCss(themes) {
+  const names = [...new Set(themes.map((theme) => theme.stylePack))];
+  const blocks = [];
+  for (const name of names) {
+    const entry = PACK_REGISTRY[name];
+    const file = path.join(root, entry.file);
+    const stat = await fs.lstat(file);
+    if (!stat.isFile() || stat.isSymbolicLink()) throw new Error(`Unsafe style pack entry: ${entry.file}`);
+    const css = await fs.readFile(file, "utf8");
+    const errors = validatePackCss(name, css);
+    if (errors.length) throw new Error(`Invalid style pack "${name}": ${errors.join("; ")}`);
+    blocks.push(`/* style pack: ${name} */\n${css.trim()}`);
+  }
+  return blocks.join("\n\n");
+}
+
 function buildThemeCss(themes) {
   const blocks = [];
   for (const theme of themes) {
@@ -524,31 +591,41 @@ function buildThemeCss(themes) {
 }
 
 async function loadPayload() {
-  const [structureCss, template, { themes, defaultTheme }] = await Promise.all([
-    fs.readFile(path.join(root, "styles", "dream", "style.css"), "utf8"),
-    fs.readFile(path.join(root, "assets", "renderer-inject.js"), "utf8"),
+  const [{ themes, defaultTheme }, template, bansheeRuntime] = await Promise.all([
     loadThemes(),
+    fs.readFile(path.join(root, "assets", "renderer-inject.js"), "utf8"),
+    fs.readFile(path.join(root, "assets", "banshee-runtime.js"), "utf8"),
   ]);
+  const structureCss = await loadPackCss(themes);
   const css = `${structureCss}\n\n/* --- generated theme token blocks --- */\n\n${buildThemeCss(themes)}\n`;
-  const artAssets = Object.fromEntries(themes.map((theme) => [theme.name, theme.artUrls]));
+  const artAssets = Object.fromEntries(
+    themes.filter((theme) => theme.artMode === "image").map((theme) => [theme.name, theme.artUrls])
+  );
   const manifest = {
     order: themes.map((theme) => theme.name),
     meta: Object.fromEntries(themes.map((theme) => [theme.name, theme.meta])),
     stickers: Object.fromEntries(themes.map((theme) => [theme.name, theme.stickers])),
+    packs: Object.fromEntries(themes.map((theme) => [theme.name, theme.stylePack])),
+    artModes: Object.fromEntries(themes.map((theme) => [theme.name, theme.artMode])),
     defaultTheme,
     defaultLayout: DEFAULT_LAYOUT,
   };
   return template
     .replace("__DREAM_CSS_JSON__", () => JSON.stringify(css))
     .replace("__DREAM_ART_ASSETS_JSON__", () => JSON.stringify(artAssets))
-    .replace("__DREAM_MANIFEST_JSON__", () => JSON.stringify(manifest));
+    .replace("__DREAM_MANIFEST_JSON__", () => JSON.stringify(manifest))
+    .replace("__BANSHEE_RUNTIME_FACTORY__", () => bansheeRuntime.trim());
 }
 
 async function connectTarget(target) {
+  if (!isLoopbackEndpoint(target.webSocketDebuggerUrl, ["ws:"])) {
+    throw new Error(`Rejected non-loopback CDP WebSocket: ${target.webSocketDebuggerUrl}`);
+  }
   return new CdpSession(target).open();
 }
 
-async function applyToSession(session, payload) {
+async function applyToSession(session, payload, { paletteOnly = false } = {}) {
+  await session.evaluate("window.__CODEX_DREAM_SKIN_PALETTE_ONLY__ = " + JSON.stringify(paletteOnly));
   return session.evaluate(payload);
 }
 
@@ -562,8 +639,10 @@ async function removeFromSession(session) {
       rootElement.style.removeProperty('--dream-art');
       rootElement.style.removeProperty('--dream-home-art');
       rootElement.style.removeProperty('--dream-chat-art');
+      rootElement.style.removeProperty('--dream-banshee-wave-epoch-offset');
+      rootElement.removeAttribute('data-dream-pack-ready');
       for (const cls of [...rootElement.classList]) {
-        if (cls === 'codex-dream-skin' || cls.startsWith('dream-theme-') || cls.startsWith('dream-layout-')) {
+        if (cls === 'codex-dream-skin' || cls.startsWith('dream-theme-') || cls.startsWith('dream-layout-') || cls.startsWith('dream-pack-')) {
           rootElement.classList.remove(cls);
         }
       }
@@ -571,6 +650,11 @@ async function removeFromSession(session) {
     document.querySelectorAll('.dream-home').forEach((node) => node.classList.remove('dream-home'));
     document.querySelectorAll('.dream-home-shell').forEach((node) => node.classList.remove('dream-home-shell'));
     document.querySelectorAll('.dream-new-task').forEach((node) => node.classList.remove('dream-new-task'));
+    document.querySelectorAll('[data-dream-owner], [data-dream-surface], [data-dream-capability]').forEach((node) => {
+      node.removeAttribute('data-dream-owner');
+      node.removeAttribute('data-dream-surface');
+      node.removeAttribute('data-dream-capability');
+    });
     document.getElementById('codex-dream-skin-style')?.remove();
     document.getElementById('codex-dream-skin-chrome')?.remove();
     document.getElementById('codex-dream-skin-controls')?.remove();
@@ -701,14 +785,14 @@ async function runOneShot(options) {
     const session = await connectTarget(target);
     try {
       if (options.mode === "remove") await removeFromSession(session);
-      else if (options.mode === "once") await applyToSession(session, payload);
+      else if (options.mode === "once") await applyToSession(session, payload, { paletteOnly: mainTargets.length !== 1 });
       if (options.mode === "once") {
         await new Promise((resolve) => setTimeout(resolve, 850));
       }
       if (options.reload) {
         await session.send("Page.reload", { ignoreCache: true });
         await new Promise((resolve) => setTimeout(resolve, 1600));
-        if (options.mode !== "remove") await applyToSession(session, payload);
+        if (options.mode !== "remove") await applyToSession(session, payload, { paletteOnly: mainTargets.length !== 1 });
       }
       const verified = options.mode === "remove"
         ? await session.evaluate("!document.documentElement.classList.contains('codex-dream-skin')")
@@ -732,6 +816,21 @@ async function runOneShot(options) {
   )) process.exitCode = 2;
 }
 
+async function runPayloadCheck() {
+  const payload = await loadPayload();
+  const { themes, defaultTheme } = await loadThemes();
+  console.log(JSON.stringify({
+    valid: true,
+    payloadBytes: Buffer.byteLength(payload, "utf8"),
+    defaultTheme,
+    themes: themes.map((theme) => ({
+      name: theme.name,
+      schemaVersion: theme.schemaVersion,
+      stylePack: theme.stylePack,
+      artMode: theme.artMode,
+    })),
+  }, null, 2));
+}
 async function runThemesReport() {
   const { themes, defaultTheme } = await loadThemes();
   console.log(JSON.stringify({
@@ -743,6 +842,9 @@ async function runThemesReport() {
       order: theme.order,
       default: theme.isDefault,
       button: theme.meta.button,
+      schemaVersion: theme.schemaVersion,
+      stylePack: theme.stylePack,
+      artMode: theme.artMode,
       extraCss: theme.extraCss !== null,
       stickers: theme.stickers ? Object.keys(theme.stickers) : [],
     })),
@@ -798,11 +900,11 @@ async function runWatch(options) {
       try {
         const session = await connectTarget(target);
         session.on("Page.loadEventFired", () => {
-          setTimeout(() => applyToSession(session, payload).catch((error) => {
+          setTimeout(() => applyToSession(session, payload, { paletteOnly: targets.length !== 1 }).catch((error) => {
             console.error(`[dream-skin] reinject failed: ${error.message}`);
           }), 250);
         });
-        await applyToSession(session, payload);
+        await applyToSession(session, payload, { paletteOnly: targets.length !== 1 });
         sessions.set(target.id, session);
         console.log(`[dream-skin] injected target ${target.id} (${target.title || target.url})`);
       } catch (error) {
@@ -818,4 +920,5 @@ async function runWatch(options) {
 const options = parseArgs(process.argv.slice(2));
 if (options.mode === "watch") await runWatch(options);
 else if (options.mode === "themes") await runThemesReport();
+else if (options.mode === "check") await runPayloadCheck();
 else await runOneShot(options);

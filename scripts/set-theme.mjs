@@ -1,3 +1,6 @@
+import fs from "node:fs";
+import path from "node:path";
+
 // Programmatic theme/layout switcher for the running Codex Dream Skin.
 // The skin intentionally has no on-screen switch UI; agents (or users through
 // their agent) change themes with:
@@ -12,7 +15,7 @@
 const LAYOUTS = new Set(["banner", "fullscreen"]);
 
 function parseArgs(argv) {
-  const options = { port: 9335, theme: null, layout: null, list: false };
+  const options = { port: null, theme: null, layout: null, list: false };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === "--port") options.port = Number(argv[++i]);
@@ -21,7 +24,7 @@ function parseArgs(argv) {
     else if (!arg.startsWith("-") && !options.theme) options.theme = arg;
     else throw new Error(`Unknown argument: ${arg}`);
   }
-  if (!Number.isInteger(options.port) || options.port < 1024 || options.port > 65535) {
+  if (options.port !== null && (!Number.isInteger(options.port) || options.port < 1024 || options.port > 65535)) {
     throw new Error(`Invalid port: ${options.port}`);
   }
   if (!options.list && !options.theme && !options.layout) {
@@ -30,6 +33,14 @@ function parseArgs(argv) {
   return options;
 }
 
+function persistedPort() {
+  try {
+    const file = path.join(process.env.LOCALAPPDATA ?? "", "CodexDreamSkin", "install-transaction.json");
+    const port = Number(JSON.parse(fs.readFileSync(file, "utf8")).port);
+    if (Number.isInteger(port) && port >= 1024 && port <= 65535) return port;
+  } catch {}
+  return 9335;
+}
 // Chromium may bind DevTools to either loopback stack; probe both (see runtime-notes.md).
 async function fetchTargets(port) {
   let lastError;
@@ -87,6 +98,7 @@ async function evaluateOnce(target, expression) {
 }
 
 const options = parseArgs(process.argv.slice(2));
+options.port ??= persistedPort();
 const targets = await fetchTargets(options.port);
 const main = targets.find(isMainRendererTarget);
 if (!main) {

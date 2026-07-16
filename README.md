@@ -60,7 +60,7 @@ node scripts\set-theme.mjs aurora-veil fullscreen # 切主题 + 版式（banner 
 
 ## 工作原理与安全
 
-- **CDP 注入**：以 `--remote-debugging-port=9335` 启动 Store 版官方 `ChatGPT.exe`，通过 DevTools 协议往主渲染器注入一段 CSS + JS。端口只绑定**本机回环**，不要暴露到局域网。
+- **CDP 注入**：以 `--remote-debugging-port=<persisted-loopback-port>` 启动 Store 版官方 `ChatGPT.exe`，通过 DevTools 协议往主渲染器注入一段 CSS + JS。端口只绑定**本机回环**，不要暴露到局域网。
 - **不改任何官方文件**：不碰 `WindowsApps`、不碰 `app.asar`、不替换任何可执行文件，登录态/会话/插件全部保持原样。
 - **随时还原**：`scripts\restore-dream-skin.ps1` 现场移除所有注入内容，DOM 恢复得干干净净；加 `-Uninstall -RestoreBaseTheme` 连快捷方式和安装前的配色备份一起还原。所有运行时状态都在 `%LOCALAPPDATA%\CodexDreamSkin`，删掉即无痕。
 - **Codex 更新后**：重跑一遍 `install` + `start` 即可，脚本每次动态发现当前 Appx 包，不存版本化路径。
@@ -111,3 +111,24 @@ Quick start: hand this repo to your agent and say "install this skin", or run `s
 Bundled demo art is 100% procedurally generated (`tools/generate-demo-art.py`); no photos of real people in this repo. Do not publish themes using a real person's likeness — keep private themes in the git-ignored `themes-private/`. Decorative community project, not affiliated with OpenAI; Codex and related marks belong to their respective owners.
 
 [MIT](LICENSE) © Vikicc · **v2.0.0**
+
+---
+
+## Banshee Armored Shell (engine extension)
+
+This fork adds an artless dark structural pack:
+
+```powershell
+node scripts\set-theme.mjs banshee-armor fullscreen
+```
+
+It preserves the official Codex renderer and restyles native controls in place. The pack uses abstract blue-black armor planes, cut panel seams, and one synchronized 9.6-second gold energy wave. It contains no character, machine, emblem, or franchise artwork. The original image-theme workflow in `THEME-SPEC.md` remains unchanged. Engine-extension requirements and the pre/post-restart acceptance gates are documented separately in `BANSHEE-SPEC.md`.
+
+Before restarting Codex, run:
+
+```powershell
+node --test --test-isolation=none tests\banshee-static.test.mjs
+node scripts\injector.mjs --themes
+```
+
+These offline checks validate schema compatibility, artless packaging, pack isolation, cleanup contracts, target selection, and motion/accessibility fallbacks. They do not replace the real-renderer native-parity and hit-testing pass required after restart.
