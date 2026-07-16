@@ -1,7 +1,7 @@
-# Scene art swap — 实战记录（arina，2026-07-16）
+# Scene art swap — 实战记录（2026-07-16）
 
 把一个主题的视觉图从"设计效果图/截图"换成"整幅纯净场景图"（THEME-SPEC §5.1 预设）的完整实操。
-本文是 arina 换图的真实记录，下次换图（任何主题）照此步骤执行即可。
+本文是一次私有主题（本地 `themes-private/`）换图的真实记录，下次换图（任何主题）照此步骤执行即可。
 
 ## 前提确认（换图前逐项过）
 
@@ -27,7 +27,7 @@
 8. **四个 crop 角色都要重调**：fullscreen（主画布）、hero（banner 横带）、polaroid（小竖卡）、chat（聊天淡背景，红线：消息文字绝对主导）。
 9. **回归**：全部主题 × 两版式截图；elementsFromPoint 命中账号按钮/四卡/输入框/发送键；restore 后 check-clean；重启 start 脚本恢复守护；**重启 watcher 并看日志无误杀**。
 
-## 本次最终参数（arina, 1672×941 场景图，写在 theme.json tokens 里）
+## 本次最终参数（1672×941 场景图，写在 theme.json tokens 里）
 
 ```jsonc
 "--dream-fullscreen-art-size": "cover",             // 图与画布比例几乎一致，无需 bleed
