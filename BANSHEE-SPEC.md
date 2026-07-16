@@ -94,13 +94,44 @@ The interface must read as assembled plates, not as rounded cards with gold bord
 - Geometry is decorative and must not change hit areas, scroll geometry, native layout order, or keyboard navigation.
 - Use pseudo-elements and dedicated injected chrome nodes only. All such nodes are namespaced and removable.
 
+The approved fourth concept establishes a **minimum seam coverage**, not merely a color reference:
+
+| Zone | Required armor construction |
+| --- | --- |
+| Sidebar crown | One broad diagonal cut, a recessed lower seam, and one short gold conduit; the crown must read as a separate shoulder plate. |
+| Sidebar/content boundary | An interrupted vertical spine with at least three depth changes and two angled joints; it may not render as one plain divider. |
+| Main top frame | Mirrored shoulder plates plus a stepped center spine with nested seams; the center remains abstract and contains no emblem, head, or machine silhouette. |
+| Main side frame | Left/right segmented rails with upper, middle, and lower interruptions, chamfered transfers, and low-energy conduit segments. |
+| Main corners/footer | Double-frame corner joints and a broken lower rail, with the outer and inner plates visibly separated at rest. |
+| Suggestion cards | Multi-corner chamfers, a recessed secondary edge, a distinct cut at the upper-left, and a short lower-center energy seam. |
+| Context/composer tray | A separate upper context plate, clipped outer corners, an inset inner seam, and a stepped top conduit without covering native controls. |
+
+At the 1920×1200 review viewport, every one of these seven zones must be visibly identifiable with animation paused at its dimmest frame. A full-width or full-height straight border does not count as armor construction. Adjacent seams should vary in depth and terminate before the next joint so the shell reads as assembled plates rather than a continuous picture frame.
+
+Corner joints must read cleanly on screen; independent shoulder and side seams must never expose an accidental X. The approved construction is layered rather than mathematically flat: rear structural seams may pass beneath a foreground plate, but the overlap must be hidden by an opaque fill or explicit mask before the foreground contour is painted. When no plate occludes an overlap, split the rear path into separate SVG subpaths at the occlusion boundary. SVG paint order is therefore part of the armor topology: rear fill/seam, foreground plate fill, foreground seam, then energy conduit. The composer and its context tray are opaque foreground plates: global frame seams and bottom energy rails must be occluded beneath them and must not create translucency, duplicated borders, or ghost lines through native content.
+
+The frame SVG uses the approved main-frame crop as its canonical coordinate system: `viewBox="0 0 1261 941"`. Do not redraw it in a guessed square coordinate system. Scale it to the available viewport with `preserveAspectRatio="none"` while retaining `vector-effect: non-scaling-stroke` for stable seam weight. Geometry review is performed at an exact 1047×668 preview viewport and then resampled to the 1570×1002 reference canvas; both images must share dimensions before overlay or pixel comparison.
+
+Visual acceptance uses a fixed, repeatable capture rather than subjective inspection alone. Pause or settle animation, capture in the same browser and viewport, compare the approved/current images at identical dimensions, and inspect a red/cyan edge overlay for the frame regions. Pixel/edge metrics are diagnostics, not permission to ignore a visibly wrong silhouette. A baseline is accepted only after the user approves it; tests may prevent topology regressions but may not declare visual approval.
+
+The user-approved 1580×1000 reference is the canonical silhouette. The main shell must preserve these continuous relationships when scaled:
+
+- each top shoulder transfers through a diagonal joint into its corresponding side rail;
+- the top center contains at least three nested horizontal levels, including a narrow recessed conduit;
+- each side contains two parallel structural seams, an upper illuminated slot, a long recessed mid-rail, a lower illuminated slot, and an angled transfer into the bottom corner;
+- neither side rail may disappear behind the page background or collapse to a single one-pixel divider;
+- the lower corners visibly join the bottom rail while leaving the native composer unobstructed;
+- the dim frame must expose the entire construction; animation enhances the structure but never supplies missing geometry.
+
+The energy system has two simultaneous layers: a persistent low-output conduit and a brighter traveling crest. Both layers use the shared 9.6-second epoch. The crest originates in the recessed top-center conduit, reaches mirrored upper side joints together, travels down both side rails, and reaches the lower corners and bottom rail last. Left and right counterparts must share phase exactly.
+
 ### 4.3 Global energy wave
 
 All breathing/flow effects are one physical event, not independent looping widgets.
 
 - Source: viewport/content center at the top edge: `50% 0%`.
 - Cycle: `9.6s` default.
-- Propagation: outward by normalized distance from the source. Phase 1 uses reviewed coarse geometric zones with fixed delays: top frame `0ms`, upper sidebar/rails `400ms`, central cards `800ms`, composer `1300ms`, and far/footer accents `1700ms`.
+- Propagation: outward by normalized distance from the source. Phase 1 uses reviewed coarse geometric zones with fixed delays: top frame `0ms`, upper sidebar/rails `400–600ms`, central cards `800–1000ms`, composer `1300–1700ms`, and far/footer accents `1700ms`.
 - Zones progress in order: top frame → upper sidebar/main rails → central cards → composer/footer → far corners.
 - A crest is brief and subtle; most of the cycle is dark, quiet, and apparently charged beneath armor.
 - Peak glow must never reduce text contrast or obscure native status colors.
@@ -222,6 +253,17 @@ Deferred until the user explicitly restarts/authorizes restart:
 - responsive/accessibility matrix: minimum supported window, 1280×820, current user viewport, and >1400px; sidebar open/closed; 100/125/150/200% scale or zoom; long Chinese/English labels; multiline composer; forced colors; keyboard Tab/Shift+Tab/Escape order unchanged.
 - hit testing covers center and four corners of each control, seam pseudo-element regions, and controls while menus/modals are open; the topmost interactive ancestor remains native.
 
+### 8.3 Incremental visual acceptance
+
+Visual parity is accepted zone by zone, not from a whole-screen impression. The review order is: sidebar crown and top task controls, main-frame top edge, main-frame left/right edges, then cards/composer and coordinated energy behavior.
+
+For each zone:
+
+- freeze every zone that is not currently under review;
+- render the approved reference crop and current crop at identical pixel dimensions and alignment;
+- provide a 50% alpha overlay for seam, baseline, spacing, and silhouette inspection;
+- do not begin the next zone until the user accepts the current crop;
+- preserve native controls and icon semantics; preview-only stand-ins must match native geometry and must never become production replacements.
 ## 9. Deliverables
 
 1. This specification, separate from `THEME-SPEC.md`.
