@@ -1,0 +1,49 @@
+# QA inventory
+
+## User-visible claims
+
+1. Every theme folder scanned from `themes/` and `themes-private/` is available at runtime; `node scripts/injector.mjs --themes` lists them with the resolved default theme/layout.
+2. Every theme supports two persisted home layouts: top banner and fullscreen canvas.
+3. The real Codex suggestion buttons occupy the visual middle and the real project selector/composer stays at the bottom in both layouts.
+4. Normal tasks use a separate, faint, subject-focused chat-art layer with a light wash; message text remains dominant.
+5. The sidebar is warm glass rather than merely changing the accent color.
+6. All real Codex controls remain interactive; the skin is not a screenshot overlay and has no on-screen switch UI of its own (switching is programmatic via `scripts/set-theme.mjs`).
+7. The skin survives route changes and renderer reloads while the injector daemon runs.
+8. The official Store package and `app.asar` remain unchanged.
+9. Restore removes the injected DOM/CSS and install/restore can be repeated.
+
+## Functional checks
+
+- Home feature card: click one card and confirm the real composer is populated or the normal action occurs.
+- Project selector: click the real project chip under the "选择项目" label and confirm the native project menu opens.
+- Sidebar: open a real task, then return to New Task.
+- Composer: type text, verify caret/readability, then clear it without sending.
+- Theme switch: `node scripts/set-theme.mjs <name> [layout]` for each scanned theme; confirm the header copy, accents, home art, and chat art all update, the command's `persisted` output matches, and the final choice survives reload.
+- Layout switch: switch between `banner` and `fullscreen`; confirm the native suggestion buttons remain centered and the native composer remains bottom-aligned; confirm the final choice survives reload.
+- Chat route: open a real task in every theme and confirm the full chat-art layer appears only behind the task, not on the home screen.
+- Reload: use CDP `Page.reload`, wait, and confirm the injection marker returns.
+- Normal restart persistence: close all Codex processes, launch the Store `ChatGPT.exe` without debug arguments, and confirm the watcher relaunches it on port 9335 with the saved theme/layout restored.
+- Closed-app behavior: leave Codex closed for at least two watcher polls and confirm the watcher remains idle instead of launching the app.
+- Desktop pet: confirm the `initialRoute=/avatar-overlay` renderer has no Dream Skin class, style, chrome, or state and its computed body background is transparent; reload that renderer and confirm it stays clean.
+- Restore/reapply cycle: remove live skin, verify marker absent (no `codex-dream-skin`/`dream-theme-*`/`dream-layout-*` classes, no injected nodes, no state object, no inline `--dream-*` vars), apply again, verify marker present.
+- Theme validation: a theme with a missing required token, a bad folder name, or an unscoped `extra.css` must be skipped/rejected with a `[dream-skin]` warning on stderr and must not break the remaining themes.
+- Update resilience: resolve the current `OpenAI.Codex` Appx location dynamically; never store a versioned WindowsApps path.
+
+## Visual checks
+
+- 1280x820 initial home: in both layouts, hero, native cards, real project selector, and composer are all visible without horizontal scrolling or header overlap.
+- First-entry density: the hero anchors the top/canvas, suggestions occupy the middle, and the real project selector/composer stays at the bottom; reject a large accidental empty band or collisions.
+- Swappable art: changing a theme's home or chat image may require only that theme's crop/wash tokens in its `theme.json`; hero/card/composer geometry must not depend on a specific subject position.
+- Ghost-text ban: zoom into every corner of both layouts; no readable text, UI fragments, or border lines from the source art may remain. Prefer a heavier overlay over any ghosting (see THEME-SPEC.md §5).
+- Chat readability: the subject may be recognizable, but fake source text/cards and high-contrast detail must not compete with real messages.
+- Narrower window: accept Codex's native responsive behavior; no essential control is covered and the polaroid intentionally hides at 1400px and below.
+- Normal task: messages remain readable and composer does not overlap content.
+- Inspect the sidebar, header, hero edges, card labels, composer controls, scrollbar, ribbon, and bottom-right decoration.
+- Reject black/transparent sidebar artifacts, clipped cards, duplicated/disconnected project labels, rasterized native controls, deep chat fills, readable fake controls from source art, weak contrast, or decorations intercepting clicks.
+- Reject any colored square, gradient, or opaque panel behind a desktop pet. Auxiliary overlay windows must remain transparent even while the main window is fully skinned.
+
+## Exploratory checks
+
+- Start when the debug port is occupied: fail with a clear message or use a caller-selected port.
+- Start after Codex updates: package discovery and injection still work without patching installed files.
+- Start with zero valid themes: the injector must fail with a clear "No valid themes found" error instead of injecting a broken payload.

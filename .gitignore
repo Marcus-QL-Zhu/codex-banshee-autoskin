@@ -1,0 +1,15 @@
+# Local-only themes (personal / likeness-sensitive art) — never publish
+themes-private/
+
+# Runtime state lives in %LOCALAPPDATA%\CodexDreamSkin, but guard against strays
+*.log
+state.json
+watcher-state.json
+
+# OS / editor noise
+Thumbs.db
+Desktop.ini
+.DS_Store
+node_modules/
+__pycache__/
+*.pyc

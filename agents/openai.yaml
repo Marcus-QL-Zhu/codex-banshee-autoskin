@@ -1,0 +1,4 @@
+interface:
+  display_name: "Codex Dream Skin"
+  short_description: "Apply, theme-switch, and safely restore the manifest-driven Codex skin"
+  default_prompt: "Use $codex-dream-skin to apply, verify, switch themes, update, or restore the full Codex desktop skin."
