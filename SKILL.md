@@ -7,7 +7,7 @@ description: Apply, launch, verify, theme-switch, repair, update, or restore a f
 
 Apply a reversible renderer skin through Chromium DevTools Protocol while launching the official Store-installed Codex executable. Never replace or take ownership of files under `WindowsApps`.
 
-Themes are data, not code: the injector scans `themes/` and `themes-private/` for folders containing `theme.json` (meta + 28 required tokens + art, plus optional v1.1 `cards`/`stickers`/`composer` decor fields) and generates the payload at start. To create or adjust a theme, follow `THEME-SPEC.md` at the repo root — never hardcode theme names into engine files.
+Themes are data, not code: the injector scans `themes/` and `themes-private/` for folders containing `theme.json` (meta + 28 required tokens + art, plus optional `cards`/`stickers`/`composer` decor fields — including v1.2 `cards.icons` built-in badge icons) and generates the payload at start. To create or adjust a theme, follow `THEME-SPEC.md` at the repo root — never hardcode theme names into engine files.
 
 ## Workflow
 
@@ -47,3 +47,4 @@ Themes are data, not code: the injector scans `themes/` and `themes-private/` fo
 - `tools/generate-demo-art.py`: reproducible generator for the bundled demo art.
 - `references/qa-inventory.md`: required functional and visual signoff coverage.
 - `references/runtime-notes.md`: troubleshooting and update behavior.
+- `references/scene-art-swap.md`: worked example of swapping a theme's art for a full-canvas scene image (THEME-SPEC §5.1 preset) with the live-tuning workflow and final tokens.

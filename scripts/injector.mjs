@@ -190,6 +190,10 @@ const REQUIRED_META = ["button", "brand", "edition", "signature"];
 // only drops that field with a warning — it never rejects the theme.
 const CARD_SUBTITLE_MAX = 4;
 const DECOR_TEXT_LIMIT = 120;
+// v1.2: built-in badge icon names for cards.icons. Each entry maps a suggestion
+// card position to a masked SVG drawn by the structure CSS (--dream-icon-<name>);
+// null keeps the native glyph for that position.
+const BUILT_IN_CARD_ICONS = new Set(["code", "wand", "scales", "wrench"]);
 
 function warn(message) {
   console.error(`[dream-skin] ${message}`);
@@ -224,6 +228,21 @@ function deriveDecorTokens(name, config) {
               return;
             }
             derived[`--dream-card-sub-${index + 1}`] = cssStringToken(text);
+          });
+        }
+      }
+      if (cards.icons !== undefined) {
+        if (!Array.isArray(cards.icons) || cards.icons.length > CARD_SUBTITLE_MAX) {
+          warn(`theme "${name}": cards.icons must be an array of at most ${CARD_SUBTITLE_MAX} entries; field ignored`);
+        } else {
+          cards.icons.forEach((icon, index) => {
+            if (icon === null) return; // null = keep the native icon at this position
+            if (typeof icon !== "string" || !BUILT_IN_CARD_ICONS.has(icon)) {
+              warn(`theme "${name}": cards.icons[${index}] must be null or one of ${[...BUILT_IN_CARD_ICONS].join("/")}; entry ignored`);
+              return;
+            }
+            derived[`--dream-card-icon-${index + 1}`] = `var(--dream-icon-${icon})`;
+            derived[`--dream-card-native-icon-${index + 1}`] = "hidden";
           });
         }
       }

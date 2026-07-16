@@ -21,7 +21,8 @@
       "把灵感慢慢落成实现",
       "细致审查，温柔打磨质量",
       "找到问题，给出修复方案"
-    ]
+    ],
+    "icons": ["code", "wand", "scales", "wrench"]
   },
   "tokens": {
     "--dream-ink": "#6b3a2a",

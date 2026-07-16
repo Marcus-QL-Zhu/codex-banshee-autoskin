@@ -9,7 +9,7 @@
   const INJECTION_ID = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const LAYOUT_STORAGE_KEY = "codex-dream-skin.layout";
   const THEME_STORAGE_KEY = "codex-dream-skin.theme";
-  const STYLE_VERSION = "3";
+  const STYLE_VERSION = "4";
   const LAYOUTS = new Set(["banner", "fullscreen"]);
   // Sidebar "new task" row gets a marker class so the structure CSS can restyle
   // it as a capsule. Text matching only; the real button stays fully native.
@@ -36,14 +36,29 @@
     for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
     return URL.createObjectURL(new Blob([bytes], { type: mime }));
   };
-  const previousUrlsUsable = previous?.artUrls &&
-    THEME_ORDER.every((theme) => previous.artUrls[theme]?.home);
+  // Cheap per-theme art fingerprint (data URL lengths + base64 tail). Blob URLs
+  // from a previous injection are only reused when the fingerprints still match,
+  // so replacing a theme's art file takes effect on live re-injection without a
+  // renderer reload (stale blobs are revoked below).
+  const artSignature = (assets) =>
+    `${assets.home.length}:${assets.home.slice(-24)}|${assets.chat.length}:${assets.chat.slice(-24)}`;
+  const artSigs = Object.fromEntries(
+    Object.entries(artAssets).map(([theme, assets]) => [theme, artSignature(assets)])
+  );
+  const previousUrlsUsable = previous?.artUrls && previous?.artSigs &&
+    THEME_ORDER.every((theme) => previous.artUrls[theme]?.home && previous.artSigs[theme] === artSigs[theme]);
   const artUrls = previousUrlsUsable ? previous.artUrls : Object.fromEntries(
     Object.entries(artAssets).map(([theme, assets]) => [theme, {
       home: createObjectUrl(assets.home),
       chat: assets.chat === assets.home ? null : createObjectUrl(assets.chat),
     }])
   );
+  if (!previousUrlsUsable && previous?.artUrls) {
+    for (const assets of Object.values(previous.artUrls)) {
+      if (assets.home) URL.revokeObjectURL(assets.home);
+      if (assets.chat && assets.chat !== assets.home) URL.revokeObjectURL(assets.chat);
+    }
+  }
   for (const assets of Object.values(artUrls)) {
     if (!assets.chat) assets.chat = assets.home;
   }
@@ -182,7 +197,19 @@
         <div class="dream-ribbon" aria-hidden="true"><span>♡</span>🎀<span>✦</span></div>
         <div class="dream-polaroid" aria-hidden="true"></div>
         <div class="dream-sticker dream-sticker-bubble" aria-hidden="true"><span></span></div>
-        <div class="dream-sticker dream-sticker-board" aria-hidden="true"><span class="dream-board-l1"></span><span class="dream-board-l2"></span><span class="dream-board-l3"></span></div>
+        <div class="dream-sticker dream-sticker-board" aria-hidden="true">${
+          ["tl", "tr", "bl", "br"].map((corner) => `<i class="dream-board-corner dream-board-corner-${corner}">
+            <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" fill="none">
+              <g stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+                <path d="M30 3 C15 3 3 15 3 30"/>
+                <path d="M30 8 C17.7 8 8 17.7 8 30"/>
+                <path d="M30 3 c-3.3 0 -4.3 3.3 -1.9 4.3 2 .9 3.7 -1.4 1.9 -2.8"/>
+                <path d="M3 30 c0 -3.3 3.3 -4.3 4.3 -1.9 .9 2 -1.4 3.7 -2.8 1.9"/>
+              </g>
+              <circle cx="6.8" cy="6.8" r="1.7" fill="currentColor"/>
+            </svg>
+          </i>`).join("")
+        }<span class="dream-board-l1"></span><span class="dream-board-l2"></span><span class="dream-board-l3"></span></div>
         <div class="dream-sticker dream-sticker-corner" aria-hidden="true">
           <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" fill="none">
             <g stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
@@ -269,6 +296,7 @@
     timer,
     scheduler,
     artUrls,
+    artSigs,
     themes: [...THEME_ORDER],
     defaultTheme: DEFAULT_THEME,
     defaultLayout: DEFAULT_LAYOUT,
@@ -276,8 +304,8 @@
     setLayout: applyLayout,
     get theme() { return activeTheme; },
     setTheme: applyTheme,
-    version: "2.1.0"
+    version: "2.2.0"
   };
   ensure();
-  return { installed: true, version: "2.1.0", layout: activeLayout, theme: activeTheme, themes: [...THEME_ORDER] };
+  return { installed: true, version: "2.2.0", layout: activeLayout, theme: activeTheme, themes: [...THEME_ORDER] };
 })(__DREAM_CSS_JSON__, __DREAM_ART_ASSETS_JSON__, __DREAM_MANIFEST_JSON__)
