@@ -1,4 +1,4 @@
-# THEME-SPEC — Codex Dream Skin 主题定制规范（写给 Agent 读）
+# THEME-SPEC — Codex AutoSkin 主题定制规范（写给 Agent 读）
 
 > 读者设定：你是用户的 Codex / Claude agent。用户丢给你一张图片说"给我的 Codex 做个这样的皮肤"。
 > 你只需要读完本文件，产出一个主题文件夹，不需要读引擎源码。

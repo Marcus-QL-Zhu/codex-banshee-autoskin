@@ -1,6 +1,6 @@
 # 贡献指南 / Contributing
 
-感谢你愿意给 Codex Dream Skin 出力。我们最欢迎三类贡献：
+感谢你愿意给 Codex AutoSkin 出力。我们最欢迎三类贡献：
 
 ## 1. 新主题（最容易上手）
 
