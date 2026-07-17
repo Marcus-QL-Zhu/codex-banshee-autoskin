@@ -140,24 +140,19 @@ The user-approved 1580×1000 reference is the canonical silhouette. The main she
 - the lower corners visibly join the bottom rail while leaving the native composer unobstructed;
 - the dim frame must expose the entire construction; animation enhances the structure but never supplies missing geometry.
 
-The energy system has two simultaneous layers: a persistent low-output conduit and a brighter traveling crest. Both layers use the shared 9.6-second epoch. The crest originates in the recessed top-center conduit, reaches mirrored upper side joints together, travels down both side rails, and reaches the lower corners and bottom rail last. Left and right counterparts must share phase exactly.
+The rollback baseline retains the approved composer split pulse and the existing low-output breathing of the narrow frame conduits. The old short frame `seam-travel` crest is removed completely. No replacement split pulse is added to the top-center or side cavities, and no new frame-light timing is introduced.
 
 ### 4.3 Global energy wave
 
-All breathing/flow effects are one physical event, not independent looping widgets.
+Energy behavior at this rollback point is deliberately limited:
 
-- Source: viewport/content center at the top edge: `50% 0%`.
-- Cycle: `9.6s` default.
-- Propagation: outward by normalized distance from the source. Phase 1 uses reviewed coarse geometric zones with fixed delays: top frame `0ms`, upper sidebar/rails `400–600ms`, composer `1300–1700ms`, and far/footer accents `1700ms`.
-- Zones progress in order: top frame → upper sidebar/main rails → composer/footer → far corners.
-- A crest is brief and subtle; most of the cycle is dark, quiet, and apparently charged beneath armor.
-- Peak glow must never reduce text contrast or obscure native status colors.
-- The adapter may assign coarse phase buckets, but every animation uses the same clock and easing.
-- No random delay, no independent duration, and no per-control free-running pulse.
-- Runtime captures one monotonic `document.timeline.currentTime` epoch and persists it in injection state across route reconciliation and reinjection. Every Banshee CSS animation is attached to that same Web Animations `startTime`; fixed zone delays provide outward travel, so late nodes join the existing wave rather than starting an independent clock. Resetting the epoch is allowed only after full cleanup or a deliberate theme epoch reset.
-- Prefer a single permanent pack-chrome animation with static seam masks. If per-node animation is required, use `document.timeline`/Web Animations with the same absolute start time.
-- `prefers-reduced-motion: reduce` disables travel and leaves a stable low-energy seam.
-- If animation performance degrades, fall back to opacity-only animation on injected decorative layers.
+- The composer keeps its approved `9.6s` pulse: one center crest expands to approximately one third of its top conduit, separates into two elongated luminous bands, and moves toward opposite ends.
+- The narrow frame conduits keep their pre-existing breathing animation and phase delays (`0ms`, `420ms`, and `1150ms`).
+- The old `.dream-banshee-conduit-travel` SVG group, `.dream-banshee-energy-*` paths, and `dream-banshee-seam-travel` keyframes are absent.
+- No top-center or left/right wide-cavity split nodes are added in this baseline.
+- Left/right matching narrow conduits retain identical delays.
+- Runtime continues to attach the remaining composer and conduit animations to one monotonic `document.timeline.currentTime` epoch.
+- `prefers-reduced-motion: reduce` disables the remaining motion while leaving stable low-energy conduits.
 
 ## 5. DOM capability adapter
 

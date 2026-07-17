@@ -84,10 +84,10 @@ test("Banshee selectors are pack-scoped and its motion/accessibility fallbacks e
   assert.match(css, /pointer-events: none !important/);
   const chromeRule = css.match(/#codex-dream-skin-chrome\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
   assert.match(chromeRule, /z-index:4;/);
-  assert.match(css, /dream-banshee-seam-travel/);
+  assert.doesNotMatch(css, /dream-banshee-seam-travel/);
   assert.match(css, /dream-banshee-conduit-breathe/);
-  assert.match(css, /dream-banshee-energy-upper/);
-  assert.match(css, /dream-banshee-energy-lower/);
+  assert.doesNotMatch(css, /dream-banshee-energy-upper/);
+  assert.doesNotMatch(css, /dream-banshee-energy-lower/);
   assert.match(css, /dream-banshee-conduit-origin \{ animation-delay:0ms; \}/);
   assert.match(css, /dream-banshee-conduit-upper \{ animation-delay:420ms; \}/);
   assert.match(css, /dream-banshee-conduit-lower \{ animation-delay:1150ms; \}/);
@@ -167,10 +167,10 @@ test("renderer supports artless switching, pack cleanup, neutral chrome, and one
   assert.match(source, /dream-banshee-seam-s1/);
   assert.match(source, /dream-banshee-seam-s2/);
   assert.match(source, /dream-banshee-seam-s3/);
-  assert.match(source, /dream-banshee-energy-origin/);
-  assert.match(source, /dream-banshee-energy-upper/);
-  assert.match(source, /dream-banshee-energy-lower/);
-  assert.match(source, /dream-banshee-energy-far/);
+  assert.doesNotMatch(source, /dream-banshee-energy-origin/);
+  assert.doesNotMatch(source, /dream-banshee-energy-upper/);
+  assert.doesNotMatch(source, /dream-banshee-energy-lower/);
+  assert.doesNotMatch(source, /dream-banshee-energy-far/);
   assert.match(source, /dream-banshee-conduit-origin/);
   assert.match(source, /dream-banshee-conduit-upper/);
   assert.match(source, /dream-banshee-conduit-lower/);
@@ -196,7 +196,7 @@ test("renderer supports artless switching, pack cleanup, neutral chrome, and one
   assert.match(source, /dream-banshee-conduit-upper" d="M5 6H171"/);
   assert.match(source, /dream-banshee-conduit-upper" d="M1090 6H1256"/);
   assert.match(source, /M9 920H83L108 902H1153L1178 920H1252/);
-  assert.match(source, /M108 900H1153/);
+  assert.doesNotMatch(source, /M108 900H1153/);
   assert.doesNotMatch(source, /H354M907 902/);
   const rearSeamIndex = source.indexOf('dream-banshee-seam-rear');
   const foregroundPlateIndex = source.indexOf('dream-banshee-top-plate-fill');
@@ -215,6 +215,7 @@ test("renderer supports artless switching, pack cleanup, neutral chrome, and one
   assert.match(preview, /dream-banshee-composer-occluder/);
   assert.match(preview, /dream-banshee-conduit-upper" d="M5 6H171"/);
   assert.match(preview, /dream-banshee-conduit-upper" d="M1090 6H1256"/);
+  assert.doesNotMatch(preview, /dream-banshee-conduit-travel|dream-banshee-energy-(?:origin|upper|lower|far)/);
   assert.doesNotMatch(preview, /data-dream-surface="cards"/);
   const spec = read("BANSHEE-SPEC.md");
   assert.match(spec, /minimum seam coverage/);
@@ -224,6 +225,8 @@ test("renderer supports artless switching, pack cleanup, neutral chrome, and one
   assert.match(spec, /S1 structural boundary/);
   assert.match(spec, /topology reveal/);
   assert.match(spec, /two elongated luminous bands/);
+  assert.match(spec, /old short frame `seam-travel` crest is removed completely/);
+  assert.match(spec, /No top-center or left\/right wide-cavity split nodes are added/);
   assert.match(spec, /suggestion-shortcut group is intentionally suppressed/);
 });
 
@@ -302,7 +305,7 @@ test("live verifier reports synchronized Banshee motion and native capability hi
   assert.match(injector, /verified\.suggestionsSuppressed === true/);
   assert.match(injector, /result\.suggestionsSuppressed = suggestionsSuppressed/);
   assert.match(injector, /filter\(\(card\) => card\.width > 0 && card\.height > 0\)/);
-  assert.match(injector, /dream-banshee-\(wave\|seam-travel\|conduit-breathe\)/);
+  assert.match(injector, /dream-banshee-\(wave\|conduit-breathe\)/);
   assert.match(injector, /startTimeSkewMs/);
   assert.match(injector, /styleVersion:/);
   assert.match(injector, /threadHeaderPass/);
@@ -377,7 +380,7 @@ test("runtime ownership, artless switching, wave propagation, and burst debounce
   assert.deepEqual([0, .25, .5, 1].map((d) => runtime.propagationDelay(d, 1700)), [0, 425, 850, 1700]);
   const pseudoWave = { animationName: "dream-banshee-wave", effect: { pseudoElement: "::after" } };
   assert.equal(runtime.isBansheeWaveAnimation(pseudoWave), true);
-  assert.equal(runtime.isBansheeWaveAnimation({ animationName: "dream-banshee-seam-travel" }), true);
+  assert.equal(runtime.isBansheeWaveAnimation({ animationName: "dream-banshee-seam-travel" }), false);
   assert.equal(runtime.isBansheeWaveAnimation({ animationName: "dream-banshee-conduit-breathe" }), true);
   assert.equal(runtime.isBansheeWaveAnimation({ animationName: "native-spinner" }), false);
   let nextId = 0, callbacks = new Map(), runs = 0;
