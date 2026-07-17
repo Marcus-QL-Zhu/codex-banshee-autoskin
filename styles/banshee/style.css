@@ -109,9 +109,10 @@ html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [da
 html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="thread-header"] {
   position:relative !important;
   top:48px !important;
+  left:clamp(84px,6vw,104px) !important;
   right:auto !important;
   bottom:auto !important;
-  width:calc(100% - clamp(310px,20vw,360px)) !important;
+  width:calc(100% - clamp(180px,12vw,220px)) !important;
   min-width:0 !important;
   max-width:none !important;
   z-index:5 !important;
