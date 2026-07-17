@@ -94,6 +94,15 @@ The interface must read as assembled plates, not as rounded cards with gold bord
 - Geometry is decorative and must not change hit areas, scroll geometry, native layout order, or keyboard navigation.
 - Use pseudo-elements and dedicated injected chrome nodes only. All such nodes are namespaced and removable.
 
+Design-language semantics take precedence over seam count. The shell is translated from the approved Banshee analysis as a hierarchy of large quiet planes, functional joints, and selectively exposed inner energy:
+
+- **S1 structural boundary** groups adjacent plates or content regions. It is a low-contrast, non-luminous line and may remain continuous only where the underlying region is continuous.
+- **S2 step/facet edge** communicates a real foreground/background change. It uses a paired cool highlight and dark cavity edge; it must terminate at a cut, shoulder, inset, anchor, or functional transition.
+- **S3 energy-reveal seam** represents inner structure exposed by an active state. Gold is sparse, local, and dim at rest; it must never become a general border color.
+- Read geometry in the order `large plane → functional/expandable relationship → local facet → panel line`. Adding more lines cannot compensate for a missing plate hierarchy.
+- Main reading and input surfaces are the largest and quietest armor planes. Detail density concentrates around navigation selection, tool/approval/diff nodes, frame transfers, and the composer context rail.
+- Direction follows a force field: stable verticals express navigation and progression; outward diagonals express expansion or activity; inward-converging folds are reserved for a primary action or core state. A component does not mix unrelated diagonal directions.
+- State change is **topology reveal**, not color replacement. The selected sidebar row is a subtly raised plate with one embedded S3 segment, not a gold rectangle. The composer is a closed shell with one short upper S3 insert. Suggestion cards preserve a stable grid while using mirrored, non-repeating local cuts rather than identical four-corner chamfers.
 The approved fourth concept establishes a **minimum seam coverage**, not merely a color reference:
 
 | Zone | Required armor construction |
@@ -103,7 +112,7 @@ The approved fourth concept establishes a **minimum seam coverage**, not merely 
 | Main top frame | Mirrored shoulder plates plus a stepped center spine with nested seams; the center remains abstract and contains no emblem, head, or machine silhouette. |
 | Main side frame | Left/right segmented rails with upper, middle, and lower interruptions, chamfered transfers, and low-energy conduit segments. |
 | Main corners/footer | Double-frame corner joints and a broken lower rail, with the outer and inner plates visibly separated at rest. |
-| Suggestion cards | Multi-corner chamfers, a recessed secondary edge, a distinct cut at the upper-left, and a short lower-center energy seam. |
+| Suggestion cards | Stable rectangular planes with mirrored local cuts, a partial recessed edge, and short offset energy inserts; the four cards must not repeat one four-corner chamfer template. |
 | Context/composer tray | A separate upper context plate, clipped outer corners, an inset inner seam, and a stepped top conduit without covering native controls. |
 
 At the 1920×1200 review viewport, every one of these seven zones must be visibly identifiable with animation paused at its dimmest frame. A full-width or full-height straight border does not count as armor construction. Adjacent seams should vary in depth and terminate before the next joint so the shell reads as assembled plates rather than a continuous picture frame.

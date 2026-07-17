@@ -82,6 +82,8 @@ test("Banshee selectors are pack-scoped and its motion/accessibility fallbacks e
   assert.match(css, /forced-colors: active/);
   assert.match(css, /#codex-dream-skin-chrome \*/);
   assert.match(css, /pointer-events: none !important/);
+  const chromeRule = css.match(/#codex-dream-skin-chrome\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
+  assert.match(chromeRule, /z-index:4;/);
   assert.match(css, /dream-banshee-seam-travel/);
   assert.match(css, /dream-banshee-conduit-breathe/);
   assert.match(css, /dream-banshee-energy-upper/);
@@ -94,6 +96,16 @@ test("Banshee selectors are pack-scoped and its motion/accessibility fallbacks e
   assert.match(css, /animation-delay:1320ms/);
   assert.match(css, /background:linear-gradient\(160deg,#121f32,#050b14\) !important;/);
   assert.match(css, /isolation:isolate;/);
+  assert.match(css, /dream-banshee-seam-s1/);
+  assert.match(css, /dream-banshee-seam-s2/);
+  assert.match(css, /button:nth-child\(4\)/);
+  assert.match(css, /\[data-dream-surface="composer"\]:focus-within/);
+  const selectedPlate = css.match(/\[aria-current="page"\]\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
+  assert.match(selectedPlate, /bottom\/100% 1px no-repeat/);
+  assert.doesNotMatch(selectedPlate, /border:\s*1px solid rgba\(217,162,62/);
+  const composerEnergy = css.match(/\[data-dream-surface="composer"\]::after\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
+  assert.match(composerEnergy, /left:43%/);
+  assert.match(composerEnergy, /right:43%/);
   assert.doesNotMatch(css, /(^|[\s,>])svg\b/m);
   assert.doesNotMatch(css, /outline\s*:\s*none/i);
   assert.doesNotMatch(css, /@import|url\(\s*["']?https?:/i);
@@ -130,6 +142,9 @@ test("renderer supports artless switching, pack cleanup, neutral chrome, and one
   assert.match(source, /dream-banshee-armor-svg/);
   assert.match(source, /dream-banshee-seam-outer/);
   assert.match(source, /dream-banshee-seam-strong/);
+  assert.match(source, /dream-banshee-seam-s1/);
+  assert.match(source, /dream-banshee-seam-s2/);
+  assert.match(source, /dream-banshee-seam-s3/);
   assert.match(source, /dream-banshee-energy-origin/);
   assert.match(source, /dream-banshee-energy-upper/);
   assert.match(source, /dream-banshee-energy-lower/);
@@ -138,6 +153,11 @@ test("renderer supports artless switching, pack cleanup, neutral chrome, and one
   assert.match(source, /dream-banshee-conduit-upper/);
   assert.match(source, /dream-banshee-conduit-lower/);
   assert.match(source, /dream-banshee-spine-plate/);
+  assert.match(source, /dream-banshee-content-mask/);
+  assert.match(source, /dream-banshee-composer-occluder/);
+  assert.match(source, /maskUnits="userSpaceOnUse"/);
+  assert.match(source, /composerBox\.left - shellBox\.left/);
+  assert.match(source, /composerBox\.top - shellBox\.top/);
   assert.match(source, /viewBox="0 0 1261 941" preserveAspectRatio="none"/);
   assert.match(source, /dream-banshee-top-plate-fill/);
   assert.match(source, /M105 41H211M226 51H410L420 61H500L510 66H751L761 61H841L851 51H1035M1050 41H1156/);
@@ -153,10 +173,15 @@ test("renderer supports artless switching, pack cleanup, neutral chrome, and one
   const preview = read("docs/banshee-preview.html");
   assert.match(preview, /viewBox="0 0 1261 941"/);
   assert.match(preview, /dream-banshee-top-plate-fill/);
+  assert.match(preview, /dream-banshee-content-mask/);
+  assert.match(preview, /dream-banshee-composer-occluder/);
   const spec = read("BANSHEE-SPEC.md");
   assert.match(spec, /minimum seam coverage/);
   assert.match(spec, /Sidebar\/content boundary/);
   assert.match(spec, /full-height straight border does not count/);
+  assert.match(spec, /Design-language semantics take precedence/);
+  assert.match(spec, /S1 structural boundary/);
+  assert.match(spec, /topology reveal/);
 });
 
 test("installer is dark-first, persists a port, and restores with compare-and-swap", () => {
