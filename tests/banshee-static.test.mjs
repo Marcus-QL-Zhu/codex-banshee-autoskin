@@ -194,6 +194,8 @@ test("renderer supports artless switching, pack cleanup, neutral chrome, and one
   assert.match(source, /M410 51H500L510 61H751L761 51H851L841 66H761L751 71H510L500 66H420Z/);
   assert.match(source, /M105 41H211M226 51H410L420 61H500L510 66H751L761 61H841L851 51H1035M1050 41H1156/);
   assert.match(source, /M5 14H167L222 59H1039L1094 14H1256/);
+  assert.match(source, /dream-banshee-conduit-upper" d="M5 6H171"/);
+  assert.match(source, /dream-banshee-conduit-upper" d="M1090 6H1256"/);
   assert.match(source, /M9 920H83L108 902H1153L1178 920H1252/);
   assert.match(source, /M108 900H1153/);
   assert.doesNotMatch(source, /H354M907 902/);
@@ -212,6 +214,8 @@ test("renderer supports artless switching, pack cleanup, neutral chrome, and one
   assert.match(preview, /dream-banshee-top-plate-fill/);
   assert.match(preview, /dream-banshee-content-mask/);
   assert.match(preview, /dream-banshee-composer-occluder/);
+  assert.match(preview, /dream-banshee-conduit-upper" d="M5 6H171"/);
+  assert.match(preview, /dream-banshee-conduit-upper" d="M1090 6H1256"/);
   const spec = read("BANSHEE-SPEC.md");
   assert.match(spec, /minimum seam coverage/);
   assert.match(spec, /Sidebar\/content boundary/);
