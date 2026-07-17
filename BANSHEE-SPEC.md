@@ -23,7 +23,8 @@ The standalone React mockup remains a visual laboratory only. Production deliver
    - microphone uses the exact native control and SVG;
    - Fast mode remains conditional and shows the native lightning indicator only when Codex exposes it;
    - send, stop, attachments, permissions, model/reasoning selectors, branch/worktree state, diffs, citations, terminal, review controls, menus, dialogs, toasts, focus rings, disabled states, and hover/pressed states remain operable;
-   - diff insertion/deletion and semantic warning/error/success colors are not collapsed into the theme accent.
+   - diff insertion/deletion and semantic warning/error/success colors are not collapsed into the theme accent;
+   - explicit user-approved presentation exception: the Banshee home view suppresses the native suggestion-shortcut group and collapses its layout space. The underlying native DOM is not deleted or replaced, cleanup restores it, and no other native capability inherits this exception.
 6. The skin must fail safely. When a required capability cannot be identified, apply palette-only styling and omit structural decoration for that surface.
 7. Auxiliary renderers with `initialRoute` or transparent utility windows are never skinned.
 8. CDP remains loopback-only and must probe both IPv4 and IPv6 loopback.
@@ -89,7 +90,7 @@ The interface must read as assembled plates, not as rounded cards with gold bord
 - Prefer 45-degree chamfers, stepped shoulders, asymmetric cuts, and short interrupted seams.
 - A plate is defined by at least two of: cut silhouette, adjacent cavity, edge highlight, recessed seam, or different surface plane.
 - Large regions are divided into a small number of meaningful plates. Do not texture every control.
-- Sidebar header, sidebar/content boundary, main top frame, suggestion cards, composer tray, and status/footer rails each receive deliberate panel-gap treatment when the corresponding native surface exists.
+- Sidebar header, sidebar/content boundary, main top frame, composer tray, and status/footer rails each receive deliberate panel-gap treatment when the corresponding native surface exists.
 - Seams must remain visible at rest. Energy light travels inside selected seams; it is not the seam itself.
 - Geometry is decorative and must not change hit areas, scroll geometry, native layout order, or keyboard navigation.
 - Use pseudo-elements and dedicated injected chrome nodes only. All such nodes are namespaced and removable.
@@ -102,7 +103,7 @@ Design-language semantics take precedence over seam count. The shell is translat
 - Read geometry in the order `large plane → functional/expandable relationship → local facet → panel line`. Adding more lines cannot compensate for a missing plate hierarchy.
 - Main reading and input surfaces are the largest and quietest armor planes. Detail density concentrates around navigation selection, tool/approval/diff nodes, frame transfers, and the composer context rail.
 - Direction follows a force field: stable verticals express navigation and progression; outward diagonals express expansion or activity; inward-converging folds are reserved for a primary action or core state. A component does not mix unrelated diagonal directions.
-- State change is **topology reveal**, not color replacement. The selected sidebar row is a subtly raised plate with one embedded S3 segment, not a gold rectangle. The composer is a closed shell with a persistent low-output recessed top conduit and one short brighter S3 crest; the warm line may span that functional joint, but the bright pulse may not become a general border. Suggestion cards preserve a stable grid while using mirrored, non-repeating local cuts rather than identical four-corner chamfers.
+- State change is **topology reveal**, not color replacement. The selected sidebar row is a subtly raised plate with one embedded S3 segment, not a gold rectangle. The composer is a closed shell with a persistent low-output recessed top conduit. Its synchronized pulse begins as one center crest, expands across approximately one third of that conduit, then separates into two elongated luminous bands that retain substantial length while traveling toward opposite ends; the center returns to low-output light as they separate. The pulse may never become a full-border flash. The native home suggestion-shortcut group is intentionally suppressed and leaves no empty card rail.
 The approved fourth concept establishes a **minimum seam coverage**, not merely a color reference:
 
 | Zone | Required armor construction |
@@ -112,16 +113,15 @@ The approved fourth concept establishes a **minimum seam coverage**, not merely 
 | Main top frame | Mirrored shoulder plates plus a stepped center spine with nested seams; the center remains abstract and contains no emblem, head, or machine silhouette. |
 | Main side frame | Left/right segmented rails with upper, middle, and lower interruptions, chamfered transfers, and low-energy conduit segments. |
 | Main corners/footer | Double-frame corner joints and a geometrically continuous lower rail, with the outer and inner plates visibly separated at rest. The composer occludes that rail as an opaque foreground plate; the rail is never authored as a fixed composer-shaped gap. |
-| Suggestion cards | Stable rectangular planes with mirrored local cuts, a partial recessed edge, and short offset energy inserts; the four cards must not repeat one four-corner chamfer template. |
 | Context/composer tray | A separate upper context plate, clipped outer corners, an inset inner seam, and a stepped top conduit without covering native controls. |
 
 On conversation routes, the native task title and its native right-side toolbar occupy one quiet safe band below the top shoulder plates. The adapter may mark and reposition that existing header rectangle, but it may not clone, replace, reorder, or resize its controls. The complete title line must remain visible, every applicable toolbar control must remain inside the main viewport, and the group must retain native flex order, accessible names, and hit targets.
 Within the native main stacking context, that marked header must paint above the scrolling content viewport so the topmost interactive node at each control center remains the original button or one of its descendants. Decorative shell chrome remains pointer-transparent and may not be used to compensate for an incorrect native stacking order.
 The task-title cluster anchors to the inner left rail rather than the centered conversation column, while the toolbar cluster anchors to the corresponding inner right safe edge. Their optical edge insets should read as a balanced pair; expanding the header safe rectangle leftward must preserve its established right edge and native flex ordering.
 
-At the 1920×1200 review viewport, every one of these seven zones must be visibly identifiable with animation paused at its dimmest frame. A full-width or full-height straight border does not count as armor construction. Adjacent seams should vary in depth and terminate before the next joint so the shell reads as assembled plates rather than a continuous picture frame.
+At the 1920×1200 review viewport, every one of these six zones must be visibly identifiable with animation paused at its dimmest frame. A full-width or full-height straight border does not count as armor construction. Adjacent seams should vary in depth and terminate before the next joint so the shell reads as assembled plates rather than a continuous picture frame.
 
-The canonical `1047×668` preview retains the four-card row used by the approved reference when Codex exposes four native suggestions. Responsive collapse to two columns begins only below `820px`; it must not alter the reference review composition. If a later Codex build exposes fewer suggestions, center the available native card planes and never fabricate replacement buttons or copy.
+The canonical preview omits the home suggestion-shortcut row entirely. It retains the approved main-frame silhouette, quiet central field, and composer assembly without fabricating replacement controls or leaving an empty grid gap.
 
 The approved composer assembly occupies approximately three quarters of the main-frame width and combines a shallow context plate with a deeper input cavity. On the native home route, the adapter may widen only the existing composer host's maximum width and add a bounded minimum height to the existing composer surface. The native context utility bar is restyled as that separate chamfered plate instead of retaining a rounded capsule silhouette. The assembly must remain inside the native main bounds and may not reorder controls, resize individual control hit targets, or apply the home proportion while a conversation/output rail owns a narrower content column.
 
@@ -148,8 +148,8 @@ All breathing/flow effects are one physical event, not independent looping widge
 
 - Source: viewport/content center at the top edge: `50% 0%`.
 - Cycle: `9.6s` default.
-- Propagation: outward by normalized distance from the source. Phase 1 uses reviewed coarse geometric zones with fixed delays: top frame `0ms`, upper sidebar/rails `400–600ms`, central cards `800–1000ms`, composer `1300–1700ms`, and far/footer accents `1700ms`.
-- Zones progress in order: top frame → upper sidebar/main rails → central cards → composer/footer → far corners.
+- Propagation: outward by normalized distance from the source. Phase 1 uses reviewed coarse geometric zones with fixed delays: top frame `0ms`, upper sidebar/rails `400–600ms`, composer `1300–1700ms`, and far/footer accents `1700ms`.
+- Zones progress in order: top frame → upper sidebar/main rails → composer/footer → far corners.
 - A crest is brief and subtle; most of the cycle is dark, quiet, and apparently charged beneath armor.
 - Peak glow must never reduce text contrast or obscure native status colors.
 - The adapter may assign coarse phase buckets, but every animation uses the same clock and easing.
@@ -272,7 +272,7 @@ Deferred until the user explicitly restarts/authorizes restart:
 
 ### 8.3 Incremental visual acceptance
 
-Visual parity is accepted zone by zone, not from a whole-screen impression. The review order is: sidebar crown and top task controls, main-frame top edge, main-frame left/right edges, then cards/composer and coordinated energy behavior.
+Visual parity is accepted zone by zone, not from a whole-screen impression. The review order is: sidebar crown and top task controls, main-frame top edge, main-frame left/right edges, then composer and coordinated energy behavior.
 
 For each zone:
 

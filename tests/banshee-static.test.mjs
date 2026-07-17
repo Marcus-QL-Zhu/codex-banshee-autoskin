@@ -91,24 +91,16 @@ test("Banshee selectors are pack-scoped and its motion/accessibility fallbacks e
   assert.match(css, /dream-banshee-conduit-origin \{ animation-delay:0ms; \}/);
   assert.match(css, /dream-banshee-conduit-upper \{ animation-delay:420ms; \}/);
   assert.match(css, /dream-banshee-conduit-lower \{ animation-delay:1150ms; \}/);
-  assert.match(css, /button:nth-child\(2\)::after/);
-  assert.match(css, /animation-delay:780ms/);
   assert.match(css, /animation-delay:1320ms/);
   assert.match(css, /linear-gradient\(160deg,#121f32,#050b14\) !important;/);
   assert.match(css, /isolation:isolate;/);
   assert.match(css, /dream-banshee-seam-s1/);
   assert.match(css, /dream-banshee-seam-s2/);
-  assert.match(css, /button:nth-child\(4\)/);
-  assert.match(css, /grid-template-columns:repeat\(4,minmax\(0,1fr\)\) !important/);
-  assert.match(css, /gap:clamp\(17px,1\.7vw,28px\) !important/);
-  assert.match(css, /width:min\(1080px,calc\(100vw - 420px\)\) !important/);
-  assert.match(css, /min-height:clamp\(113px,9vw,154px\) !important/);
-  assert.match(css, /@media \(max-width: 820px\)/);
-  assert.match(css, /button:nth-child\(3\)::before/);
-  assert.match(css, /transform:scaleX\(-1\)/);
-  assert.match(css, /clip-path:polygon\(2px 0,calc\(100% - 2px\) 0,100% 50%/);
-  assert.match(css, /\[data-dream-surface="cards"\]:has\(> :only-child\)/);
-  assert.match(css, /grid-template-columns:minmax\(0,249px\) !important/);
+  const hiddenSuggestions = css.match(/\[data-dream-surface="cards"\]\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
+  assert.match(hiddenSuggestions, /display:none !important/);
+  assert.doesNotMatch(css, /\[data-dream-surface="cards"\] button/);
+  assert.doesNotMatch(css, /animation-delay:780ms/);
+  assert.doesNotMatch(css, /grid-template-columns:repeat\(4/);
   assert.match(css, /\[data-dream-composer-host="home"\]/);
   assert.match(css, /max-width:min\(1132px,max\(480px,calc\(100vw - clamp\(386px,33vw,576px\)\)\)\) !important/);
   assert.match(css, /min-height:clamp\(108px,12\.7vh,116px\) !important/);
@@ -125,8 +117,15 @@ test("Banshee selectors are pack-scoped and its motion/accessibility fallbacks e
   assert.match(selectedPlate, /bottom\/100% 1px no-repeat/);
   assert.doesNotMatch(selectedPlate, /border:\s*1px solid rgba\(217,162,62/);
   const composerEnergy = css.match(/\[data-dream-surface="composer"\]::after\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
-  assert.match(composerEnergy, /left:43%/);
-  assert.match(composerEnergy, /right:43%/);
+  assert.match(composerEnergy, /left:10px/);
+  assert.match(composerEnergy, /right:10px/);
+  assert.equal((composerEnergy.match(/linear-gradient/g) ?? []).length, 2);
+  assert.match(composerEnergy, /background-size:2% 100%,2% 100%/);
+  const composerWave = css.match(/@keyframes dream-banshee-wave \{([\s\S]*?)\n\}/)?.[1] ?? "";
+  assert.match(composerWave, /background-size:33% 100%,33% 100%/);
+  assert.match(composerWave, /background-position:34% 0,66% 0/);
+  assert.match(composerWave, /background-size:24% 100%,24% 100%/);
+  assert.match(composerWave, /background-position:0 0,100% 0/);
   assert.doesNotMatch(css, /(^|[\s,>])svg\b/m);
   assert.doesNotMatch(css, /outline\s*:\s*none/i);
   assert.doesNotMatch(css, /@import|url\(\s*["']?https?:/i);
@@ -150,7 +149,7 @@ test("legacy Dream structure is isolated behind its own pack class", () => {
 
 test("renderer supports artless switching, pack cleanup, neutral chrome, and one epoch", () => {
   const source = read("assets/renderer-inject.js");
-  assert.match(source, /const STYLE_VERSION = "20"/);
+  assert.match(source, /const STYLE_VERSION = "21"/);
   assert.match(source, /THEME_ART_MODES/);
   assert.match(source, /bansheeRuntime\.artVariables/);
   assert.match(source, /cls\.startsWith\("dream-pack-"\)/);
@@ -216,6 +215,7 @@ test("renderer supports artless switching, pack cleanup, neutral chrome, and one
   assert.match(preview, /dream-banshee-composer-occluder/);
   assert.match(preview, /dream-banshee-conduit-upper" d="M5 6H171"/);
   assert.match(preview, /dream-banshee-conduit-upper" d="M1090 6H1256"/);
+  assert.doesNotMatch(preview, /data-dream-surface="cards"/);
   const spec = read("BANSHEE-SPEC.md");
   assert.match(spec, /minimum seam coverage/);
   assert.match(spec, /Sidebar\/content boundary/);
@@ -223,6 +223,8 @@ test("renderer supports artless switching, pack cleanup, neutral chrome, and one
   assert.match(spec, /Design-language semantics take precedence/);
   assert.match(spec, /S1 structural boundary/);
   assert.match(spec, /topology reveal/);
+  assert.match(spec, /two elongated luminous bands/);
+  assert.match(spec, /suggestion-shortcut group is intentionally suppressed/);
 });
 
 test("installer is dark-first, persists a port, and restores with compare-and-swap", () => {
@@ -297,7 +299,8 @@ test("live verifier reports synchronized Banshee motion and native capability hi
   assert.match(injector, /--open-new-task/);
   assert.match(injector, /async function openNewTask/);
   assert.match(injector, /stablePasses/);
-  assert.match(injector, /verified\.cards\.length >= 1/);
+  assert.match(injector, /verified\.suggestionsSuppressed === true/);
+  assert.match(injector, /result\.suggestionsSuppressed = suggestionsSuppressed/);
   assert.match(injector, /filter\(\(card\) => card\.width > 0 && card\.height > 0\)/);
   assert.match(injector, /dream-banshee-\(wave\|seam-travel\|conduit-breathe\)/);
   assert.match(injector, /startTimeSkewMs/);
@@ -392,7 +395,7 @@ test("motion fallbacks avoid disabling arbitrary native descendants and preserve
   const reduced = banshee.match(/@media \(prefers-reduced-motion: reduce\) \{([\s\S]*?)\n\}/)?.[1] ?? "";
   assert.doesNotMatch(reduced, /dream-pack-banshee[^,{]*\s\*/);
   const forced = banshee.match(/@media \(forced-colors: active\) \{([\s\S]*?)\n\}/)?.[1] ?? "";
-  assert.match(forced, /\[data-dream-surface="cards"\] button,/);
+  assert.doesNotMatch(forced, /\[data-dream-surface="cards"\] button/);
   assert.match(forced, /background: Canvas !important/);
   assert.match(forced, /box-shadow: none !important/);
   const renderer = read("assets/renderer-inject.js");

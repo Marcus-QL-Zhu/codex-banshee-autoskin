@@ -999,6 +999,9 @@ async function verifySession(session) {
     };
     const bansheeActive = document.documentElement.classList.contains('dream-pack-banshee') &&
       document.documentElement.getAttribute('data-dream-pack-ready') === 'banshee-v1';
+    const suggestionsSuppressed = bansheeActive && result.suggestionsPresent &&
+      result.suggestionSurface?.display === 'none' && result.cards.length === 0;
+    result.suggestionsSuppressed = suggestionsSuppressed;
     result.pass = result.installed && result.stylePresent && result.chromePresent &&
       Array.isArray(result.themes) && result.themes.length > 0 && result.themes.includes(result.theme) &&
       ['banner', 'fullscreen'].includes(result.layout) &&
@@ -1007,7 +1010,7 @@ async function verifySession(session) {
       (!bansheeActive || (result.wave.pass && markedCapabilitiesPass)) &&
       result.topRegion.pass &&
       (!result.homePresent || (Boolean(result.hero) &&
-        (!result.suggestionsPresent || (result.cards.length >= 1 && result.cards.length <= 4 &&
+        (!result.suggestionsPresent || result.suggestionsSuppressed || (result.cards.length >= 1 && result.cards.length <= 4 &&
           result.cards.every((card) => card.width > 0 && card.height > 0)))));
     return result;
   })()`);
@@ -1062,15 +1065,16 @@ async function openNewTask(session, timeoutMs) {
   let stablePasses = 0;
   while (Date.now() < deadline) {
     verified = await verifySession(session);
+    const suppressedCards = verified.suggestionsSuppressed === true;
     const visibleCards = verified.cards.length >= 1 && verified.cards.length <= 4 &&
       verified.cards.every((card) => card.width > 0 && card.height > 0);
-    const signature = visibleCards ? JSON.stringify(verified.cards) : null;
+    const signature = suppressedCards ? 'suppressed' : visibleCards ? JSON.stringify(verified.cards) : null;
     stablePasses = signature && signature === stableSignature ? stablePasses + 1 : 0;
     stableSignature = signature;
-    if (verified.homePresent && verified.suggestionsPresent && visibleCards && stablePasses >= 1) return verified;
+    if (verified.homePresent && verified.suggestionsPresent && (suppressedCards || visibleCards) && stablePasses >= 1) return verified;
     await new Promise((resolve) => setTimeout(resolve, 200));
   }
-  throw new Error(`New-task view did not stabilize its native suggestion cards: ${JSON.stringify(verified)}`);
+  throw new Error(`New-task view did not stabilize its suggestion presentation: ${JSON.stringify(verified)}`);
 }
 
 async function probeTopControl(session) {

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Banshee Armored Shell Preview</title>
-  <link rel="stylesheet" href="../styles/banshee/style.css?v=16">
+  <link rel="stylesheet" href="../styles/banshee/style.css?v=21">
   <style>
     :root {
       --dream-ink:#dce7f8; --dream-purple:#6d7f9c; --dream-violet:#8699b7; --dream-pink:#d9a23e;
@@ -25,9 +25,6 @@
     .review-still .dream-banshee-conduit-lower,
     .review-still .dream-banshee-energy-lower { animation-delay:-5.55s!important }
     .review-still .dream-banshee-energy-far { animation-delay:-5s!important }
-    .review-still [data-dream-surface="cards"] button::after { animation-delay:-5.8s!important }
-    .review-still [data-dream-surface="cards"] button:nth-child(2)::after,
-    .review-still [data-dream-surface="cards"] button:nth-child(3)::after { animation-delay:-5.92s!important }
     .review-still [data-dream-surface="composer"]::after { animation-delay:-5.38s!important }
     html,body { margin:0; width:100%; height:100%; overflow:hidden; font-family:"Microsoft YaHei UI","Segoe UI",sans-serif }
 
@@ -62,11 +59,6 @@
     .headline { margin:40vh 0 0; font-size:21px; font-weight:440; letter-spacing:.02em }
     .headline span { color:#f0c56f; border-bottom:1px dashed rgba(240,197,111,.55) }
     .subline { margin-top:7px; color:#70829e; font-size:9px; letter-spacing:.2em }
-    .cards { width:74%; margin-top:30px; display:grid; grid-template-columns:repeat(4,1fr); gap:16px }
-    .cards button { height:113px; padding:16px; text-align:left; display:flex; flex-direction:column; justify-content:flex-start; gap:25px }
-    .card-icon svg { width:19px; height:19px; stroke:currentColor; fill:none; stroke-width:1.7 }
-    .card-label { font-size:11px; line-height:1.45 }
-    .blue{color:#49b7ff}.violet{color:#a47cff}.cyan{color:#49d6c8}.gold{color:#f0c56f}
     .composer-wrap { width:75%; margin-top:auto; margin-bottom:1px }
     .context { position:relative; z-index:6; height:33px; padding:0 13px; display:flex; align-items:center; gap:20px; font-size:11px; background:#0a1322; border:1px solid rgba(119,151,194,.28); border-bottom:0; color:#aebed6; clip-path:polygon(14px 0,100% 0,100% 100%,0 100%,0 14px) }
     .composer { height:83px; padding:15px; display:flex; flex-direction:column }
@@ -107,12 +99,6 @@
     <main class="main" data-dream-surface="main">
       <div class="content">
         <h1 class="headline">我们应该在 <span>text-to-cad</span> 中构建什么？</h1>
-        <div class="cards" data-dream-surface="cards">
-          <button><span class="card-icon blue"><svg viewBox="0 0 24 24"><path d="m5 15 4-4 3 3 7-7M14 7h5v5"/><path d="m5 18 3-1-2-2z"/></svg></span><span class="card-label">探索并理解代码</span></button>
-          <button><span class="card-icon violet"><svg viewBox="0 0 24 24"><path d="m4 18 8-8 4 4-8 8H4zM12 10l2-5 5 5-3 4"/></svg></span><span class="card-label">构建新功能、应用或工具</span></button>
-          <button><span class="card-icon cyan"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 13-6l2 2M20 12a8 8 0 0 1-13 6l-2-2"/><path d="M19 3v5h-5M5 21v-5h5"/></svg></span><span class="card-label">审查代码并提出修改建议</span></button>
-          <button><span class="card-icon gold"><svg viewBox="0 0 24 24"><path d="M8 4h8l1 5 3 4-3 7H7l-3-7 3-4z"/><path d="m9 9 3 3 3-3M12 12v5"/></svg></span><span class="card-label">修复问题和失败</span></button>
-        </div>
         <div class="composer-wrap">
           <div class="context"><span>▱ text-to-cad</span><span>▰ 本地</span><span>⌘ main</span></div>
           <div class="composer" data-dream-surface="composer">
