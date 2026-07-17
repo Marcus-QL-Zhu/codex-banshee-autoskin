@@ -14,6 +14,7 @@ function parseArgs(argv) {
     else if (arg === "--once") options.mode = "once";
     else if (arg === "--watch") options.mode = "watch";
     else if (arg === "--verify") options.mode = "verify";
+    else if (arg === "--open-new-task") options.mode = "open-new-task";
     else if (arg === "--remove") options.mode = "remove";
     else if (arg === "--themes") options.mode = "themes";
     else if (arg === "--check") options.mode = "check";
@@ -667,6 +668,7 @@ async function verifyAuxiliarySession(session) {
     const result = {
       installed: document.documentElement.classList.contains('codex-dream-skin'),
       stylePresent: Boolean(document.getElementById('codex-dream-skin-style')),
+      styleVersion: document.getElementById('codex-dream-skin-style')?.dataset?.dreamVersion ?? null,
       chromePresent: Boolean(document.getElementById('codex-dream-skin-chrome')),
       statePresent: Boolean(window.__CODEX_DREAM_SKIN_STATE__),
       bodyBackgroundImage: getComputedStyle(document.body).backgroundImage,
@@ -696,8 +698,228 @@ async function verifySession(session) {
     };
     const home = document.querySelector('.dream-home');
     const suggestions = home?.querySelector('.group\\\\/home-suggestions') ?? null;
-    const cards = suggestions ? [...suggestions.querySelectorAll('button')].map(box) : [];
+    const cardNodes = suggestions ? [...suggestions.querySelectorAll('button')] : [];
+    // Recent Codex builds may keep the other suggestion buttons mounted as
+    // zero-rectangle nodes while exposing only one native suggestion. Report
+    // rendered cards separately from diagnostics so hidden React state cannot
+    // fail visual parity or be mistaken for a visible native control.
+    const cards = cardNodes.map(box).filter((card) => card.width > 0 && card.height > 0);
+    const cardDiagnostics = cardNodes.map((node) => {
+      const style = getComputedStyle(node);
+      return {
+        label: (node.innerText || node.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 48) || null,
+        className: typeof node.className === 'string' ? node.className : null,
+        parentClassName: typeof node.parentElement?.className === 'string' ? node.parentElement.className : null,
+        display: style.display,
+        visibility: style.visibility,
+        opacity: style.opacity,
+        ariaHidden: node.getAttribute('aria-hidden'),
+        clientRects: node.getClientRects().length,
+        box: box(node),
+      };
+    });
+    const composerNode = document.querySelector('.composer-surface-chrome');
+    const composerStyle = composerNode ? getComputedStyle(composerNode) : null;
+    const composerAncestry = [];
+    for (let node = composerNode, depth = 0; node && depth < 7; node = node.parentElement, depth += 1) {
+      const style = getComputedStyle(node);
+      composerAncestry.push({
+        depth,
+        tagName: node.tagName,
+        className: typeof node.className === 'string' ? node.className : null,
+        box: box(node),
+        display: style.display,
+        position: style.position,
+        width: style.width,
+        maxWidth: style.maxWidth,
+      });
+    }
+    const composerStack = composerNode?.parentElement?.parentElement ?? null;
+    const composerStackChildren = composerStack ? [...composerStack.children].map((node, index) => ({
+      index,
+      tagName: node.tagName,
+      className: typeof node.className === 'string' ? node.className : null,
+      text: (node.innerText || '').trim().replace(/\s+/g, ' ').slice(0, 80) || null,
+      box: box(node),
+    })) : [];
+    const composerContextNode = composerStack?.firstElementChild ?? null;
+    const composerContextTree = composerContextNode
+      ? [composerContextNode, ...composerContextNode.querySelectorAll(':scope > *, :scope > * > *')].slice(0, 10).map((node, index) => {
+          const style = getComputedStyle(node);
+          return {
+            index,
+            tagName: node.tagName,
+            className: typeof node.className === 'string' ? node.className : null,
+            box: box(node),
+            background: style.background,
+            borderRadius: style.borderRadius,
+            overflow: style.overflow,
+          };
+        })
+      : [];
     const state = window.__CODEX_DREAM_SKIN_STATE__;
+    const nativeControl = (key) => {
+      const node = document.querySelector('[data-dream-capability="' + key + '"]');
+      if (!node) return { enhanced: false };
+      const rect = node.getBoundingClientRect();
+      const stack = document.elementsFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2);
+      const hitPass = stack.some((candidate) => candidate === node || node.contains(candidate));
+      return {
+        enhanced: true,
+        tagName: node.tagName,
+        ariaLabel: node.getAttribute('aria-label') || node.getAttribute('title') || null,
+        ariaPressed: node.getAttribute('aria-pressed'),
+        svgPresent: Boolean(node.querySelector('svg')),
+        hitPass,
+        box: box(node),
+      };
+    };
+    const composerControlHints = [...document.querySelectorAll('.composer-surface-chrome button')].map((node) => ({
+      ariaLabel: node.getAttribute('aria-label') || null,
+      title: node.getAttribute('title') || null,
+      controlText: (node.innerText || '').trim().replace(/\s+/g, ' ').slice(0, 40) || null,
+      testId: node.getAttribute('data-testid') || null,
+      ariaPressed: node.getAttribute('aria-pressed'),
+      svgPresent: Boolean(node.querySelector('svg')),
+      svgClass: node.querySelector('svg')?.getAttribute('class') || null,
+      svgViewBox: node.querySelector('svg')?.getAttribute('viewBox') || null,
+      box: box(node),
+    }));
+    const mainNode = document.querySelector('main.main-surface');
+    const mainRect = mainNode?.getBoundingClientRect() ?? null;
+    const topBandLimit = mainRect ? Math.min(innerHeight, mainRect.top + 180) : 180;
+    const describeTopNode = (node) => {
+      const style = getComputedStyle(node);
+      const rect = node.getBoundingClientRect();
+      const centerX = rect.x + rect.width / 2;
+      const centerY = rect.y + rect.height / 2;
+      const stack = rect.width > 0 && rect.height > 0
+        ? document.elementsFromPoint(centerX, centerY)
+        : [];
+      return {
+        tagName: node.tagName,
+        className: typeof node.className === 'string' ? node.className : null,
+        role: node.getAttribute('role'),
+        ariaLabel: node.getAttribute('aria-label') || node.getAttribute('title') || null,
+        testId: node.getAttribute('data-testid'),
+        directTextLength: [...node.childNodes].reduce((total, child) =>
+          total + (child.nodeType === Node.TEXT_NODE ? (child.textContent || '').trim().length : 0), 0),
+        box: box(node),
+        position: style.position,
+        zIndex: style.zIndex,
+        overflow: style.overflow,
+        pointerEvents: style.pointerEvents,
+        hitPass: stack.some((candidate) => candidate === node || node.contains(candidate)),
+      };
+    };
+    const inTopBand = (node) => {
+      const rect = node.getBoundingClientRect();
+      return rect.width > 0 && rect.height > 0 && rect.bottom > (mainRect?.top ?? 0) &&
+        rect.top < topBandLimit && rect.right > (mainRect?.left ?? 0);
+    };
+    const topInteractiveNodes = [...document.querySelectorAll('button, a, [role="button"]')]
+      .filter(inTopBand);
+    const topInteractive = topInteractiveNodes.map(describeTopNode);
+    const describeAncestry = (node) => {
+      const result = [];
+      for (let current = node, depth = 0; current && depth < 9; current = current.parentElement, depth += 1) {
+        const style = getComputedStyle(current);
+        result.push({
+          depth,
+          tagName: current.tagName,
+          className: typeof current.className === 'string' ? current.className : null,
+          box: box(current),
+          display: style.display,
+          position: style.position,
+          inset: [style.top, style.right, style.bottom, style.left],
+          transform: style.transform,
+          width: style.width,
+          maxWidth: style.maxWidth,
+          overflow: style.overflow,
+          justifyContent: style.justifyContent,
+        });
+        if (current === mainNode) break;
+      }
+      return result;
+    };
+    const titleAnchor = topInteractiveNodes.find((node) => {
+      const rect = node.getBoundingClientRect();
+      return mainRect && rect.left >= mainRect.left && rect.left < mainRect.left + mainRect.width / 2 &&
+        rect.top >= mainRect.top && rect.top < mainRect.top + 100 &&
+        Boolean(node.getAttribute('aria-label') || node.getAttribute('title'));
+    }) ?? null;
+    const offscreenToolbarAnchor = topInteractiveNodes.find((node) => {
+      const rect = node.getBoundingClientRect();
+      return mainRect && rect.left >= mainRect.right;
+    }) ?? null;
+    const topTextNodes = mainNode
+      ? [...mainNode.querySelectorAll('span, p, h1, h2, h3, div')]
+          .filter((node) => inTopBand(node) && [...node.childNodes].some((child) =>
+            child.nodeType === Node.TEXT_NODE && (child.textContent || '').trim().length > 0
+          ))
+          .slice(0, 40)
+          .map(describeTopNode)
+      : [];
+    const threadHeaderNode = document.querySelector('[data-dream-surface="thread-header"]');
+    const threadHeaderRect = threadHeaderNode?.getBoundingClientRect() ?? null;
+    const threadHeaderControlNodes = threadHeaderNode
+      ? [...threadHeaderNode.querySelectorAll('button, a, [role="button"]')].filter((node) => {
+          const rect = node.getBoundingClientRect();
+          const style = getComputedStyle(node);
+          return rect.width > 0 && rect.height > 0 && threadHeaderRect &&
+            rect.right > threadHeaderRect.left && rect.left < threadHeaderRect.right &&
+            rect.bottom > threadHeaderRect.top && rect.top < threadHeaderRect.bottom &&
+            style.display !== 'none' && style.visibility !== 'hidden' && Number(style.opacity) !== 0;
+        })
+      : [];
+    const threadHeaderControls = threadHeaderControlNodes.map(describeTopNode);
+    const threadHeaderTitle = threadHeaderNode
+      ? [...threadHeaderNode.querySelectorAll('span')]
+          .filter((node) => {
+            const rect = node.getBoundingClientRect();
+            return rect.width > 0 && rect.height > 0 && [...node.childNodes].some((child) =>
+              child.nodeType === Node.TEXT_NODE && (child.textContent || '').trim().length > 0
+            );
+          })
+          .sort((left, right) => left.getBoundingClientRect().left - right.getBoundingClientRect().left)[0] ?? null
+      : null;
+    const threadHeaderTitleRect = threadHeaderTitle?.getBoundingClientRect() ?? null;
+    const threadHeaderPass = !threadHeaderNode || Boolean(
+      mainRect && threadHeaderRect && threadHeaderTitleRect && threadHeaderControls.length > 0 &&
+      threadHeaderRect.left >= mainRect.left && threadHeaderRect.right <= mainRect.right &&
+      threadHeaderRect.top >= mainRect.top + 44 && threadHeaderRect.bottom < mainRect.top + 140 &&
+      threadHeaderTitleRect.top >= threadHeaderRect.top && threadHeaderTitleRect.bottom <= threadHeaderRect.bottom &&
+      threadHeaderControls.every((control) => control.hitPass && control.box.x >= mainRect.left &&
+        control.box.x + control.box.width <= Math.min(innerWidth, mainRect.right))
+    );
+    const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const waveAnimations = document.getAnimations().filter((animation) =>
+      /^dream-banshee-(wave|seam-travel|conduit-breathe)$/.test(animation.animationName || '')
+    );
+    const waveStartTimes = waveAnimations.map((animation) => animation.startTime).filter(Number.isFinite);
+    const waveStartSkewMs = waveStartTimes.length
+      ? Math.max(...waveStartTimes) - Math.min(...waveStartTimes)
+      : null;
+    const waveDelaysMs = [...new Set(waveAnimations.map((animation) =>
+      Math.round(Number(animation.effect?.getTiming?.().delay) || 0)
+    ))].sort((a, b) => a - b);
+    const wave = {
+      reducedMotion,
+      animationCount: waveAnimations.length,
+      startTimeCount: waveStartTimes.length,
+      startTimeSkewMs: waveStartSkewMs,
+      delaysMs: waveDelaysMs,
+      pass: reducedMotion
+        ? waveAnimations.length === 0 || waveStartSkewMs === 0
+        : waveAnimations.length >= 6 && waveStartTimes.length === waveAnimations.length && waveStartSkewMs <= 1,
+    };
+    const capabilities = {
+      microphone: nativeControl('microphone'),
+      fastMode: nativeControl('fast-mode'),
+    };
+    const markedCapabilitiesPass = Object.values(capabilities).every((control) =>
+      !control.enhanced || (control.tagName === 'BUTTON' && control.svgPresent && control.hitPass && Boolean(control.box))
+    );
     const result = {
       installed: document.documentElement.classList.contains('codex-dream-skin'),
       version: state?.version ?? null,
@@ -705,28 +927,66 @@ async function verifySession(session) {
       layout: state?.layout ?? null,
       themes: state?.themes ?? null,
       stylePresent: Boolean(document.getElementById('codex-dream-skin-style')),
+      styleVersion: document.getElementById('codex-dream-skin-style')?.dataset?.dreamVersion ?? null,
       chromePresent: Boolean(document.getElementById('codex-dream-skin-chrome')),
       legacyControlsPresent: Boolean(document.getElementById('codex-dream-skin-controls')),
       chromePointerEvents: getComputedStyle(document.getElementById('codex-dream-skin-chrome') || document.body).pointerEvents,
       homePresent: Boolean(home),
       suggestionsPresent: Boolean(suggestions),
+      suggestionSurface: suggestions ? {
+        box: box(suggestions),
+        className: typeof suggestions.className === 'string' ? suggestions.className : null,
+        display: getComputedStyle(suggestions).display,
+        columns: getComputedStyle(suggestions).gridTemplateColumns,
+      } : null,
       hero: box(home?.firstElementChild?.firstElementChild?.firstElementChild),
       cards,
-      composer: box(document.querySelector('.composer-surface-chrome')),
+      cardDiagnostics,
+      composer: box(composerNode),
+      composerStyle: composerStyle ? {
+        borderTopColor: composerStyle.borderTopColor,
+        borderTopWidth: composerStyle.borderTopWidth,
+        clipPath: composerStyle.clipPath,
+        boxShadow: composerStyle.boxShadow,
+        focusWithin: composerNode.matches(':focus-within'),
+      } : null,
+      composerAncestry,
+      composerStackChildren,
+      composerContextTree,
       sidebar: box(document.querySelector('aside.app-shell-left-panel')),
       viewport: { width: innerWidth, height: innerHeight },
       documentOverflow: {
         x: document.documentElement.scrollWidth > document.documentElement.clientWidth,
         y: document.documentElement.scrollHeight > document.documentElement.clientHeight,
       },
+      wave,
+      capabilities,
+      composerControlHints,
+      topRegion: {
+        main: box(mainNode),
+        bandBottom: Math.round(topBandLimit),
+        threadHeader: box(threadHeaderNode),
+        threadHeaderTitle: box(threadHeaderTitle),
+        threadHeaderControls,
+        pass: threadHeaderPass,
+        interactive: topInteractive,
+        textNodes: topTextNodes,
+        titleAnchorAncestry: describeAncestry(titleAnchor),
+        offscreenToolbarAncestry: describeAncestry(offscreenToolbarAnchor),
+      },
     };
+    const bansheeActive = document.documentElement.classList.contains('dream-pack-banshee') &&
+      document.documentElement.getAttribute('data-dream-pack-ready') === 'banshee-v1';
     result.pass = result.installed && result.stylePresent && result.chromePresent &&
       Array.isArray(result.themes) && result.themes.length > 0 && result.themes.includes(result.theme) &&
       ['banner', 'fullscreen'].includes(result.layout) &&
       !result.legacyControlsPresent &&
       result.chromePointerEvents === 'none' && Boolean(result.composer) && Boolean(result.sidebar) &&
+      (!bansheeActive || (result.wave.pass && markedCapabilitiesPass)) &&
+      result.topRegion.pass &&
       (!result.homePresent || (Boolean(result.hero) &&
-        (!result.suggestionsPresent || (result.cards.length >= 2 && result.cards.length <= 4))));
+        (!result.suggestionsPresent || (result.cards.length >= 1 && result.cards.length <= 4 &&
+          result.cards.every((card) => card.width > 0 && card.height > 0)))));
     return result;
   })()`);
 }
@@ -762,6 +1022,35 @@ async function capture(session, outputPath) {
   await fs.writeFile(outputPath, Buffer.from(result.data, "base64"));
 }
 
+async function openNewTask(session, timeoutMs) {
+  const action = await session.evaluate(`(() => {
+    const sidebar = document.querySelector('aside.app-shell-left-panel');
+    const labels = ['新建任务', 'New task'];
+    const candidates = sidebar ? [...sidebar.querySelectorAll('button')].filter((button) =>
+      labels.some((label) => (button.innerText || button.textContent || '').trim().includes(label))
+    ) : [];
+    if (candidates.length !== 1) return { clicked: false, candidateCount: candidates.length };
+    candidates[0].click();
+    return { clicked: true, candidateCount: 1 };
+  })()`);
+  if (!action.clicked) throw new Error(`Expected one native new-task button, found ${action.candidateCount}`);
+  const deadline = Date.now() + timeoutMs;
+  let verified;
+  let stableSignature = null;
+  let stablePasses = 0;
+  while (Date.now() < deadline) {
+    verified = await verifySession(session);
+    const visibleCards = verified.cards.length >= 1 && verified.cards.length <= 4 &&
+      verified.cards.every((card) => card.width > 0 && card.height > 0);
+    const signature = visibleCards ? JSON.stringify(verified.cards) : null;
+    stablePasses = signature && signature === stableSignature ? stablePasses + 1 : 0;
+    stableSignature = signature;
+    if (verified.homePresent && verified.suggestionsPresent && visibleCards && stablePasses >= 1) return verified;
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  }
+  throw new Error(`New-task view did not stabilize its native suggestion cards: ${JSON.stringify(verified)}`);
+}
+
 async function runOneShot(options) {
   const allTargets = await waitForTargets(options.port, options.timeoutMs, { includeAuxiliary: true });
   let mainTargets = allTargets.filter(isMainRendererTarget);
@@ -794,7 +1083,9 @@ async function runOneShot(options) {
         await new Promise((resolve) => setTimeout(resolve, 1600));
         if (options.mode !== "remove") await applyToSession(session, payload, { paletteOnly: mainTargets.length !== 1 });
       }
-      const verified = options.mode === "remove"
+      const verified = options.mode === "open-new-task"
+        ? await openNewTask(session, options.timeoutMs)
+        : options.mode === "remove"
         ? await session.evaluate("!document.documentElement.classList.contains('codex-dream-skin')")
         : (options.reload || options.mode === "once")
           ? await waitForVerifiedSession(session, options.timeoutMs)

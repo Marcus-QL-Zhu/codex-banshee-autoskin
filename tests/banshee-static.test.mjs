@@ -94,11 +94,32 @@ test("Banshee selectors are pack-scoped and its motion/accessibility fallbacks e
   assert.match(css, /button:nth-child\(2\)::after/);
   assert.match(css, /animation-delay:780ms/);
   assert.match(css, /animation-delay:1320ms/);
-  assert.match(css, /background:linear-gradient\(160deg,#121f32,#050b14\) !important;/);
+  assert.match(css, /linear-gradient\(160deg,#121f32,#050b14\) !important;/);
   assert.match(css, /isolation:isolate;/);
   assert.match(css, /dream-banshee-seam-s1/);
   assert.match(css, /dream-banshee-seam-s2/);
   assert.match(css, /button:nth-child\(4\)/);
+  assert.match(css, /grid-template-columns:repeat\(4,minmax\(0,1fr\)\) !important/);
+  assert.match(css, /gap:clamp\(17px,1\.7vw,28px\) !important/);
+  assert.match(css, /width:min\(1080px,calc\(100vw - 420px\)\) !important/);
+  assert.match(css, /min-height:clamp\(113px,9vw,154px\) !important/);
+  assert.match(css, /@media \(max-width: 820px\)/);
+  assert.match(css, /button:nth-child\(3\)::before/);
+  assert.match(css, /transform:scaleX\(-1\)/);
+  assert.match(css, /clip-path:polygon\(2px 0,calc\(100% - 2px\) 0,100% 50%/);
+  assert.match(css, /\[data-dream-surface="cards"\]:has\(> :only-child\)/);
+  assert.match(css, /grid-template-columns:minmax\(0,249px\) !important/);
+  assert.match(css, /\[data-dream-composer-host="home"\]/);
+  assert.match(css, /max-width:min\(1132px,max\(480px,calc\(100vw - clamp\(386px,33vw,576px\)\)\)\) !important/);
+  assert.match(css, /min-height:clamp\(108px,12\.7vh,116px\) !important/);
+  assert.match(css, /\[data-dream-composer-context="home"\]/);
+  assert.match(css, /clip-path:polygon\(12px 0,calc\(100% - 12px\) 0,100% 12px/);
+  assert.match(css, /--dream-banshee-composer-top-seam:rgba\(217,162,62,\.46\)/);
+  assert.match(css, /--dream-banshee-composer-top-seam:rgba\(240,197,111,\.64\)/);
+  assert.match(css, /var\(--dream-banshee-composer-top-seam\)/);
+  assert.match(css, /inset 0 4px 0 var\(--dream-banshee-composer-top-seam\)/);
+  assert.match(css, /border:0 !important/);
+  assert.match(css, /clip-path:polygon\(10px 0,calc\(100% - 10px\) 0,100% 10px/);
   assert.match(css, /\[data-dream-surface="composer"\]:focus-within/);
   const selectedPlate = css.match(/\[aria-current="page"\]\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
   assert.match(selectedPlate, /bottom\/100% 1px no-repeat/);
@@ -129,6 +150,7 @@ test("legacy Dream structure is isolated behind its own pack class", () => {
 
 test("renderer supports artless switching, pack cleanup, neutral chrome, and one epoch", () => {
   const source = read("assets/renderer-inject.js");
+  assert.match(source, /const STYLE_VERSION = "17"/);
   assert.match(source, /THEME_ART_MODES/);
   assert.match(source, /bansheeRuntime\.artVariables/);
   assert.match(source, /cls\.startsWith\("dream-pack-"\)/);
@@ -140,6 +162,7 @@ test("renderer supports artless switching, pack cleanup, neutral chrome, and one
   assert.match(source, /role", "presentation/);
   assert.match(source, /restoreOwned/);
   assert.match(source, /dream-banshee-armor-svg/);
+  assert.match(source, /"听写"/);
   assert.match(source, /dream-banshee-seam-outer/);
   assert.match(source, /dream-banshee-seam-strong/);
   assert.match(source, /dream-banshee-seam-s1/);
@@ -158,15 +181,29 @@ test("renderer supports artless switching, pack cleanup, neutral chrome, and one
   assert.match(source, /maskUnits="userSpaceOnUse"/);
   assert.match(source, /composerBox\.left - shellBox\.left/);
   assert.match(source, /composerBox\.top - shellBox\.top/);
+  assert.match(source, /const composer = composerResult\.node/);
+  assert.match(source, /data-dream-composer-host/);
+  assert.match(source, /data-dream-composer-context/);
+  assert.match(source, /home\.contains\(composerResult\.node\)/);
+  assert.doesNotMatch(source, /home\?\.querySelector\("\.composer-surface-chrome"\)/);
   assert.match(source, /viewBox="0 0 1261 941" preserveAspectRatio="none"/);
   assert.match(source, /dream-banshee-top-plate-fill/);
+  assert.match(source, /threadHeaderResult/);
+  assert.match(source, /\[threadHeaderResult, "thread-header"\]/);
+  assert.match(source, /dream-banshee-spine-shoulder-fill/);
+  assert.match(source, /M410 51H500L510 61H751L761 51H851L841 66H761L751 71H510L500 66H420Z/);
   assert.match(source, /M105 41H211M226 51H410L420 61H500L510 66H751L761 61H841L851 51H1035M1050 41H1156/);
   assert.match(source, /M5 14H167L222 59H1039L1094 14H1256/);
+  assert.match(source, /M9 920H83L108 902H1153L1178 920H1252/);
+  assert.match(source, /M108 900H1153/);
+  assert.doesNotMatch(source, /H354M907 902/);
   const rearSeamIndex = source.indexOf('dream-banshee-seam-rear');
   const foregroundPlateIndex = source.indexOf('dream-banshee-top-plate-fill');
+  const spineShoulderIndex = source.indexOf('dream-banshee-spine-shoulder-fill');
   const foregroundSeamIndex = source.indexOf('dream-banshee-seam-front');
   assert.ok(rearSeamIndex > -1 && rearSeamIndex < foregroundPlateIndex);
-  assert.ok(foregroundPlateIndex < foregroundSeamIndex);
+  assert.ok(foregroundPlateIndex < spineShoulderIndex);
+  assert.ok(spineShoulderIndex < foregroundSeamIndex);
   const bansheeMarkup = source.match(/const BANSHEE_CHROME_MARKUP = `([\s\S]*?)`;/)?.[1] ?? "";
   assert.match(bansheeMarkup, /<svg class="dream-banshee-armor-svg"/);
   assert.doesNotMatch(bansheeMarkup, /logo|gundam|unicorn|robot|mecha/i);
@@ -205,8 +242,35 @@ test("installer is dark-first, persists a port, and restores with compare-and-sw
   assert.match(runtimeState, /IPAddress\]::IPv6Loopback/);
   assert.match(runtimeState, /DualMode = \$false/);
   assert.match(runtimeState, /Write-DreamSkinTextAtomic/);
-  assert.match(read("scripts/start-dream-skin.ps1"), /Get-AuthenticodeSignature/);
-  assert.match(read("scripts/start-dream-skin.ps1"), /Get-NetTCPConnection/);
+  const startScript = read("scripts/start-dream-skin.ps1");
+  const standalone = read("scripts/standalone-runtime.ps1");
+  const watcher = read("scripts/watch-dream-skin.ps1");
+  assert.match(standalone, /Get-AuthenticodeSignature/);
+  assert.match(standalone, /SignatureKind -ne 'Store'/);
+  assert.match(standalone, /PublisherId -ne \$script:DreamSkinExpectedPublisherId/);
+  assert.match(standalone, /Status -ne 'Ok'/);
+  assert.match(standalone, /StartsWith\(\$parentFull, \[StringComparison\]::OrdinalIgnoreCase\)/);
+  assert.match(standalone, /Status -notin @\('Valid', 'NotSigned'\)/);
+  assert.match(standalone, /\.codex-dream-skin-runtime\.json/);
+  assert.match(standalone, /robocopy\.exe/);
+  assert.match(standalone, /\/COPY:DAT/);
+  assert.match(standalone, /\/DCOPY:DAT/);
+  assert.doesNotMatch(standalone, /\/COPYALL|\/MIR/);
+  assert.match(standalone, /Get-FileHash -LiteralPath \$fullPath -Algorithm SHA256/);
+  assert.match(standalone, /\.staging-/);
+  assert.match(standalone, /Refusing to replace an unowned runtime directory/);
+  assert.match(startScript, /Ensure-DreamSkinStandaloneRuntime/);
+  assert.ok(startScript.indexOf("Ensure-DreamSkinStandaloneRuntime") < startScript.indexOf("Stop-CodexCompletely"));
+  assert.match(startScript, /Start-Process -FilePath \$StandaloneRuntime\.Executable -WorkingDirectory \$StandaloneRuntime\.Root/);
+  assert.match(startScript, /StringComparison\]::OrdinalIgnoreCase/);
+  assert.match(startScript, /\$maxLaunchAttempts = 1/);
+  assert.match(startScript, /automatic retry is disabled/);
+  assert.match(startScript, /Get-NetTCPConnection/);
+  assert.match(watcher, /Get-DreamSkinStandaloneRuntime/);
+  assert.doesNotMatch(watcher, /Ensure-DreamSkinStandaloneRuntime/);
+  assert.match(watcher, /watcher will not rebuild it or restart Codex/);
+  assert.match(install, /Ensure-DreamSkinStandaloneRuntime/);
+  assert.match(install, /runtimePackageFullName/);
 });
 test("target selection rejects auxiliary and non-loopback renderers", () => {
   const base = { type: "page", url: "app://-/index.html", webSocketDebuggerUrl: "ws://127.0.0.1:9335/devtools/page/1" };
@@ -222,6 +286,30 @@ test("target selection rejects auxiliary and non-loopback renderers", () => {
     { type: "page", url: "https://example.com", webSocketDebuggerUrl: "ws://127.0.0.1:9335/devtools/page/2" }
   ]);
   assert.deepEqual([result.main.length, result.auxiliary.length, result.rejected.length], [1, 1, 1]);
+});
+
+test("live verifier reports synchronized Banshee motion and native capability hit targets", () => {
+  const injector = read("scripts/injector.mjs");
+  assert.match(injector, /--open-new-task/);
+  assert.match(injector, /async function openNewTask/);
+  assert.match(injector, /stablePasses/);
+  assert.match(injector, /verified\.cards\.length >= 1/);
+  assert.match(injector, /filter\(\(card\) => card\.width > 0 && card\.height > 0\)/);
+  assert.match(injector, /dream-banshee-\(wave\|seam-travel\|conduit-breathe\)/);
+  assert.match(injector, /startTimeSkewMs/);
+  assert.match(injector, /styleVersion:/);
+  assert.match(injector, /threadHeaderPass/);
+  assert.match(injector, /result\.topRegion\.pass/);
+  assert.match(injector, /cardDiagnostics/);
+  assert.match(injector, /composerAncestry/);
+  assert.match(injector, /composerStyle/);
+  assert.match(injector, /composerStackChildren/);
+  assert.match(injector, /composerContextTree/);
+  assert.match(injector, /waveStartSkewMs <= 1/);
+  assert.match(injector, /data-dream-capability/);
+  assert.match(injector, /node\.contains\(candidate\)/);
+  assert.match(injector, /tagName === 'BUTTON'/);
+  assert.match(injector, /svgPresent && control\.hitPass/);
 });
 
 test("runtime capability classifier is double-signal and fail-closed", () => {
@@ -280,6 +368,8 @@ test("runtime ownership, artless switching, wave propagation, and burst debounce
   assert.deepEqual([0, .25, .5, 1].map((d) => runtime.propagationDelay(d, 1700)), [0, 425, 850, 1700]);
   const pseudoWave = { animationName: "dream-banshee-wave", effect: { pseudoElement: "::after" } };
   assert.equal(runtime.isBansheeWaveAnimation(pseudoWave), true);
+  assert.equal(runtime.isBansheeWaveAnimation({ animationName: "dream-banshee-seam-travel" }), true);
+  assert.equal(runtime.isBansheeWaveAnimation({ animationName: "dream-banshee-conduit-breathe" }), true);
   assert.equal(runtime.isBansheeWaveAnimation({ animationName: "native-spinner" }), false);
   let nextId = 0, callbacks = new Map(), runs = 0;
   const scheduleTimer = (fn) => { const id = ++nextId; callbacks.set(id, fn); return id; };

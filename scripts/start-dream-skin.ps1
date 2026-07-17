@@ -11,11 +11,16 @@ $SkillRoot = Split-Path -Parent $PSScriptRoot
 $Injector = Join-Path $PSScriptRoot 'injector.mjs'
 $StateRoot = Join-Path $env:LOCALAPPDATA 'CodexDreamSkin'
 . (Join-Path $PSScriptRoot 'runtime-state.ps1')
+. (Join-Path $PSScriptRoot 'standalone-runtime.ps1')
+New-Item -ItemType Directory -Force -Path $StateRoot | Out-Null
+# Build and verify the user-writable runtime before inspecting or stopping any
+# running Codex process. A failed copy therefore cannot disrupt the official app.
+$StandaloneRuntime = Ensure-DreamSkinStandaloneRuntime -StateRoot $StateRoot
+$node = (Get-Command node -ErrorAction Stop).Source
 $Port = Get-DreamSkinPersistedPort -StateRoot $StateRoot -RequestedPort $Port
 $StatePath = Join-Path $StateRoot 'state.json'
 $StdoutPath = Join-Path $StateRoot 'injector.log'
 $StderrPath = Join-Path $StateRoot 'injector-error.log'
-New-Item -ItemType Directory -Force -Path $StateRoot | Out-Null
 
 function Test-CodexPortOwner([int]$CandidatePort) {
   try {
@@ -25,7 +30,8 @@ function Test-CodexPortOwner([int]$CandidatePort) {
     foreach ($listener in $listeners) {
       $owner = Get-CimInstance Win32_Process -Filter "ProcessId = $([int]$listener.OwningProcess)" -ErrorAction Stop
       $path = [string]$owner.ExecutablePath
-      if ($owner.Name -eq 'ChatGPT.exe' -and $path -match 'OpenAI\.Codex_' -and $path -match '\\app\\ChatGPT\.exe$') {
+      if ($owner.Name -eq 'ChatGPT.exe' -and
+          [string]::Equals([IO.Path]::GetFullPath($path), [IO.Path]::GetFullPath($StandaloneRuntime.Executable), [StringComparison]::OrdinalIgnoreCase)) {
         return $true
       }
     }
@@ -62,7 +68,6 @@ function Stop-CodexCompletely {
   Start-Sleep -Milliseconds 300
 }
 
-$node = (Get-Command node -ErrorAction Stop).Source
 $debugReady = Test-CodexDebugPort $Port
 $mainProcesses = @(Get-Process ChatGPT -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -ne 0 })
 
@@ -74,18 +79,16 @@ if (-not $debugReady -and -not $ProfilePath -and $mainProcesses.Count -gt 0) {
 }
 
 function Start-CodexWithDebugPort {
-  $package = Get-AppxPackage OpenAI.Codex | Sort-Object Version -Descending | Select-Object -First 1
-  if (-not $package) { throw 'The OpenAI.Codex Store package is not installed.' }
-  $exe = Join-Path $package.InstallLocation 'app\ChatGPT.exe'
-  if (-not (Test-Path -LiteralPath $exe)) { throw "Codex executable not found: $exe" }
-  $signature = Get-AuthenticodeSignature -LiteralPath $exe
-  if ($signature.Status -ne 'Valid') { throw "Codex executable signature is not valid: $($signature.Status)" }
   $arguments = @("--remote-debugging-port=$Port")
   if ($ProfilePath) {
     New-Item -ItemType Directory -Force -Path $ProfilePath | Out-Null
     $arguments += "--user-data-dir=$ProfilePath"
   }
-  Start-Process -FilePath $exe -ArgumentList $arguments
+  try {
+    Start-Process -FilePath $StandaloneRuntime.Executable -WorkingDirectory $StandaloneRuntime.Root -ArgumentList $arguments
+  } catch [System.InvalidOperationException] {
+    throw "Windows denied launch of the verified per-user Codex runtime. $($_.Exception.Message)"
+  }
 }
 
 function Wait-CodexDebugPort([int]$Seconds) {
@@ -97,7 +100,7 @@ function Wait-CodexDebugPort([int]$Seconds) {
   return $true
 }
 
-$maxLaunchAttempts = if ($ProfilePath) { 1 } else { 2 }
+$maxLaunchAttempts = 1
 $attempt = 0
 while (-not (Test-CodexDebugPort $Port)) {
   if ($attempt -ge $maxLaunchAttempts) {
@@ -106,9 +109,7 @@ while (-not (Test-CodexDebugPort $Port)) {
   $attempt++
   Start-CodexWithDebugPort
   if (Wait-CodexDebugPort 30) { break }
-  if ($ProfilePath) { throw "Codex did not expose CDP on 127.0.0.1/[::1]:$Port within 30 seconds." }
-  # Likely lost the single-instance race to an unflagged auto-respawn; clear everything and retry once.
-  Stop-CodexCompletely
+  throw "Codex did not expose CDP on 127.0.0.1/[::1]:$Port within 30 seconds; automatic retry is disabled to avoid another disruptive restart."
 }
 
 if (Test-Path -LiteralPath $StatePath) {
@@ -131,6 +132,8 @@ $daemon = Start-Process -FilePath $node -ArgumentList $injectorArgs -WindowStyle
   startedAt = (Get-Date).ToString('o')
   skillRoot = $SkillRoot
   profilePath = $ProfilePath
+  runtimeRoot = $StandaloneRuntime.Root
+  runtimeVersion = $StandaloneRuntime.Version
 } | ForEach-Object { Write-DreamSkinJsonAtomic -Path $StatePath -Value $_ }
 
 $verified = $false

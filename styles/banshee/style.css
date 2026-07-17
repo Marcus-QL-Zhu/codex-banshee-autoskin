@@ -98,15 +98,41 @@ html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [da
   box-shadow:inset 0 0 54px rgba(21,38,62,.13) !important;
 }
 
-html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="main"] > * {
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="main"] > :not([data-dream-surface="thread-header"]) {
   position:relative;
   z-index:3;
 }
 
+/* Keep the native conversation title and its toolbar inside the quiet band
+   below the top shoulder plates. The existing flex layout owns every control;
+   the skin changes only the header's safe rectangle. */
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="thread-header"] {
+  position:relative !important;
+  top:48px !important;
+  right:auto !important;
+  bottom:auto !important;
+  width:calc(100% - clamp(270px,18vw,320px)) !important;
+  min-width:0 !important;
+  max-width:none !important;
+  z-index:3 !important;
+}
+
 /* Suggestion cards: large quiet planes with local, function-led cuts. */
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="cards"] {
+  display:grid !important;
+  grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+  gap:clamp(17px,1.7vw,28px) !important;
+  width:min(1080px,calc(100vw - 420px)) !important;
+  max-width:none !important;
+  margin-inline:auto !important;
+}
+
 html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="cards"] button {
   position:relative;
   overflow:hidden;
+  min-width:0 !important;
+  min-height:clamp(113px,9vw,154px) !important;
+  padding:clamp(16px,1.3vw,22px) clamp(16px,1.2vw,20px) clamp(14px,1.1vw,18px) !important;
   color:var(--dream-banshee-text-primary) !important;
   background:
     linear-gradient(135deg,rgba(47,68,100,.5),transparent 13px) top left/31px 31px no-repeat,
@@ -139,11 +165,18 @@ html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [da
   position:absolute;
   pointer-events: none;
   inset:5px;
-  border-top:1px solid rgba(91,122,166,.24);
-  border-left:1px solid rgba(74,104,146,.18);
-  border-right:0;
-  border-bottom:0;
+  border:0;
+  background:
+    linear-gradient(90deg,rgba(119,151,194,.28),rgba(74,104,146,.12)) left top/calc(100% - 12px) 1px no-repeat,
+    linear-gradient(180deg,rgba(91,122,166,.22),transparent) left top/1px calc(100% - 11px) no-repeat,
+    linear-gradient(90deg,rgba(52,78,116,.12),rgba(91,122,166,.24),transparent) left bottom/calc(100% - 18px) 1px no-repeat;
   clip-path:polygon(6px 0,100% 0,100% 100%,0 100%,0 6px);
+  transform-origin:center;
+}
+
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="cards"] button:nth-child(3)::before,
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="cards"] button:nth-child(4)::before {
+  transform:scaleX(-1);
 }
 
 html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="cards"] button::after {
@@ -153,9 +186,10 @@ html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [da
   left:44%;
   right:44%;
   bottom:0;
-  height:1px;
-  background:rgba(217,162,62,.62);
-  box-shadow:0 0 5px rgba(217,162,62,.34);
+  height:2px;
+  background:rgba(240,197,111,.82);
+  box-shadow:0 0 4px rgba(217,162,62,.42),0 0 8px rgba(217,162,62,.2);
+  clip-path:polygon(2px 0,calc(100% - 2px) 0,100% 50%,calc(100% - 2px) 100%,2px 100%,0 50%);
   animation:dream-banshee-wave var(--dream-banshee-wave-cycle) linear infinite;
   animation-delay:900ms;
 }
@@ -178,20 +212,71 @@ html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [da
 html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="cards"] button:hover {
   border-color:rgba(119,151,194,.66) !important;
 }
+
+@media (max-width: 820px) {
+  html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="cards"] {
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    width:min(700px,calc(100vw - 80px)) !important;
+  }
+}
+
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="cards"]:has(> :only-child) {
+  grid-template-columns:minmax(0,249px) !important;
+  justify-content:center !important;
+  width:min(249px,calc(100vw - 80px)) !important;
+}
 /* Composer: closed armor box; only the active upper insert exposes S3 energy. */
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-composer-host="home"] {
+  width:100% !important;
+  max-width:min(1132px,max(480px,calc(100vw - clamp(386px,33vw,576px)))) !important;
+}
+
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-composer-host="home"] [data-dream-surface="composer"] {
+  min-height:clamp(108px,12.7vh,116px) !important;
+}
+
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-composer-context="home"] {
+  position:relative !important;
+  top:0 !important;
+  left:0 !important;
+  width:100% !important;
+  max-width:none !important;
+  margin-inline:0 !important;
+  box-sizing:border-box;
+  overflow:hidden;
+  border:1px solid rgba(91,122,166,.42) !important;
+  border-bottom-color:rgba(43,65,96,.7) !important;
+  border-radius:0 !important;
+  clip-path:polygon(12px 0,calc(100% - 12px) 0,100% 12px,100% 100%,0 100%,0 12px);
+  background:
+    linear-gradient(135deg,rgba(119,151,194,.24),transparent 13px) top left/30px 30px no-repeat,
+    linear-gradient(225deg,rgba(119,151,194,.2),transparent 13px) top right/30px 30px no-repeat,
+    linear-gradient(180deg,rgba(18,31,50,.99),rgba(7,16,28,.99)) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(139,166,202,.12),
+    inset 0 -3px 0 var(--dream-banshee-gap) !important;
+  backdrop-filter:none !important;
+}
+
 html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="composer"] {
   position:relative;
   z-index:6;
   isolation:isolate;
   overflow:hidden;
   color:var(--dream-banshee-text-primary) !important;
-  background:linear-gradient(160deg,#121f32,#050b14) !important;
-  border:1px solid rgba(98,130,174,.46) !important;
+  --dream-banshee-composer-top-seam:rgba(217,162,62,.46);
+  background:
+    linear-gradient(90deg,transparent 10px,var(--dream-banshee-composer-top-seam) 10px calc(100% - 10px),transparent calc(100% - 10px)) top/100% 1px no-repeat,
+    linear-gradient(90deg,transparent 10px,rgba(98,130,174,.46) 10px calc(100% - 10px),transparent calc(100% - 10px)) bottom/100% 1px no-repeat,
+    linear-gradient(180deg,transparent 10px,rgba(98,130,174,.46) 10px calc(100% - 10px),transparent calc(100% - 10px)) left/1px 100% no-repeat,
+    linear-gradient(180deg,transparent 10px,rgba(98,130,174,.46) 10px calc(100% - 10px),transparent calc(100% - 10px)) right/1px 100% no-repeat,
+    linear-gradient(160deg,#121f32,#050b14) !important;
+  border:0 !important;
   border-radius:0 !important;
-  clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px);
+  clip-path:polygon(10px 0,calc(100% - 10px) 0,100% 10px,100% calc(100% - 10px),calc(100% - 10px) 100%,10px 100%,0 calc(100% - 10px),0 10px);
   box-shadow:
     inset 0 3px 0 var(--dream-banshee-gap),
-    inset 0 4px 0 rgba(119,151,194,.26),
+    inset 0 4px 0 var(--dream-banshee-composer-top-seam),
     0 12px 34px rgba(0,0,0,.3) !important;
 }
 
@@ -220,10 +305,10 @@ html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [da
 }
 
 html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="composer"]:focus-within {
-  border-color:rgba(119,151,194,.68) !important;
+  --dream-banshee-composer-top-seam:rgba(240,197,111,.64);
   box-shadow:
     inset 0 3px 0 var(--dream-banshee-gap),
-    inset 0 4px 0 rgba(154,181,216,.34),
+    inset 0 4px 0 var(--dream-banshee-composer-top-seam),
     0 12px 34px rgba(0,0,0,.3) !important;
 }
 
@@ -277,6 +362,11 @@ html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] #co
   fill:rgba(8,17,30,.98);
   stroke:none;
   filter:drop-shadow(0 2px 0 rgba(0,0,0,.82));
+}
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] #codex-dream-skin-chrome .dream-banshee-spine-shoulder-fill {
+  fill:rgba(18,31,50,.96);
+  stroke:none;
+  filter:drop-shadow(0 2px 0 rgba(0,0,0,.86));
 }
 html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] #codex-dream-skin-chrome .dream-banshee-spine-plate {
   fill:rgba(1,5,10,.88);

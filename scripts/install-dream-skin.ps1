@@ -9,9 +9,11 @@ $ErrorActionPreference = 'Stop'
 $SkillRoot = Split-Path -Parent $PSScriptRoot
 $StateRoot = Join-Path $env:LOCALAPPDATA 'CodexDreamSkin'
 . (Join-Path $PSScriptRoot 'runtime-state.ps1')
+. (Join-Path $PSScriptRoot 'standalone-runtime.ps1')
+New-Item -ItemType Directory -Force -Path $StateRoot | Out-Null
+$StandaloneRuntime = Ensure-DreamSkinStandaloneRuntime -StateRoot $StateRoot
 $Port = Get-DreamSkinPersistedPort -StateRoot $StateRoot -RequestedPort $Port -Allocate
 $TransactionPath = Join-Path $StateRoot 'install-transaction.json'
-New-Item -ItemType Directory -Force -Path $StateRoot | Out-Null
 $ConfigPath = Join-Path $HOME '.codex\config.toml'
 $BackupPath = Join-Path $StateRoot 'config.before-dream-skin.toml'
 if (-not (Test-Path -LiteralPath $ConfigPath)) { throw "Codex config not found: $ConfigPath" }
@@ -62,10 +64,13 @@ if (Test-Path -LiteralPath $TransactionPath) {
 
 Write-DreamSkinTextAtomic -Path $ConfigPath -Content $content
 $transaction = [ordered]@{
-  version = 2
+  version = 3
   port = $Port
   installedAt = (Get-Date).ToString('o')
   configPath = $ConfigPath
+  runtimeRoot = $StandaloneRuntime.Root
+  runtimeVersion = $StandaloneRuntime.Version
+  runtimePackageFullName = $StandaloneRuntime.PackageFullName
   changes = $changes
   shortcuts = if ($previousTransaction -and $previousTransaction.shortcuts) { @($previousTransaction.shortcuts) } else { @() }
 }

@@ -60,10 +60,10 @@ node scripts\set-theme.mjs aurora-veil fullscreen # 切主题 + 版式（banner 
 
 ## 工作原理与安全
 
-- **CDP 注入**：以 `--remote-debugging-port=<persisted-loopback-port>` 启动 Store 版官方 `ChatGPT.exe`，通过 DevTools 协议往主渲染器注入一段 CSS + JS。端口只绑定**本机回环**，不要暴露到局域网。
-- **不改任何官方文件**：不碰 `WindowsApps`、不碰 `app.asar`、不替换任何可执行文件，登录态/会话/插件全部保持原样。
+- **CDP 注入**：先校验当前 Store 包的身份与关键文件，再把官方 `app` 负载复制到用户目录，以 `--remote-debugging-port=<persisted-loopback-port>` 启动这个只读来源的独立运行副本，随后通过 DevTools 协议往主渲染器注入 CSS + JS。端口只绑定**本机回环**，不要暴露到局域网。
+- **不改任何官方文件**：不写入 `WindowsApps`、不修改 `app.asar`、不替换 Store 安装；独立副本位于 `%LOCALAPPDATA%\CodexDreamSkin\runtime`，约占用与 Store `app` 负载相同的磁盘空间（当前版本约 1.8 GiB）。
 - **随时还原**：`scripts\restore-dream-skin.ps1` 现场移除所有注入内容，DOM 恢复得干干净净；加 `-Uninstall -RestoreBaseTheme` 连快捷方式和安装前的配色备份一起还原。所有运行时状态都在 `%LOCALAPPDATA%\CodexDreamSkin`，删掉即无痕。
-- **Codex 更新后**：重跑一遍 `install` + `start` 即可，脚本每次动态发现当前 Appx 包，不存版本化路径。
+- **Codex 更新后**：重跑一遍 `install` + `start` 即可；安装器会验证新 Store 包、构建新的版本化运行副本并校验关键文件哈希。watcher 不会自行复制或升级运行层。
 - **自恢复**：一个隐藏 watcher 在正常重启 Codex 后自动补皮肤（防抖、频率熔断、失败冷却，不会跟应用打架）。
 - **辅助窗口保护**：桌面宠物等 `initialRoute` 辅助渲染器永远不注入、保持透明。
 

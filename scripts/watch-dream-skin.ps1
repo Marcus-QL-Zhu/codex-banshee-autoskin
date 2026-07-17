@@ -13,6 +13,7 @@ param(
 $ErrorActionPreference = 'Continue'
 $StateRoot = Join-Path $env:LOCALAPPDATA 'CodexDreamSkin'
 . (Join-Path $PSScriptRoot 'runtime-state.ps1')
+. (Join-Path $PSScriptRoot 'standalone-runtime.ps1')
 $Port = Get-DreamSkinPersistedPort -StateRoot $StateRoot -RequestedPort $Port
 $StatePath = Join-Path $StateRoot 'state.json'
 $WatcherStatePath = Join-Path $StateRoot 'watcher-state.json'
@@ -30,6 +31,12 @@ function Write-WatcherLog([string]$Message) {
   } catch {}
 }
 
+$StandaloneRuntime = Get-DreamSkinStandaloneRuntime -StateRoot $StateRoot
+if (-not $StandaloneRuntime) {
+  Write-WatcherLog 'Verified standalone runtime is missing or stale; watcher will not rebuild it or restart Codex. Run install-dream-skin.ps1 manually.'
+  exit 2
+}
+
 function Test-CodexPortOwner([int]$CandidatePort) {
   try {
     $listeners = @(Get-NetTCPConnection -State Listen -LocalPort $CandidatePort -ErrorAction Stop | Where-Object {
@@ -38,7 +45,8 @@ function Test-CodexPortOwner([int]$CandidatePort) {
     foreach ($listener in $listeners) {
       $owner = Get-CimInstance Win32_Process -Filter "ProcessId = $([int]$listener.OwningProcess)" -ErrorAction Stop
       $path = [string]$owner.ExecutablePath
-      if ($owner.Name -eq 'ChatGPT.exe' -and $path -match 'OpenAI\.Codex_' -and $path -match '\\app\\ChatGPT\.exe$') {
+      if ($owner.Name -eq 'ChatGPT.exe' -and
+          [string]::Equals([IO.Path]::GetFullPath($path), [IO.Path]::GetFullPath($StandaloneRuntime.Executable), [StringComparison]::OrdinalIgnoreCase)) {
         return $true
       }
     }

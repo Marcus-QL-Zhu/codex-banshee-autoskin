@@ -110,7 +110,8 @@
     const top = [...(stack ?? [])].find((candidate) => (styleFor?.(candidate)?.pointerEvents ?? "auto") !== "none");
     return Boolean(top && (top === node || node?.contains?.(top)));
   };
-  const isBansheeWaveAnimation = (animation) => animation?.animationName === "dream-banshee-wave";
+  const isBansheeWaveAnimation = (animation) =>
+    /^dream-banshee-(wave|seam-travel|conduit-breathe)$/.test(animation?.animationName ?? "");
 
   const propagationDelay = (distance, travelMs) => {
     const normalized = Math.max(0, Math.min(1, Number(distance) || 0));

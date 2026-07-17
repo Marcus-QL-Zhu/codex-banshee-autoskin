@@ -9,12 +9,12 @@
   const INJECTION_ID = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const LAYOUT_STORAGE_KEY = "codex-dream-skin.layout";
   const THEME_STORAGE_KEY = "codex-dream-skin.theme";
-  const STYLE_VERSION = "5";
+  const STYLE_VERSION = "17";
   const LAYOUTS = new Set(["banner", "fullscreen"]);
   // Sidebar "new task" row gets a marker class so the structure CSS can restyle
   // it as a capsule. Text matching only; the real button stays fully native.
   const NEW_TASK_LABELS = ["新建任务", "New task"];
-  const MICROPHONE_LABELS = new Set(["Microphone", "Voice input", "麦克风", "语音输入"]);
+  const MICROPHONE_LABELS = new Set(["Microphone", "Voice input", "Dictation", "麦克风", "语音输入", "听写"]);
   const FAST_MODE_LABELS = new Set(["Fast mode", "快速模式"]);
   // Canonical Banshee shell geometry is traced in the approved reference's
   // 1261 x 941 main-frame coordinate space. Rear seams are painted first;
@@ -42,19 +42,22 @@
       </g>
       <g class="dream-banshee-seam dream-banshee-seam-s1 dream-banshee-seam-outer dream-banshee-seam-rear">
         <path d="M5 6H171L226 51H1035L1090 6H1256V932H5Z"/>
-        <path d="M9 920H83L108 902H354M907 902H1153L1178 920H1252"/>
+        <path d="M9 920H83L108 902H1153L1178 920H1252"/>
       </g>
       <g class="dream-banshee-seam dream-banshee-seam-s2 dream-banshee-seam-strong dream-banshee-seam-rear">
         <path d="M105 41H211M226 51H410L420 61H500L510 66H751L761 61H841L851 51H1035M1050 41H1156"/>
-        <path d="M105 41L38 104V185L21 201V704L38 720V847L108 900H354"/>
-        <path d="M1156 41L1223 104V185L1240 201V704L1223 720V847L1153 900H907"/>
+        <path d="M105 41L38 104V185L21 201V704L38 720V847L108 900H1153"/>
+        <path d="M1156 41L1223 104V185L1240 201V704L1223 720V847L1153 900"/>
       </g>
       <g class="dream-banshee-seam dream-banshee-seam-s2 dream-banshee-seam-inner dream-banshee-seam-rear">
-        <path d="M108 48L48 109V191L32 207V698L48 713V838L116 890H354"/>
-        <path d="M1153 48L1213 109V191L1229 207V698L1213 713V838L1145 890H907"/>
+        <path d="M108 48L48 109V191L32 207V698L48 713V838L116 890H1145"/>
+        <path d="M1153 48L1213 109V191L1229 207V698L1213 713V838L1145 890"/>
       </g>
       <g class="dream-banshee-top-plate-fill">
         <path d="M5 6H171L226 51H1035L1090 6H1256V14H1094L1039 59H222L167 14H5Z"/>
+      </g>
+      <g class="dream-banshee-spine-shoulder-fill">
+        <path d="M410 51H500L510 61H751L761 51H851L841 66H761L751 71H510L500 66H420Z"/>
       </g>
       <g class="dream-banshee-seam dream-banshee-seam-s1 dream-banshee-seam-outer dream-banshee-seam-front">
         <path d="M5 6H171L226 51H1035L1090 6H1256"/>
@@ -78,9 +81,9 @@
         <path class="dream-banshee-energy dream-banshee-energy-origin" pathLength="1000" d="M492 58H769"/>
         <path class="dream-banshee-energy dream-banshee-energy-upper" pathLength="1000" d="M105 41L38 104V185L21 201V461"/>
         <path class="dream-banshee-energy dream-banshee-energy-upper" pathLength="1000" d="M1156 41L1223 104V185L1240 201V461"/>
-        <path class="dream-banshee-energy dream-banshee-energy-lower" pathLength="1000" d="M21 461V704L38 720V847L108 900H354"/>
-        <path class="dream-banshee-energy dream-banshee-energy-lower" pathLength="1000" d="M1240 461V704L1223 720V847L1153 900H907"/>
-        <path class="dream-banshee-energy dream-banshee-energy-far" pathLength="1000" d="M354 900H542M719 900H907"/>
+        <path class="dream-banshee-energy dream-banshee-energy-lower" pathLength="1000" d="M21 461V704L38 720V847L108 900"/>
+        <path class="dream-banshee-energy dream-banshee-energy-lower" pathLength="1000" d="M1240 461V704L1223 720V847L1153 900"/>
+        <path class="dream-banshee-energy dream-banshee-energy-far" pathLength="1000" d="M108 900H1153"/>
       </g>
       </g>
     </svg>`;
@@ -278,8 +281,37 @@
       [...document.querySelectorAll(".group\\/home-suggestions")],
       (node) => [node.classList.contains("group/home-suggestions"), node.querySelectorAll("button").length > 0]
     );
+    const threadHeaderCandidates = mainResult.node
+      ? [...mainResult.node.querySelectorAll(":scope > header.app-header-tint")]
+      : [];
+    const threadHeaderResult = bansheeRuntime.classifyCandidates(
+      threadHeaderCandidates,
+      (node) => [
+        node.tagName === "HEADER",
+        node.classList.contains("app-header-tint"),
+        node.parentElement === mainResult.node,
+        Boolean(node.querySelector("button")),
+      ]
+    );
     const homeCandidates = document.querySelectorAll('[role="main"]:has([data-testid="home-icon"])');
     const home = homeCandidates.length === 1 ? homeCandidates[0] : null;
+    const composerHost = (() => {
+      if (!home || !composerResult.node || !home.contains(composerResult.node)) return null;
+      const composerWidth = composerResult.node.getBoundingClientRect().width;
+      for (let node = composerResult.node.parentElement; node && node !== mainResult.node; node = node.parentElement) {
+        const maxWidth = Number.parseFloat(getComputedStyle(node).maxWidth);
+        if (Number.isFinite(maxWidth) && maxWidth >= composerWidth) return node;
+      }
+      return null;
+    })();
+    const composerStack = composerResult.node?.parentElement?.parentElement ?? null;
+    const contextWrapper = composerStack?.firstElementChild ?? null;
+    const composerContext = composerHost &&
+      contextWrapper &&
+      composerStack?.lastElementChild?.contains(composerResult.node) &&
+      contextWrapper.firstElementChild?.getBoundingClientRect().width > 0
+        ? contextWrapper.firstElementChild
+        : null;
     const requiredResults = [sideResult, mainResult, composerResult];
     if (home) requiredResults.push(cardsResult);
     const verifiedShell = requiredResults.every((result) => result.state === "verified") &&
@@ -317,10 +349,24 @@
 
     if (bansheeActive) {
       root.setAttribute("data-dream-pack-ready", "banshee-v1");
-      for (const [result, surface] of [[sideResult, "sidebar"], [mainResult, "main"], [composerResult, "composer"], [cardsResult, "cards"]]) {
+      for (const [result, surface] of [
+        [sideResult, "sidebar"],
+        [mainResult, "main"],
+        [composerResult, "composer"],
+        [cardsResult, "cards"],
+        [threadHeaderResult, "thread-header"],
+      ]) {
         if (result.state !== "verified") continue;
         setOwnedAttribute(result.node, "data-dream-surface", surface);
         setOwnedAttribute(result.node, "data-dream-owner", INJECTION_ID);
+      }
+      if (composerHost) {
+        setOwnedAttribute(composerHost, "data-dream-composer-host", "home");
+        setOwnedAttribute(composerHost, "data-dream-owner", INJECTION_ID);
+      }
+      if (composerContext) {
+        setOwnedAttribute(composerContext, "data-dream-composer-context", "home");
+        setOwnedAttribute(composerContext, "data-dream-owner", INJECTION_ID);
       }
     } else {
       root.removeAttribute("data-dream-pack-ready");
@@ -357,6 +403,7 @@
           main: mainResult.state,
           composer: composerResult.state,
           cards: home ? cardsResult.state : "not-applicable",
+          threadHeader: threadHeaderResult.state,
         },
         microphone: { state: microphoneResult.state, parity: microphoneParity?.pass ?? null },
         fastMode: {
@@ -453,7 +500,10 @@
     chrome.style.top = `${Math.round(shellBox.top)}px`;
     chrome.style.width = `${Math.round(shellBox.width)}px`;
     chrome.style.height = `${Math.round(shellBox.height)}px`;
-    const composer = home?.querySelector(".composer-surface-chrome");
+    // The composer exists on both the home route and active conversation routes.
+    // Its live verified rectangle occludes the still-continuous footer rail, so
+    // the composer reads as a foreground plate rather than a hard-coded gap.
+    const composer = composerResult.node;
     const composerOccluder = chrome.querySelector(".dream-banshee-composer-occluder");
     if (composer) {
       const composerBox = composer.getBoundingClientRect();
@@ -461,7 +511,7 @@
       if (composerOccluder) {
         const scaleX = 1261 / Math.max(1, shellBox.width);
         const scaleY = 941 / Math.max(1, shellBox.height);
-        const padding = 3;
+        const padding = 1;
         composerOccluder.setAttribute("x", String(Math.max(0, Math.floor((composerBox.left - shellBox.left) * scaleX) - padding)));
         composerOccluder.setAttribute("y", String(Math.max(0, Math.floor((composerBox.top - shellBox.top) * scaleY) - padding)));
         composerOccluder.setAttribute("width", String(Math.ceil(composerBox.width * scaleX) + padding * 2));
