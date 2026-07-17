@@ -116,6 +116,7 @@ The approved fourth concept establishes a **minimum seam coverage**, not merely 
 | Context/composer tray | A separate upper context plate, clipped outer corners, an inset inner seam, and a stepped top conduit without covering native controls. |
 
 On conversation routes, the native task title and its native right-side toolbar occupy one quiet safe band below the top shoulder plates. The adapter may mark and reposition that existing header rectangle, but it may not clone, replace, reorder, or resize its controls. The complete title line must remain visible, every applicable toolbar control must remain inside the main viewport, and the group must retain native flex order, accessible names, and hit targets.
+Within the native main stacking context, that marked header must paint above the scrolling content viewport so the topmost interactive node at each control center remains the original button or one of its descendants. Decorative shell chrome remains pointer-transparent and may not be used to compensate for an incorrect native stacking order.
 
 At the 1920×1200 review viewport, every one of these seven zones must be visibly identifiable with animation paused at its dimmest frame. A full-width or full-height straight border does not count as armor construction. Adjacent seams should vary in depth and terminate before the next joint so the shell reads as assembled plates rather than a continuous picture frame.
 

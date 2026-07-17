@@ -111,10 +111,10 @@ html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [da
   top:48px !important;
   right:auto !important;
   bottom:auto !important;
-  width:calc(100% - clamp(270px,18vw,320px)) !important;
+  width:calc(100% - clamp(310px,20vw,360px)) !important;
   min-width:0 !important;
   max-width:none !important;
-  z-index:3 !important;
+  z-index:5 !important;
 }
 
 /* Suggestion cards: large quiet planes with local, function-led cuts. */

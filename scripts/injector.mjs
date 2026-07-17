@@ -15,6 +15,7 @@ function parseArgs(argv) {
     else if (arg === "--watch") options.mode = "watch";
     else if (arg === "--verify") options.mode = "verify";
     else if (arg === "--open-new-task") options.mode = "open-new-task";
+    else if (arg === "--probe-top-control") options.mode = "probe-top-control";
     else if (arg === "--remove") options.mode = "remove";
     else if (arg === "--themes") options.mode = "themes";
     else if (arg === "--check") options.mode = "check";
@@ -796,6 +797,22 @@ async function verifySession(session) {
       const stack = rect.width > 0 && rect.height > 0
         ? document.elementsFromPoint(centerX, centerY)
         : [];
+      const topHit = stack.find((candidate) => getComputedStyle(candidate).pointerEvents !== 'none') ?? null;
+      const topInteractiveNode = topHit?.closest?.('button, a, [role="button"]') ?? null;
+      const clippingAncestors = [];
+      for (let current = node.parentElement; current && current !== document.body; current = current.parentElement) {
+        const currentStyle = getComputedStyle(current);
+        if (!/(hidden|clip|scroll|auto)/.test(currentStyle.overflow + ' ' + currentStyle.overflowX + ' ' + currentStyle.overflowY)) continue;
+        const currentRect = current.getBoundingClientRect();
+        clippingAncestors.push({
+          tagName: current.tagName,
+          className: typeof current.className === 'string' ? current.className : null,
+          box: box(current),
+          overflow: [currentStyle.overflowX, currentStyle.overflowY],
+          centerInside: centerX >= currentRect.left && centerX <= currentRect.right &&
+            centerY >= currentRect.top && centerY <= currentRect.bottom,
+        });
+      }
       return {
         tagName: node.tagName,
         className: typeof node.className === 'string' ? node.className : null,
@@ -810,6 +827,10 @@ async function verifySession(session) {
         overflow: style.overflow,
         pointerEvents: style.pointerEvents,
         hitPass: stack.some((candidate) => candidate === node || node.contains(candidate)),
+        topHitTag: topHit?.tagName ?? null,
+        topHitClassName: typeof topHit?.className === 'string' ? topHit.className : null,
+        topInteractivePass: topInteractiveNode === node,
+        clippingAncestors,
       };
     };
     const inTopBand = (node) => {
@@ -889,7 +910,8 @@ async function verifySession(session) {
       threadHeaderRect.left >= mainRect.left && threadHeaderRect.right <= mainRect.right &&
       threadHeaderRect.top >= mainRect.top + 44 && threadHeaderRect.bottom < mainRect.top + 140 &&
       threadHeaderTitleRect.top >= threadHeaderRect.top && threadHeaderTitleRect.bottom <= threadHeaderRect.bottom &&
-      threadHeaderControls.every((control) => control.hitPass && control.box.x >= mainRect.left &&
+      threadHeaderControls.every((control) => control.hitPass && control.topInteractivePass &&
+        control.clippingAncestors.every((ancestor) => ancestor.centerInside) && control.box.x >= mainRect.left &&
         control.box.x + control.box.width <= Math.min(innerWidth, mainRect.right))
     );
     const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1051,6 +1073,64 @@ async function openNewTask(session, timeoutMs) {
   throw new Error(`New-task view did not stabilize its native suggestion cards: ${JSON.stringify(verified)}`);
 }
 
+async function probeTopControl(session) {
+  const target = await session.evaluate(`(() => {
+    const header = document.querySelector('[data-dream-surface="thread-header"]');
+    const labels = new Set(['次要操作', 'Secondary actions']);
+    const matches = header ? [...header.querySelectorAll('button')].filter((button) => {
+      const rect = button.getBoundingClientRect();
+      const label = (button.getAttribute('aria-label') || button.getAttribute('title') || '').trim();
+      return labels.has(label) && rect.width > 0 && rect.height > 0;
+    }) : [];
+    if (matches.length !== 1) return { ready: false, candidateCount: matches.length };
+    const button = matches[0];
+    const rect = button.getBoundingClientRect();
+    const state = { expected: button, pointerdown: false, click: false, pointerTarget: null, clickTarget: null };
+    const observe = (key, event) => {
+      const interactive = event.target?.closest?.('button, a, [role="button"]') ?? null;
+      state[key] = interactive === state.expected;
+      state[key + 'Target'] = interactive?.getAttribute?.('aria-label') || interactive?.getAttribute?.('title') || null;
+    };
+    document.addEventListener('pointerdown', (event) => observe('pointerdown', event), { capture: true, once: true });
+    document.addEventListener('click', (event) => observe('click', event), { capture: true, once: true });
+    window.__DREAM_SKIN_TOP_CONTROL_PROBE__ = state;
+    return {
+      ready: true,
+      ariaLabel: button.getAttribute('aria-label') || button.getAttribute('title') || null,
+      point: { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 },
+    };
+  })()`);
+  if (!target.ready) return { pass: false, reason: 'target-not-unique', candidateCount: target.candidateCount };
+  await session.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: target.point.x, y: target.point.y });
+  await session.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: target.point.x, y: target.point.y, button: 'left', clickCount: 1 });
+  await session.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: target.point.x, y: target.point.y, button: 'left', clickCount: 1 });
+  await new Promise((resolve) => setTimeout(resolve, 250));
+  const observed = await session.evaluate(`(() => {
+    const state = window.__DREAM_SKIN_TOP_CONTROL_PROBE__;
+    const menuVisible = [...document.querySelectorAll('[role="menu"]')].some((node) => {
+      const rect = node.getBoundingClientRect();
+      const style = getComputedStyle(node);
+      return rect.width > 0 && rect.height > 0 && style.display !== 'none' && style.visibility !== 'hidden';
+    });
+    const result = state ? {
+      pointerdown: state.pointerdown,
+      click: state.click,
+      pointerTarget: state.pointerdownTarget,
+      clickTarget: state.clickTarget,
+      menuVisible,
+    } : null;
+    delete window.__DREAM_SKIN_TOP_CONTROL_PROBE__;
+    return result;
+  })()`);
+  await session.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
+  await session.send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
+  return {
+    target: target.ariaLabel,
+    ...observed,
+    pass: Boolean(observed?.pointerdown && observed?.click),
+  };
+}
+
 async function runOneShot(options) {
   const allTargets = await waitForTargets(options.port, options.timeoutMs, { includeAuxiliary: true });
   let mainTargets = allTargets.filter(isMainRendererTarget);
@@ -1083,7 +1163,9 @@ async function runOneShot(options) {
         await new Promise((resolve) => setTimeout(resolve, 1600));
         if (options.mode !== "remove") await applyToSession(session, payload, { paletteOnly: mainTargets.length !== 1 });
       }
-      const verified = options.mode === "open-new-task"
+      const verified = options.mode === "probe-top-control"
+        ? await probeTopControl(session)
+        : options.mode === "open-new-task"
         ? await openNewTask(session, options.timeoutMs)
         : options.mode === "remove"
         ? await session.evaluate("!document.documentElement.classList.contains('codex-dream-skin')")
@@ -1105,6 +1187,7 @@ async function runOneShot(options) {
   if (options.mode === "verify" && (
     results.some((item) => !item.result.pass) || auxiliaryResults.some((item) => !item.result.pass)
   )) process.exitCode = 2;
+  if (options.mode === "probe-top-control" && results.some((item) => !item.result.pass)) process.exitCode = 2;
 }
 
 async function runPayloadCheck() {

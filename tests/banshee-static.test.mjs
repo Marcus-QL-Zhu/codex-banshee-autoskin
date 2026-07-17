@@ -150,7 +150,7 @@ test("legacy Dream structure is isolated behind its own pack class", () => {
 
 test("renderer supports artless switching, pack cleanup, neutral chrome, and one epoch", () => {
   const source = read("assets/renderer-inject.js");
-  assert.match(source, /const STYLE_VERSION = "17"/);
+  assert.match(source, /const STYLE_VERSION = "18"/);
   assert.match(source, /THEME_ART_MODES/);
   assert.match(source, /bansheeRuntime\.artVariables/);
   assert.match(source, /cls\.startsWith\("dream-pack-"\)/);
@@ -300,6 +300,8 @@ test("live verifier reports synchronized Banshee motion and native capability hi
   assert.match(injector, /styleVersion:/);
   assert.match(injector, /threadHeaderPass/);
   assert.match(injector, /result\.topRegion\.pass/);
+  assert.match(injector, /probeTopControl/);
+  assert.match(injector, /Input\.dispatchMouseEvent/);
   assert.match(injector, /cardDiagnostics/);
   assert.match(injector, /composerAncestry/);
   assert.match(injector, /composerStyle/);
