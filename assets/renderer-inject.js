@@ -9,7 +9,7 @@
   const INJECTION_ID = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const LAYOUT_STORAGE_KEY = "codex-dream-skin.layout";
   const THEME_STORAGE_KEY = "codex-dream-skin.theme";
-  const STYLE_VERSION = "30";
+  const STYLE_VERSION = "33";
   const LAYOUTS = new Set(["banner", "fullscreen"]);
   // Sidebar "new task" row gets a marker class so the structure CSS can restyle
   // it as a capsule. Text matching only; the real button stays fully native.
@@ -31,6 +31,9 @@
         <clipPath id="dream-banshee-cavity-pulse-clip" clipPathUnits="userSpaceOnUse">
           <path d="M0 65L35 101V188L18 207V700L34 717V848L21 836V713L7 700V214L28 191V108L0 77Z"/>
           <path transform="translate(1261 0) scale(-1 1)" d="M0 65L35 101V188L18 207V700L34 717V848L21 836V713L7 700V214L28 191V108L0 77Z"/>
+        </clipPath>
+        <clipPath id="dream-banshee-center-cavity-clip" clipPathUnits="userSpaceOnUse">
+          <path d="M492 49H517L530 56H731L744 49H769L756 66H505Z"/>
         </clipPath>
         <linearGradient id="dream-banshee-cavity-pulse-fill" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stop-color="#8f3206" stop-opacity="0"/>
@@ -96,6 +99,11 @@
       </g>
       <g class="dream-banshee-cavity-rest-light dream-banshee-cavity-rest-light-center">
         <path d="M492 49H517L530 56H731L744 49H769L756 66H505Z"/>
+      </g>
+      <g class="dream-banshee-center-cavity-pulse" clip-path="url(#dream-banshee-center-cavity-clip)">
+        <foreignObject x="492" y="49" width="277" height="17">
+          <div xmlns="http://www.w3.org/1999/xhtml" class="dream-banshee-center-cavity-pulse-field"></div>
+        </foreignObject>
       </g>
       <g class="dream-banshee-seam-s3 dream-banshee-conduit dream-banshee-conduit-static">
         <path class="dream-banshee-conduit-origin" d="M535 58H726"/>

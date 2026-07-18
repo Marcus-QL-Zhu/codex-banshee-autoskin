@@ -143,7 +143,7 @@ The user-approved 1580×1000 reference is the canonical silhouette. The main she
 - the lower corners visibly join the bottom rail while leaving the native composer unobstructed;
 - the dim frame must expose the entire construction; animation enhances the structure but never supplies missing geometry.
 
-The current baseline retains the approved composer split pulse and the existing low-output breathing of the narrow frame conduits. The old short frame `seam-travel` crest remains removed completely. The side cavities add only the continuous vertically descending luminance field defined above; no top-center split node or contour-following frame crest is reintroduced.
+The current baseline retains the approved composer split pulse and the existing low-output breathing of the narrow frame conduits. The old short frame `seam-travel` crest remains removed completely. The side cavities add only the continuous vertically descending luminance field defined above. The top-center cavity adds one clipped full-width breathing pulse; no contour-following frame crest is reintroduced.
 
 ### 4.3 Global energy wave
 
@@ -155,7 +155,7 @@ Energy behavior is deliberately constrained:
 - The left and right cavity reveals are simultaneous and phase-identical because one full-width band is clipped into both side shapes.
 - The narrow frame conduits keep their pre-existing breathing animation and phase delays (`0ms`, `420ms`, and `1150ms`).
 - The old `.dream-banshee-conduit-travel` SVG group, `.dream-banshee-energy-*` paths, and `dream-banshee-seam-travel` keyframes are absent.
-- No top-center wide-cavity split node is added in this baseline.
+- The top-center cavity follows the composer's pulse rhythm with the same `9.6s` cycle and `1320ms` delay, but uses cavity-specific keyframes. One continuous low-high-low luminance mountain spans the full recess width rather than appearing as a short central streak. After reaching its peak, the complete mountain remains geometrically fixed and fades uniformly as one field: background width, position, and clipping never animate. Therefore no split, inward return, elastic rebound, changing dark-zone length, or secondary crest is permitted. The exact accepted cavity path clips the field, so the pulse changes luminance only and never redraws, covers, or enlarges the armor opening.
 - Left/right matching narrow conduits retain identical delays.
 - Runtime attaches the composer, conduit, and side-cavity pulse animations to one monotonic `document.timeline.currentTime` epoch.
 - `prefers-reduced-motion: reduce` disables motion while leaving the stable low-energy cavity and conduit layers.

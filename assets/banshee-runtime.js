@@ -111,7 +111,7 @@
     return Boolean(top && (top === node || node?.contains?.(top)));
   };
   const isBansheeWaveAnimation = (animation) =>
-    /^dream-banshee-(wave|conduit-breathe|cavity-pulse)$/.test(animation?.animationName ?? "");
+    /^dream-banshee-(wave|center-cavity-wave|conduit-breathe|cavity-pulse)$/.test(animation?.animationName ?? "");
 
   const propagationDelay = (distance, travelMs) => {
     const normalized = Math.max(0, Math.min(1, Number(distance) || 0));
