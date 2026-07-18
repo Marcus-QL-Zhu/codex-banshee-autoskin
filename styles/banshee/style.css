@@ -332,8 +332,8 @@ html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] #co
   transform-box:view-box;
   transform-origin:0 0;
   will-change:transform;
-  filter:drop-shadow(0 0 5px rgba(255,140,32,.42));
-  animation:dream-banshee-cavity-pulse 2s linear infinite;
+  filter:drop-shadow(0 0 5px rgba(255,140,32,.34));
+  animation:dream-banshee-cavity-pulse 3.2s linear infinite;
 }
 
 html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] #codex-dream-skin-chrome .dream-banshee-conduit {
@@ -400,7 +400,7 @@ html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] #co
 }
 
 @keyframes dream-banshee-cavity-pulse {
-  0% { transform:translateY(-168.866%); }
+  0% { transform:translateY(-256.876%); }
   100% { transform:translateY(93.289%); }
 }
 

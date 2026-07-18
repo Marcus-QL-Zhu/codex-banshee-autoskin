@@ -101,8 +101,8 @@ test("Banshee selectors are pack-scoped and its motion/accessibility fallbacks e
   assert.match(cavityRestLightRule, /fill:rgba\(183,68,8,\.07\)/);
   assert.match(cavityRestLightRule, /stroke:none/);
   assert.doesNotMatch(cavityRestLightRule, /animation|filter|drop-shadow/);
-  assert.match(css, /animation:dream-banshee-cavity-pulse 2s linear infinite/);
-  assert.match(css, /0% \{ transform:translateY\(-168\.866%\); \}/);
+  assert.match(css, /animation:dream-banshee-cavity-pulse 3\.2s linear infinite/);
+  assert.match(css, /0% \{ transform:translateY\(-256\.876%\); \}/);
   assert.match(css, /100% \{ transform:translateY\(93\.289%\); \}/);
   assert.match(css, /transform-box:view-box/);
   assert.match(css, /\.dream-banshee-cavity-pulse-band[\s\S]*?animation:none !important;[\s\S]*?opacity:0 !important;/);
@@ -159,7 +159,7 @@ test("legacy Dream structure is isolated behind its own pack class", () => {
 
 test("renderer supports artless switching, pack cleanup, neutral chrome, and one epoch", () => {
   const source = read("assets/renderer-inject.js");
-  assert.match(source, /const STYLE_VERSION = "27"/);
+  assert.match(source, /const STYLE_VERSION = "29"/);
   assert.match(source, /THEME_ART_MODES/);
   assert.match(source, /bansheeRuntime\.artVariables/);
   assert.match(source, /cls\.startsWith\("dream-pack-"\)/);
@@ -198,8 +198,8 @@ test("renderer supports artless switching, pack cleanup, neutral chrome, and one
   assert.match(source, /id="dream-banshee-cavity-pulse-clip" clipPathUnits="userSpaceOnUse"/);
   assert.match(source, /id="dream-banshee-cavity-pulse-fill" x1="0" y1="0" x2="0" y2="1"/);
   assert.match(source, /stop-color="#8f3206" stop-opacity="0"/);
-  assert.match(source, /stop-color="#ffad36" stop-opacity="\.72"/);
-  assert.match(source, /class="dream-banshee-cavity-pulse-band" x="0" y="0" width="1261" height="1600"/);
+  assert.match(source, /stop-color="#ffad36" stop-opacity="\.62"/);
+  assert.match(source, /class="dream-banshee-cavity-pulse-band" x="0" y="0" width="1261" height="2400"/);
   assert.doesNotMatch(source, /dream-banshee-cavity-(?:lamp|tube)/);
   const cavityOutlineMarkup = source.match(/<g class="dream-banshee-cavity-outline">([\s\S]*?)<\/g>/)?.[1] ?? "";
   assert.ok(cavityOutlineMarkup.includes('<path d="' + sideRestLightPath + '"/>'));
