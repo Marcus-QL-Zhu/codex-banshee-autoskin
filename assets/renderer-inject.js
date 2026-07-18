@@ -9,7 +9,7 @@
   const INJECTION_ID = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const LAYOUT_STORAGE_KEY = "codex-dream-skin.layout";
   const THEME_STORAGE_KEY = "codex-dream-skin.theme";
-  const STYLE_VERSION = "22";
+  const STYLE_VERSION = "23";
   const LAYOUTS = new Set(["banner", "fullscreen"]);
   // Sidebar "new task" row gets a marker class so the structure CSS can restyle
   // it as a capsule. Text matching only; the real button stays fully native.
@@ -28,7 +28,21 @@
           <rect width="1261" height="941" fill="#fff"/>
           <rect class="dream-banshee-composer-occluder" x="0" y="0" width="0" height="0" fill="#000"/>
         </mask>
-      </defs>
+        <clipPath id="dream-banshee-cavity-pulse-clip" clipPathUnits="userSpaceOnUse">
+          <path d="M0 65L35 101V188L18 207V700L34 717V848L21 836V713L7 700V214L28 191V108L0 77Z"/>
+          <path transform="translate(1261 0) scale(-1 1)" d="M0 65L35 101V188L18 207V700L34 717V848L21 836V713L7 700V214L28 191V108L0 77Z"/>
+        </clipPath>
+        <linearGradient id="dream-banshee-cavity-pulse-fill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#8f3206" stop-opacity="0"/>
+          <stop offset=".12" stop-color="#b74408" stop-opacity=".04"/>
+          <stop offset=".28" stop-color="#db5a0d" stop-opacity=".14"/>
+          <stop offset=".42" stop-color="#f47716" stop-opacity=".42"/>
+          <stop offset=".5" stop-color="#ffad36" stop-opacity=".72"/>
+          <stop offset=".58" stop-color="#f47716" stop-opacity=".42"/>
+          <stop offset=".72" stop-color="#db5a0d" stop-opacity=".14"/>
+          <stop offset=".88" stop-color="#b74408" stop-opacity=".04"/>
+          <stop offset="1" stop-color="#8f3206" stop-opacity="0"/>
+        </linearGradient>      </defs>
       <g class="dream-banshee-chrome-content" mask="url(#dream-banshee-content-mask)">
       <g class="dream-banshee-plate-fills">
         <path d="M5 46H105L38 105V185L21 201L5 190Z"/>
@@ -47,7 +61,9 @@
         <path class="dream-banshee-cavity-rest-light-side" transform="translate(1261 0) scale(-1 1)" d="M0 65L35 101V188L18 207V700L34 717V848L21 836V713L7 700V214L28 191V108L0 77Z"/>
         <path class="dream-banshee-cavity-rest-light-center" d="M492 49H517L530 56H731L744 49H769L756 66H505Z"/>
       </g>
-      <g class="dream-banshee-cavity-outline">
+      <g class="dream-banshee-cavity-pulse" clip-path="url(#dream-banshee-cavity-pulse-clip)">
+        <rect class="dream-banshee-cavity-pulse-band" x="0" y="0" width="1261" height="440" fill="url(#dream-banshee-cavity-pulse-fill)"/>
+      </g>      <g class="dream-banshee-cavity-outline">
         <path d="M0 65L35 101V188L18 207V700L34 717V848L21 836V713L7 700V214L28 191V108L0 77Z"/>
         <path transform="translate(1261 0) scale(-1 1)" d="M0 65L35 101V188L18 207V700L34 717V848L21 836V713L7 700V214L28 191V108L0 77Z"/>
       </g>

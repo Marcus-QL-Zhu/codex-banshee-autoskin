@@ -46,6 +46,7 @@ test("Banshee is a schema-v2 artless whitelisted pack theme", () => {
   assert.equal(theme.artMode, "none");
   assert.equal(theme.art, undefined);
   assert.match(theme.tokens["--dream-banshee-wave-cycle"], /^9\.6s$/);
+  assert.equal(theme.tokens["--dream-banshee-energy-core"], "#e66b15");
   assert.doesNotMatch(JSON.stringify(theme), /gundam|unicorn|robot|mecha|logo/i);
 });
 
@@ -97,9 +98,13 @@ test("Banshee selectors are pack-scoped and its motion/accessibility fallbacks e
   assert.match(css, /dream-banshee-seam-s1/);
   assert.match(css, /dream-banshee-seam-s2/);
   const cavityRestLightRule = css.match(/\.dream-banshee-cavity-rest-light\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
-  assert.match(cavityRestLightRule, /fill:rgba\(217,162,62,\.075\)/);
+  assert.match(cavityRestLightRule, /fill:rgba\(183,68,8,\.07\)/);
   assert.match(cavityRestLightRule, /stroke:none/);
   assert.doesNotMatch(cavityRestLightRule, /animation|filter|drop-shadow/);
+  assert.match(css, /animation:dream-banshee-cavity-pulse var\(--dream-banshee-wave-cycle\) linear infinite/);
+  assert.match(css, /0% \{ transform:translateY\(-50%\); opacity:0; \}/);
+  assert.match(css, /86% \{ transform:translateY\(92%\); opacity:\.92; \}/);
+  assert.match(css, /\.dream-banshee-cavity-pulse-band[\s\S]*?animation:none !important;[\s\S]*?opacity:0 !important;/);
   const hiddenSuggestions = css.match(/\[data-dream-surface="cards"\]\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
   assert.match(hiddenSuggestions, /display:none !important/);
   assert.doesNotMatch(css, /\[data-dream-surface="cards"\] button/);
@@ -153,7 +158,7 @@ test("legacy Dream structure is isolated behind its own pack class", () => {
 
 test("renderer supports artless switching, pack cleanup, neutral chrome, and one epoch", () => {
   const source = read("assets/renderer-inject.js");
-  assert.match(source, /const STYLE_VERSION = "22"/);
+  assert.match(source, /const STYLE_VERSION = "23"/);
   assert.match(source, /THEME_ART_MODES/);
   assert.match(source, /bansheeRuntime\.artVariables/);
   assert.match(source, /cls\.startsWith\("dream-pack-"\)/);
@@ -189,6 +194,12 @@ test("renderer supports artless switching, pack cleanup, neutral chrome, and one
   assert.ok(cavityLightMarkup.includes('<path class="dream-banshee-cavity-rest-light-side" d="' + sideRestLightPath + '"/>'));
   assert.ok(cavityLightMarkup.includes('<path class="dream-banshee-cavity-rest-light-side" transform="translate(1261 0) scale(-1 1)" d="' + sideRestLightPath + '"/>'));
   assert.match(cavityLightMarkup, /M492 49H517L530 56H731L744 49H769L756 66H505Z/);
+  assert.match(source, /id="dream-banshee-cavity-pulse-clip" clipPathUnits="userSpaceOnUse"/);
+  assert.match(source, /id="dream-banshee-cavity-pulse-fill" x1="0" y1="0" x2="0" y2="1"/);
+  assert.match(source, /stop-color="#8f3206" stop-opacity="0"/);
+  assert.match(source, /stop-color="#ffad36" stop-opacity="\.72"/);
+  assert.match(source, /class="dream-banshee-cavity-pulse-band" x="0" y="0" width="1261" height="440"/);
+  assert.doesNotMatch(source, /dream-banshee-cavity-(?:lamp|tube)/);
   const cavityOutlineMarkup = source.match(/<g class="dream-banshee-cavity-outline">([\s\S]*?)<\/g>/)?.[1] ?? "";
   assert.ok(cavityOutlineMarkup.includes('<path d="' + sideRestLightPath + '"/>'));
   assert.ok(cavityOutlineMarkup.includes('<path transform="translate(1261 0) scale(-1 1)" d="' + sideRestLightPath + '"/>'));
@@ -248,8 +259,10 @@ test("renderer supports artless switching, pack cleanup, neutral chrome, and one
   assert.match(spec, /S1 structural boundary/);
   assert.match(spec, /topology reveal/);
   assert.match(spec, /two elongated luminous bands/);
-  assert.match(spec, /old short frame `seam-travel` crest is removed completely/);
-  assert.match(spec, /No top-center or left\/right wide-cavity split nodes are added/);
+  assert.match(spec, /old short frame `seam-travel` crest remains removed completely/);
+  assert.match(spec, /No top-center wide-cavity split node is added/);
+  assert.match(spec, /continuous vertical luminance field/);
+  assert.match(spec, /never a stack of visible lamp or tube primitives/);
   assert.match(spec, /suggestion-shortcut group is intentionally suppressed/);
 });
 
@@ -333,7 +346,7 @@ test("live verifier reports synchronized Banshee motion and native capability hi
   assert.match(injector, /verified\.suggestionsSuppressed === true/);
   assert.match(injector, /result\.suggestionsSuppressed = suggestionsSuppressed/);
   assert.match(injector, /filter\(\(card\) => card\.width > 0 && card\.height > 0\)/);
-  assert.match(injector, /dream-banshee-\(wave\|conduit-breathe\)/);
+  assert.match(injector, /dream-banshee-\(wave\|conduit-breathe\|cavity-pulse\)/);
   assert.match(injector, /startTimeSkewMs/);
   assert.match(injector, /styleVersion:/);
   assert.match(injector, /threadHeaderPass/);
@@ -410,6 +423,7 @@ test("runtime ownership, artless switching, wave propagation, and burst debounce
   assert.equal(runtime.isBansheeWaveAnimation(pseudoWave), true);
   assert.equal(runtime.isBansheeWaveAnimation({ animationName: "dream-banshee-seam-travel" }), false);
   assert.equal(runtime.isBansheeWaveAnimation({ animationName: "dream-banshee-conduit-breathe" }), true);
+  assert.equal(runtime.isBansheeWaveAnimation({ animationName: "dream-banshee-cavity-pulse" }), true);
   assert.equal(runtime.isBansheeWaveAnimation({ animationName: "native-spinner" }), false);
   let nextId = 0, callbacks = new Map(), runs = 0;
   const scheduleTimer = (fn) => { const id = ++nextId; callbacks.set(id, fn); return id; };

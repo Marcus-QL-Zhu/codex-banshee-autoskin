@@ -7,7 +7,7 @@ Relationship to `THEME-SPEC.md`: this is an engine-extension specification. The 
 
 ## 1. Purpose
 
-Build a reversible dark skin for the real Codex desktop application that abstracts the visual language of a sealed, high-energy armored machine: near-black blue armor, cut planes, recessed panel gaps, restrained gold energy, and synchronized light moving beneath the shell.
+Build a reversible dark skin for the real Codex desktop application that abstracts the visual language of a sealed, high-energy armored machine: near-black blue armor, cut planes, recessed panel gaps, restrained amber-orange energy, and synchronized light moving beneath the shell.
 
 The result must not depict a Gundam, robot, head crest, insignia, weapon, character, or franchise mark. It is an independent interface shell derived from color, material, geometry, rhythm, and light behavior.
 
@@ -59,7 +59,7 @@ The solution has four layers:
 - Armor base: blue-black, not neutral black (`#050b15` through `#17243a`).
 - Elevated plates: one or two luminance steps above their surrounding cavity.
 - Panel gaps: darker than both adjacent plates, with a cool inner-edge highlight.
-- Energy core: muted amber-gold at rest; warm pale gold at the pulse crest.
+- Energy core: deep amber-orange at rest, saturated orange-amber through the pulse body, and warm yellow-orange at the crest. It must not drift into cream white or flat metallic gold.
 - Text: cool off-white primary, desaturated blue-gray secondary.
 - Cyan/violet may remain only where Codex uses them semantically or for native tool identity; gold is not allowed to overwrite those meanings.
 - Surfaces are matte with restrained directional gradients. No glossy glassmorphism, neon wash, star fields, character art, or ornamental logo.
@@ -137,25 +137,27 @@ The user-approved 1580×1000 reference is the canonical silhouette. The main she
 - the top center contains at least three nested horizontal levels, including a narrow recessed conduit;
 - each side contains two parallel structural seams, an upper illuminated slot, a long recessed mid-rail, a lower illuminated slot, and an angled transfer into the bottom corner;
 - each upper side cavity reads as four visibly distinct segments in this order: a broad diagonal cut running outward-to-inward and downward; an extremely narrow vertical conduit slot whose resting gold line nearly fills the opening; a return diagonal cut running inward-to-outward and downward that is slightly narrower than the first cut; and only then a long straight recessed vertical slot. The cavity is authored as one continuous closed SVG outline formed by two boundary polylines with shared miter vertices, never as overlapping rectangles or separately stroked polygons. It must not collapse into one filled chevron or hexagonal face;
-- cavity resting light is a separate, non-animated paint layer. Each side is painted once as one continuous closed outline. At the upper-to-lower transfer, the left boundary keeps its accepted left-edge connection while the right boundary turns into the inset edge of the long light slot; it must not follow the farther-out armor rail. This yields a shorter, steeper right-downward diagonal and a narrow vertical luminous cavity matching the reference. The accepted closed cavity paths remain as fill geometry but carry no independent stroke, because their closure edges would cross the illuminated transfer. One separate continuous outline path restores the luminous cavity border without an internal join line. The light and outline introduce no overlapping patch, mask, or glow outside this inset envelope. The top-center recess uses the same restrained static fill as an independently registered path;
+- cavity resting light remains a separate, non-animated paint layer. Each side is painted once as one continuous closed outline. At the upper-to-lower transfer, the left boundary keeps its accepted left-edge connection while the right boundary turns into the inset edge of the long light slot; it must not follow the farther-out armor rail. This yields a shorter, steeper right-downward diagonal and a narrow vertical luminous cavity matching the reference. Above that base layer, one continuous vertical luminance field is clipped to the exact left/right cavity outlines. Its extra-long soft band uses a shallow, continuous falloff and translates only along the screen Y axis from top to bottom: it does not follow, rotate with, or bend along the cavity contour. The band is a smooth gradient, never a stack of visible lamp or tube primitives. Both sides share the same band and phase. The accepted closed cavity paths remain as fill geometry but carry no independent stroke, because their closure edges would cross the illuminated transfer. One separate continuous outline path restores the luminous cavity border without an internal join line. The light and outline introduce no overlapping patch, mask, or glow outside this inset envelope. The top-center recess uses the same restrained static fill as an independently registered path;
 - neither side rail may disappear behind the page background or collapse to a single one-pixel divider;
 - the lower corners visibly join the bottom rail while leaving the native composer unobstructed;
 - the dim frame must expose the entire construction; animation enhances the structure but never supplies missing geometry.
 
-The rollback baseline retains the approved composer split pulse and the existing low-output breathing of the narrow frame conduits. The old short frame `seam-travel` crest is removed completely. No replacement split pulse is added to the top-center or side cavities, and no new frame-light timing is introduced.
+The current baseline retains the approved composer split pulse and the existing low-output breathing of the narrow frame conduits. The old short frame `seam-travel` crest remains removed completely. The side cavities add only the continuous vertically descending luminance field defined above; no top-center split node or contour-following frame crest is reintroduced.
 
 ### 4.3 Global energy wave
 
-Energy behavior at this rollback point is deliberately limited:
+Energy behavior is deliberately constrained:
 
 - The composer keeps its approved `9.6s` pulse: one center crest expands to approximately one third of its top conduit, separates into two elongated luminous bands, and moves toward opposite ends.
+- The side cavities use one extra-long continuous gradient band, approximately half the cavity height with a shallow head/tail falloff, on the same shared `9.6s` epoch. It descends slowly in screen space from top to bottom and is revealed only where the accepted cavity clip is present.
+- The side pulse contains no discrete horizontal lamp/tube elements. Its apparent long-band body and feathered head/tail are produced by continuous vertical opacity stops.
+- The left and right cavity reveals are simultaneous and phase-identical because one full-width band is clipped into both side shapes.
 - The narrow frame conduits keep their pre-existing breathing animation and phase delays (`0ms`, `420ms`, and `1150ms`).
 - The old `.dream-banshee-conduit-travel` SVG group, `.dream-banshee-energy-*` paths, and `dream-banshee-seam-travel` keyframes are absent.
-- No top-center or left/right wide-cavity split nodes are added in this baseline.
+- No top-center wide-cavity split node is added in this baseline.
 - Left/right matching narrow conduits retain identical delays.
-- Runtime continues to attach the remaining composer and conduit animations to one monotonic `document.timeline.currentTime` epoch.
-- `prefers-reduced-motion: reduce` disables the remaining motion while leaving stable low-energy conduits.
-
+- Runtime attaches the composer, conduit, and side-cavity pulse animations to one monotonic `document.timeline.currentTime` epoch.
+- `prefers-reduced-motion: reduce` disables motion while leaving the stable low-energy cavity and conduit layers.
 ## 5. DOM capability adapter
 
 ### 5.1 Responsibilities

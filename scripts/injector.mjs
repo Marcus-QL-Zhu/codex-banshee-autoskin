@@ -916,7 +916,7 @@ async function verifySession(session) {
     );
     const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
     const waveAnimations = document.getAnimations().filter((animation) =>
-      /^dream-banshee-(wave|conduit-breathe)$/.test(animation.animationName || '')
+      /^dream-banshee-(wave|conduit-breathe|cavity-pulse)$/.test(animation.animationName || '')
     );
     const waveStartTimes = waveAnimations.map((animation) => animation.startTime).filter(Number.isFinite);
     const waveStartSkewMs = waveStartTimes.length
