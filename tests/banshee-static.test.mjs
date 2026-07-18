@@ -159,7 +159,7 @@ test("legacy Dream structure is isolated behind its own pack class", () => {
 
 test("renderer supports artless switching, pack cleanup, neutral chrome, and one epoch", () => {
   const source = read("assets/renderer-inject.js");
-  assert.match(source, /const STYLE_VERSION = "29"/);
+  assert.match(source, /const STYLE_VERSION = "30"/);
   assert.match(source, /THEME_ART_MODES/);
   assert.match(source, /bansheeRuntime\.artVariables/);
   assert.match(source, /cls\.startsWith\("dream-pack-"\)/);
@@ -189,12 +189,17 @@ test("renderer supports artless switching, pack cleanup, neutral chrome, and one
   assert.match(source, /dream-banshee-cavity-upper-rail" transform="translate\(1261 0\) scale\(-1 1\)" d="M0 65L35 101V188L18 207V700H7V214L28 191V108L0 77Z"/);
   const cavityMarkup = source.match(/<g class="dream-banshee-cavity">([\s\S]*?)<\/g>/)?.[1] ?? "";
   const cavityLightMarkup = source.match(/<g class="dream-banshee-cavity-rest-light">([\s\S]*?)<\/g>/)?.[1] ?? "";
+  const centerRestLightMarkup = source.match(/<g class="dream-banshee-cavity-rest-light dream-banshee-cavity-rest-light-center">([\s\S]*?)<\/g>/)?.[1] ?? "";
   const cavityPaths = [...cavityMarkup.matchAll(/<path(?: class="[^"]+")?(?: transform="([^"]+)")? d="([^"]+)"\/>/g)].map((match) => (match[1] ?? "") + "|" + match[2]);
   assert.equal(cavityPaths.length, 4);
   const sideRestLightPath = "M0 65L35 101V188L18 207V700L34 717V848L21 836V713L7 700V214L28 191V108L0 77Z";
   assert.ok(cavityLightMarkup.includes('<path class="dream-banshee-cavity-rest-light-side" d="' + sideRestLightPath + '"/>'));
   assert.ok(cavityLightMarkup.includes('<path class="dream-banshee-cavity-rest-light-side" transform="translate(1261 0) scale(-1 1)" d="' + sideRestLightPath + '"/>'));
-  assert.match(cavityLightMarkup, /M492 49H517L530 56H731L744 49H769L756 66H505Z/);
+  const centerRestLightPath = "M492 49H517L530 56H731L744 49H769L756 66H505Z";
+  assert.doesNotMatch(cavityLightMarkup, /M492 49H517L530 56H731L744 49H769L756 66H505Z/);
+  assert.ok(centerRestLightMarkup.includes('<path d="' + centerRestLightPath + '"/>'));
+  assert.ok(source.indexOf('<g class="dream-banshee-spine-plate">') < source.indexOf('<g class="dream-banshee-cavity-rest-light dream-banshee-cavity-rest-light-center">'));
+  assert.ok(source.indexOf('<g class="dream-banshee-cavity-rest-light dream-banshee-cavity-rest-light-center">') < source.indexOf('<g class="dream-banshee-seam-s3 dream-banshee-conduit dream-banshee-conduit-static">'));
   assert.match(source, /id="dream-banshee-cavity-pulse-clip" clipPathUnits="userSpaceOnUse"/);
   assert.match(source, /id="dream-banshee-cavity-pulse-fill" x1="0" y1="0" x2="0" y2="1"/);
   assert.match(source, /stop-color="#8f3206" stop-opacity="0"/);

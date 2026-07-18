@@ -9,7 +9,7 @@
   const INJECTION_ID = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const LAYOUT_STORAGE_KEY = "codex-dream-skin.layout";
   const THEME_STORAGE_KEY = "codex-dream-skin.theme";
-  const STYLE_VERSION = "29";
+  const STYLE_VERSION = "30";
   const LAYOUTS = new Set(["banner", "fullscreen"]);
   // Sidebar "new task" row gets a marker class so the structure CSS can restyle
   // it as a capsule. Text matching only; the real button stays fully native.
@@ -59,7 +59,6 @@
       <g class="dream-banshee-cavity-rest-light">
         <path class="dream-banshee-cavity-rest-light-side" d="M0 65L35 101V188L18 207V700L34 717V848L21 836V713L7 700V214L28 191V108L0 77Z"/>
         <path class="dream-banshee-cavity-rest-light-side" transform="translate(1261 0) scale(-1 1)" d="M0 65L35 101V188L18 207V700L34 717V848L21 836V713L7 700V214L28 191V108L0 77Z"/>
-        <path class="dream-banshee-cavity-rest-light-center" d="M492 49H517L530 56H731L744 49H769L756 66H505Z"/>
       </g>
       <g class="dream-banshee-cavity-pulse" clip-path="url(#dream-banshee-cavity-pulse-clip)">
         <rect class="dream-banshee-cavity-pulse-band" x="0" y="0" width="1261" height="2400" fill="url(#dream-banshee-cavity-pulse-fill)"/>
@@ -93,6 +92,9 @@
         <path d="M5 14H167L222 59H1039L1094 14H1256"/>
       </g>
       <g class="dream-banshee-spine-plate">
+        <path d="M492 49H517L530 56H731L744 49H769L756 66H505Z"/>
+      </g>
+      <g class="dream-banshee-cavity-rest-light dream-banshee-cavity-rest-light-center">
         <path d="M492 49H517L530 56H731L744 49H769L756 66H505Z"/>
       </g>
       <g class="dream-banshee-seam-s3 dream-banshee-conduit dream-banshee-conduit-static">
