@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Banshee Armored Shell Preview</title>
-  <link rel="stylesheet" href="../styles/banshee/style.css?v=22">
+  <link rel="stylesheet" href="../styles/banshee/style.css?v=23">
   <style>
     :root {
       --dream-ink:#dce7f8; --dream-purple:#6d7f9c; --dream-violet:#8699b7; --dream-pink:#d9a23e;
@@ -13,15 +13,15 @@
       --dream-banshee-seam-strong:rgba(119,151,194,.48); --dream-banshee-energy-low:rgba(217,162,62,.46);
       --dream-banshee-energy-core:#d9a23e; --dream-banshee-energy-active:#f0c56f; --dream-banshee-energy-bright:#fff0bd;
       --dream-banshee-text-primary:#dce7f8; --dream-banshee-text-secondary:#aebed6; --dream-banshee-focus:#f0c56f;
-      --dream-banshee-wave-cycle:9.6s;
+      --dream-banshee-wave-cycle:10s;
     }
     * { box-sizing:border-box }
-    /* Freeze one coherent wavefront for review: origin at crest, outer seams lag behind. */
+    /* Freeze the unified cycle near its common crest for review. */
     .review-still * { animation-play-state:paused!important }
-    .review-still .dream-banshee-conduit-origin { animation-delay:-6.7s!important }
-    .review-still .dream-banshee-conduit-upper { animation-delay:-6.28s!important }
-    .review-still .dream-banshee-conduit-lower { animation-delay:-5.55s!important }
-    .review-still [data-dream-surface="composer"]::after { animation-delay:-5.38s!important }
+    .review-still .dream-banshee-conduit-static > path,
+    .review-still .dream-banshee-center-cavity-pulse-field,
+    .review-still .dream-banshee-cavity-pulse-band,
+    .review-still [data-dream-surface="composer"]::after { animation-delay:-1.7s!important }
     html,body { margin:0; width:100%; height:100%; overflow:hidden; font-family:"Microsoft YaHei UI","Segoe UI",sans-serif }
 
     button { font:inherit }
@@ -189,7 +189,6 @@
         </foreignObject>
       </g>
       <g class="dream-banshee-seam-s3 dream-banshee-conduit dream-banshee-conduit-static">
-        <path class="dream-banshee-conduit-origin" d="M535 58H726"/>
         <path class="dream-banshee-conduit-upper" d="M5 6H171"/>
         <path class="dream-banshee-conduit-upper" d="M1090 6H1256"/>
         <path class="dream-banshee-conduit-upper" d="M31.5 113V184"/>

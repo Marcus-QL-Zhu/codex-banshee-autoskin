@@ -45,7 +45,7 @@ test("Banshee is a schema-v2 artless whitelisted pack theme", () => {
   assert.equal(theme.stylePack, "banshee");
   assert.equal(theme.artMode, "none");
   assert.equal(theme.art, undefined);
-  assert.match(theme.tokens["--dream-banshee-wave-cycle"], /^9\.6s$/);
+  assert.match(theme.tokens["--dream-banshee-wave-cycle"], /^10s$/);
   assert.equal(theme.tokens["--dream-banshee-energy-core"], "#d9a23e");
   assert.doesNotMatch(JSON.stringify(theme), /gundam|unicorn|robot|mecha|logo/i);
 });
@@ -89,10 +89,7 @@ test("Banshee selectors are pack-scoped and its motion/accessibility fallbacks e
   assert.match(css, /dream-banshee-conduit-breathe/);
   assert.doesNotMatch(css, /dream-banshee-energy-upper/);
   assert.doesNotMatch(css, /dream-banshee-energy-lower/);
-  assert.match(css, /dream-banshee-conduit-origin \{ animation-delay:0ms; \}/);
-  assert.match(css, /dream-banshee-conduit-upper \{ animation-delay:420ms; \}/);
-  assert.match(css, /dream-banshee-conduit-lower \{ animation-delay:1150ms; \}/);
-  assert.match(css, /animation-delay:1320ms/);
+  assert.doesNotMatch(css, /animation-delay:/);
   assert.match(css, /linear-gradient\(160deg,#121f32,#050b14\) !important;/);
   assert.match(css, /isolation:isolate;/);
   assert.match(css, /dream-banshee-seam-s1/);
@@ -101,9 +98,10 @@ test("Banshee selectors are pack-scoped and its motion/accessibility fallbacks e
   assert.match(cavityRestLightRule, /fill:rgba\(183,68,8,\.07\)/);
   assert.match(cavityRestLightRule, /stroke:none/);
   assert.doesNotMatch(cavityRestLightRule, /animation|filter|drop-shadow/);
-  assert.match(css, /animation:dream-banshee-cavity-pulse 3\.2s linear infinite/);
-  assert.match(css, /0% \{ transform:translateY\(-256\.876%\); \}/);
-  assert.match(css, /100% \{ transform:translateY\(93\.289%\); \}/);
+  assert.match(css, /animation:dream-banshee-cavity-pulse var\(--dream-banshee-wave-cycle\) linear infinite/);
+  assert.match(css, /0% \{ opacity:1; transform:translateY\(-256\.876%\); \}/);
+  assert.match(css, /31\.99% \{ opacity:1; transform:translateY\(93\.289%\); \}/);
+  assert.match(css, /32%,100% \{ opacity:0; transform:translateY\(-256\.876%\); \}/);
   assert.match(css, /transform-box:view-box/);
   assert.match(css, /\.dream-banshee-cavity-pulse-band[\s\S]*?animation:none !important;[\s\S]*?opacity:0 !important;/);
   const hiddenSuggestions = css.match(/\[data-dream-surface="cards"\]\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
@@ -132,19 +130,28 @@ test("Banshee selectors are pack-scoped and its motion/accessibility fallbacks e
   assert.equal((composerEnergy.match(/linear-gradient/g) ?? []).length, 2);
   assert.match(composerEnergy, /background-size:2% 100%,2% 100%/);
   const composerWave = css.match(/@keyframes dream-banshee-wave \{([\s\S]*?)\n\}/)?.[1] ?? "";
+  assert.match(composerWave, /4\.8%/);
+  assert.match(composerWave, /11\.52%/);
+  assert.match(composerWave, /29\.76%/);
+  assert.match(composerWave, /30%,100% \{\s*opacity:0/);
   assert.match(composerWave, /background-size:33% 100%,33% 100%/);
   assert.match(composerWave, /background-position:34% 0,66% 0/);
   assert.match(composerWave, /background-size:24% 100%,24% 100%/);
   assert.match(composerWave, /background-position:0 0,100% 0/);
   const centerCavityPulse = css.match(/\.dream-banshee-center-cavity-pulse-field \{([\s\S]*?)\n\}/)?.[1] ?? "";
-  assert.match(centerCavityPulse, /background-size:100% 100%,100% 100%/);
+  assert.match(centerCavityPulse, /background-size:300% 100%/);
+  assert.equal((centerCavityPulse.match(/linear-gradient/g) ?? []).length, 1);
+  assert.match(centerCavityPulse, /rgba\(143,50,6,0\) 0/);
+  assert.match(centerCavityPulse, /rgba\(255,173,54,\.62\) 50%/);
+  assert.doesNotMatch(centerCavityPulse, /var\(--dream-banshee-energy-active\)/);
   assert.match(centerCavityPulse, /animation:dream-banshee-center-cavity-wave/);
   const centerCavityWave = css.match(/@keyframes dream-banshee-center-cavity-wave \{([\s\S]*?)\n\}/)?.[1] ?? "";
-  assert.match(centerCavityWave, /background-size:100% 100%,100% 100%/);
+  assert.match(centerCavityWave, /background-size:300% 100%/);
   assert.doesNotMatch(centerCavityWave, /background-position:0 0,100% 0/);
   assert.doesNotMatch(centerCavityWave, /mask-size/);
-  assert.match(centerCavityWave, /86% \{\s*opacity:0/);
-  assert.match(centerCavityWave, /0%,52%,87%,100% \{\s*opacity:0/);
+  assert.match(centerCavityWave, /2\.65%/);
+  assert.match(centerCavityWave, /15\.88%/);
+  assert.match(centerCavityWave, /30%,100% \{\s*opacity:0/);
   assert.doesNotMatch(css, /(^|[\s,>])svg\b/m);
   assert.doesNotMatch(css, /outline\s*:\s*none/i);
   assert.doesNotMatch(css, /@import|url\(\s*["']?https?:/i);
@@ -168,7 +175,7 @@ test("legacy Dream structure is isolated behind its own pack class", () => {
 
 test("renderer supports artless switching, pack cleanup, neutral chrome, and one epoch", () => {
   const source = read("assets/renderer-inject.js");
-  assert.match(source, /const STYLE_VERSION = "33"/);
+  assert.match(source, /const STYLE_VERSION = "36"/);
   assert.match(source, /THEME_ART_MODES/);
   assert.match(source, /bansheeRuntime\.artVariables/);
   assert.match(source, /cls\.startsWith\("dream-pack-"\)/);
@@ -190,7 +197,7 @@ test("renderer supports artless switching, pack cleanup, neutral chrome, and one
   assert.doesNotMatch(source, /dream-banshee-energy-upper/);
   assert.doesNotMatch(source, /dream-banshee-energy-lower/);
   assert.doesNotMatch(source, /dream-banshee-energy-far/);
-  assert.match(source, /dream-banshee-conduit-origin/);
+  assert.doesNotMatch(source, /dream-banshee-conduit-origin/);
   assert.match(source, /dream-banshee-conduit-upper/);
   assert.match(source, /dream-banshee-conduit-lower/);
   assert.match(source, /dream-banshee-spine-plate/);
@@ -265,6 +272,7 @@ test("renderer supports artless switching, pack cleanup, neutral chrome, and one
   assert.match(preview, /dream-banshee-composer-occluder/);
   assert.match(preview, /dream-banshee-conduit-upper" d="M5 6H171"/);
   assert.match(preview, /dream-banshee-conduit-upper" d="M1090 6H1256"/);
+  assert.doesNotMatch(preview, /dream-banshee-conduit-origin/);
   assert.match(preview, /dream-banshee-cavity-upper-rail" d="M0 65L35 101V188L18 207V700H7V214L28 191V108L0 77Z"/);
   assert.match(preview, /dream-banshee-cavity-upper-rail" transform="translate\(1261 0\) scale\(-1 1\)"/);
   assert.doesNotMatch(preview, /dream-banshee-cavity-(?:upper-cut|conduit-slot|return-cut|long-slot)/);
@@ -279,7 +287,10 @@ test("renderer supports artless switching, pack cleanup, neutral chrome, and one
   assert.match(spec, /topology reveal/);
   assert.match(spec, /two elongated luminous bands/);
   assert.match(spec, /old short frame `seam-travel` crest remains removed completely/);
-  assert.match(spec, /one continuous low-high-low luminance mountain spans the full recess width/i);
+  assert.match(spec, /completes its breathing pass in exactly `3s`/i);
+  assert.match(spec, /centered gradient canvas equal to `300%` of the cavity width/i);
+  assert.match(spec, /one shared `10s` global cycle/);
+  assert.match(spec, /all dynamic zones begin brightening within ≤100ms/);
   assert.match(spec, /continuous vertical luminance field/);
   assert.match(spec, /never a stack of visible lamp or tube primitives/);
   assert.match(spec, /suggestion-shortcut group is intentionally suppressed/);

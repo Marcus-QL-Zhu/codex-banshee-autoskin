@@ -9,7 +9,7 @@
   const INJECTION_ID = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const LAYOUT_STORAGE_KEY = "codex-dream-skin.layout";
   const THEME_STORAGE_KEY = "codex-dream-skin.theme";
-  const STYLE_VERSION = "33";
+  const STYLE_VERSION = "36";
   const LAYOUTS = new Set(["banner", "fullscreen"]);
   // Sidebar "new task" row gets a marker class so the structure CSS can restyle
   // it as a capsule. Text matching only; the real button stays fully native.
@@ -106,7 +106,6 @@
         </foreignObject>
       </g>
       <g class="dream-banshee-seam-s3 dream-banshee-conduit dream-banshee-conduit-static">
-        <path class="dream-banshee-conduit-origin" d="M535 58H726"/>
         <path class="dream-banshee-conduit-upper" d="M5 6H171"/>
         <path class="dream-banshee-conduit-upper" d="M1090 6H1256"/>
         <path class="dream-banshee-conduit-upper" d="M31.5 113V184"/>

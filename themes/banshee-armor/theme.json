@@ -58,7 +58,7 @@
     "--dream-banshee-text-primary": "#dce7f8",
     "--dream-banshee-text-secondary": "#aebed6",
     "--dream-banshee-focus": "#f0c56f",
-    "--dream-banshee-wave-cycle": "9.6s",
+    "--dream-banshee-wave-cycle": "10s",
     "--dream-banshee-wave-origin-x": "50%",
     "--dream-banshee-wave-origin-y": "0%"
   }
