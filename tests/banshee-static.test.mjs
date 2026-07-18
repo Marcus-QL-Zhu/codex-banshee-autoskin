@@ -175,6 +175,11 @@ test("renderer supports artless switching, pack cleanup, neutral chrome, and one
   assert.match(source, /dream-banshee-conduit-upper/);
   assert.match(source, /dream-banshee-conduit-lower/);
   assert.match(source, /dream-banshee-spine-plate/);
+  assert.match(source, /dream-banshee-cavity-upper-rail" d="M0 65L35 101V188L18 207V700H7V214L28 191V108L0 77Z"/);
+  assert.match(source, /dream-banshee-cavity-upper-rail" transform="translate\(1261 0\) scale\(-1 1\)" d="M0 65L35 101V188L18 207V700H7V214L28 191V108L0 77Z"/);
+  assert.doesNotMatch(source, /dream-banshee-cavity-(?:upper-cut|conduit-slot|return-cut|long-slot)/);
+  assert.match(source, /dream-banshee-conduit-upper" d="M31\.5 113V184"/);
+  assert.match(source, /dream-banshee-conduit-upper" d="M1229\.5 113V184"/);
   assert.match(source, /dream-banshee-content-mask/);
   assert.match(source, /dream-banshee-composer-occluder/);
   assert.match(source, /maskUnits="userSpaceOnUse"/);
@@ -215,6 +220,9 @@ test("renderer supports artless switching, pack cleanup, neutral chrome, and one
   assert.match(preview, /dream-banshee-composer-occluder/);
   assert.match(preview, /dream-banshee-conduit-upper" d="M5 6H171"/);
   assert.match(preview, /dream-banshee-conduit-upper" d="M1090 6H1256"/);
+  assert.match(preview, /dream-banshee-cavity-upper-rail" d="M0 65L35 101V188L18 207V700H7V214L28 191V108L0 77Z"/);
+  assert.match(preview, /dream-banshee-cavity-upper-rail" transform="translate\(1261 0\) scale\(-1 1\)"/);
+  assert.doesNotMatch(preview, /dream-banshee-cavity-(?:upper-cut|conduit-slot|return-cut|long-slot)/);
   assert.doesNotMatch(preview, /dream-banshee-conduit-travel|dream-banshee-energy-(?:origin|upper|lower|far)/);
   assert.doesNotMatch(preview, /data-dream-surface="cards"/);
   const spec = read("BANSHEE-SPEC.md");
@@ -275,9 +283,14 @@ test("installer is dark-first, persists a port, and restores with compare-and-sw
   assert.match(startScript, /\$maxLaunchAttempts = 1/);
   assert.match(startScript, /automatic retry is disabled/);
   assert.match(startScript, /Get-NetTCPConnection/);
+  assert.match(watcher, /function Sync-DreamSkinStandaloneRuntime/);
+  assert.match(watcher, /function Update-DreamSkinRuntimeRecord/);
   assert.match(watcher, /Get-DreamSkinStandaloneRuntime/);
-  assert.doesNotMatch(watcher, /Ensure-DreamSkinStandaloneRuntime/);
-  assert.match(watcher, /watcher will not rebuild it or restart Codex/);
+  assert.match(watcher, /Ensure-DreamSkinStandaloneRuntime/);
+  assert.ok(watcher.indexOf("Ensure-DreamSkinStandaloneRuntime") < watcher.indexOf("Detected Codex launched without Dream Skin"));
+  assert.match(watcher, /the running Codex process was not interrupted during the copy/);
+  assert.match(watcher, /Codex will keep running without structural injection/);
+  assert.match(watcher, /runtimePackageFullName/);
   assert.match(install, /Ensure-DreamSkinStandaloneRuntime/);
   assert.match(install, /runtimePackageFullName/);
 });

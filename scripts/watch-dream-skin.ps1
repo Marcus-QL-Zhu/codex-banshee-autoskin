@@ -31,11 +31,64 @@ function Write-WatcherLog([string]$Message) {
   } catch {}
 }
 
-$StandaloneRuntime = Get-DreamSkinStandaloneRuntime -StateRoot $StateRoot
-if (-not $StandaloneRuntime) {
-  Write-WatcherLog 'Verified standalone runtime is missing or stale; watcher will not rebuild it or restart Codex. Run install-dream-skin.ps1 manually.'
-  exit 2
+function Update-DreamSkinRuntimeRecord([object]$Runtime) {
+  $transactionPath = Join-Path $StateRoot 'install-transaction.json'
+  if (-not (Test-Path -LiteralPath $transactionPath -PathType Leaf)) { return }
+  try {
+    $transaction = Get-Content -LiteralPath $transactionPath -Raw | ConvertFrom-Json
+    $next = [ordered]@{
+      runtimeRoot = [string]$Runtime.Root
+      runtimeVersion = [string]$Runtime.Version
+      runtimePackageFullName = [string]$Runtime.PackageFullName
+    }
+    $changed = $false
+    foreach ($name in $next.Keys) {
+      if ($transaction.PSObject.Properties.Name -notcontains $name) {
+        $transaction | Add-Member -NotePropertyName $name -NotePropertyValue $next[$name]
+        $changed = $true
+      } elseif ([string]$transaction.$name -ne $next[$name]) {
+        $transaction.$name = $next[$name]
+        $changed = $true
+      }
+    }
+    if ($changed) {
+      $transaction | Add-Member -Force -NotePropertyName runtimeRefreshedAt -NotePropertyValue ((Get-Date).ToString('o'))
+      Write-DreamSkinJsonAtomic -Path $transactionPath -Value $transaction
+    }
+  } catch {
+    Write-WatcherLog "Runtime is verified, but its informational install record could not be refreshed. $($_.Exception.Message)"
+  }
 }
+
+function Sync-DreamSkinStandaloneRuntime {
+  try {
+    $existing = Get-DreamSkinStandaloneRuntime -StateRoot $StateRoot
+  } catch {
+    Write-WatcherLog "Codex Store package could not be verified yet; Codex will remain open without structural injection. $($_.Exception.Message)"
+    return $null
+  }
+  if ($existing) {
+    Update-DreamSkinRuntimeRecord -Runtime $existing
+    return $existing
+  }
+
+  # A Store update changes the package identity and intentionally makes the old
+  # copied runtime stale. Rebuild into a staging directory and verify hashes
+  # before the watcher is allowed to touch the currently running Codex process.
+  Write-WatcherLog 'Standalone runtime is missing or stale; securely refreshing it from the verified Codex Store package before recovery.'
+  try {
+    $refreshed = Ensure-DreamSkinStandaloneRuntime -StateRoot $StateRoot
+    Update-DreamSkinRuntimeRecord -Runtime $refreshed
+    Write-WatcherLog "Standalone runtime refresh completed for Codex $($refreshed.Version); the running Codex process was not interrupted during the copy."
+    return $refreshed
+  } catch {
+    Write-WatcherLog "Standalone runtime refresh failed; Codex will keep running without structural injection. $($_.Exception.Message)"
+    return $null
+  }
+}
+
+$StandaloneRuntime = Sync-DreamSkinStandaloneRuntime
+if (-not $StandaloneRuntime) { exit 2 }
 
 function Test-CodexPortOwner([int]$CandidatePort) {
   try {
@@ -148,6 +201,21 @@ try {
         continue
       }
       $missedProbes = 0
+
+      # Codex can update from the Store while the watcher remains alive. Refresh
+      # the verified runtime reference immediately before any recovery so the
+      # owner-path check and the launcher agree on the same package version.
+      $refreshedRuntime = Sync-DreamSkinStandaloneRuntime
+      if (-not $refreshedRuntime) {
+        $consecutiveFailures++
+        if ($consecutiveFailures -ge $MaxConsecutiveFailures) {
+          $suspendedUntil = (Get-Date).AddMinutes($CooldownMinutes)
+          Write-WatcherLog "Auto-recovery suspended until $($suspendedUntil.ToString('yyyy-MM-dd HH:mm:ss')) because the updated Store runtime could not be verified. Codex remains open without structural injection."
+        }
+        Start-Sleep -Seconds ([Math]::Max(5, $PollSeconds))
+        continue
+      }
+      $StandaloneRuntime = $refreshedRuntime
 
       # Rate limit: even "successful" recoveries must not loop. If we already restarted
       # Codex $MaxRestartsPerWindow times inside the window, something is systemically

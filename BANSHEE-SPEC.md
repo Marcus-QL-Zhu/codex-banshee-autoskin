@@ -136,6 +136,7 @@ The user-approved 1580×1000 reference is the canonical silhouette. The main she
 - each top shoulder transfers through a diagonal joint into its corresponding side rail;
 - the top center contains at least three nested horizontal levels, including a narrow recessed conduit;
 - each side contains two parallel structural seams, an upper illuminated slot, a long recessed mid-rail, a lower illuminated slot, and an angled transfer into the bottom corner;
+- each upper side cavity reads as four visibly distinct segments in this order: a broad diagonal cut running outward-to-inward and downward; an extremely narrow vertical conduit slot whose resting gold line nearly fills the opening; a return diagonal cut running inward-to-outward and downward that is slightly narrower than the first cut; and only then a long straight recessed vertical slot. The cavity is authored as one continuous closed SVG outline formed by two boundary polylines with shared miter vertices, never as overlapping rectangles or separately stroked polygons. It must not collapse into one filled chevron or hexagonal face;
 - neither side rail may disappear behind the page background or collapse to a single one-pixel divider;
 - the lower corners visibly join the bottom rail while leaving the native composer unobstructed;
 - the dim frame must expose the entire construction; animation enhances the structure but never supplies missing geometry.
@@ -202,6 +203,7 @@ Before each structural reconciliation, synchronously close the ready gate and ca
 - Chromium CDP has no application-layer authentication. The threat model trusts processes running as the same local user while the debug endpoint is active. Before connecting, reduce accidental/malicious mis-targeting by verifying the TCP owner PID, ChatGPT process tree, signed/package installation path, renderer URL, and metadata together; random ports reduce collisions but are not authentication.
 - Apply only to the main Codex renderer; exclude `initialRoute`, transparent helpers, devtools, and unrelated processes.
 - Watcher behavior remains optional, debounced, rate-limited, and protected by a circuit breaker.
+- When a verified Store update makes the per-user standalone runtime stale, the watcher rebuilds it transactionally in a staging directory and validates package identity plus critical-file hashes before any Codex process may be interrupted. A copy or verification failure leaves the current Codex process open and falls back to palette-only styling.
 - Store runtime state under `%LOCALAPPDATA%\CodexDreamSkin`; do not store user content.
 - Choose a random available port once at installation and persist it in state; every script reads that value unless an explicit CLI port overrides it. Port migration updates shortcut/watcher state as one transaction.
 - Back up only configuration fields that will be changed. For each field record `beforeValue`, `installedValue`, and whether it originally existed. Restore uses compare-and-swap: revert only when the current value still equals `installedValue`. Write through a temporary file and atomically replace the configuration.
