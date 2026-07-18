@@ -328,12 +328,12 @@ html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] #co
 }
 
 html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] #codex-dream-skin-chrome .dream-banshee-cavity-pulse-band {
-  opacity:0;
+  opacity:1;
   transform-box:view-box;
   transform-origin:0 0;
-  will-change:transform,opacity;
+  will-change:transform;
   filter:drop-shadow(0 0 5px rgba(255,140,32,.42));
-  animation:dream-banshee-cavity-pulse var(--dream-banshee-wave-cycle) linear infinite;
+  animation:dream-banshee-cavity-pulse 2s linear infinite;
 }
 
 html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] #codex-dream-skin-chrome .dream-banshee-conduit {
@@ -346,7 +346,7 @@ html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] #co
   stroke:var(--dream-banshee-energy-core);
   stroke-width:1.2;
   opacity:.38;
-  filter:drop-shadow(0 0 2px rgba(230,105,20,.3));
+  filter:drop-shadow(0 0 2px rgba(217,162,62,.28));
   animation:dream-banshee-conduit-breathe var(--dream-banshee-wave-cycle) linear infinite;
 }
 
@@ -393,18 +393,15 @@ html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] #co
 }
 
 @keyframes dream-banshee-conduit-breathe {
-  0%,52%,100% { opacity:.26; filter:brightness(.7) drop-shadow(0 0 2px rgba(230,105,20,.26)); }
-  64% { opacity:.46; filter:brightness(.96) drop-shadow(0 0 4px rgba(230,105,20,.42)); }
-  70% { opacity:.86; filter:brightness(1.36) drop-shadow(0 0 8px rgba(255,132,25,.7)); }
-  79% { opacity:.34; filter:brightness(.84) drop-shadow(0 0 3px rgba(230,105,20,.32)); }
+  0%,52%,100% { opacity:.26; filter:brightness(.7) drop-shadow(0 0 2px rgba(217,162,62,.24)); }
+  64% { opacity:.46; filter:brightness(.96) drop-shadow(0 0 4px rgba(217,162,62,.4)); }
+  70% { opacity:.86; filter:brightness(1.36) drop-shadow(0 0 8px rgba(217,162,62,.68)); }
+  79% { opacity:.34; filter:brightness(.84) drop-shadow(0 0 3px rgba(217,162,62,.3)); }
 }
 
 @keyframes dream-banshee-cavity-pulse {
-  0% { transform:translateY(-50%); opacity:0; }
-  6% { opacity:.28; }
-  12% { opacity:.92; }
-  86% { transform:translateY(92%); opacity:.92; }
-  94%,100% { transform:translateY(110%); opacity:0; }
+  0% { transform:translateY(-168.866%); }
+  100% { transform:translateY(93.289%); }
 }
 
 @media (prefers-reduced-motion: reduce) {

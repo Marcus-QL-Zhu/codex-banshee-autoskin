@@ -52,7 +52,7 @@
     "--dream-banshee-seam": "rgba(91, 122, 166, .30)",
     "--dream-banshee-seam-strong": "rgba(119, 151, 194, .48)",
     "--dream-banshee-energy-low": "rgba(217, 162, 62, .46)",
-    "--dream-banshee-energy-core": "#e66b15",
+    "--dream-banshee-energy-core": "#d9a23e",
     "--dream-banshee-energy-active": "#f0c56f",
     "--dream-banshee-energy-bright": "#fff0bd",
     "--dream-banshee-text-primary": "#dce7f8",
