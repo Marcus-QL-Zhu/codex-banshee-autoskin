@@ -313,6 +313,16 @@ html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] #co
 
 html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] #codex-dream-skin-chrome .dream-banshee-cavity {
   fill:rgba(1,5,10,.78);
+  stroke:none;
+}
+
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] #codex-dream-skin-chrome .dream-banshee-cavity-rest-light {
+  fill:rgba(217,162,62,.075);
+  stroke:none;
+}
+
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] #codex-dream-skin-chrome .dream-banshee-cavity-outline {
+  fill:none;
   stroke:rgba(57,83,119,.38);
   stroke-width:.75;
 }

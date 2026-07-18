@@ -9,7 +9,7 @@
   const INJECTION_ID = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const LAYOUT_STORAGE_KEY = "codex-dream-skin.layout";
   const THEME_STORAGE_KEY = "codex-dream-skin.theme";
-  const STYLE_VERSION = "21";
+  const STYLE_VERSION = "22";
   const LAYOUTS = new Set(["banner", "fullscreen"]);
   // Sidebar "new task" row gets a marker class so the structure CSS can restyle
   // it as a capsule. Text matching only; the real button stays fully native.
@@ -41,6 +41,15 @@
         <path class="dream-banshee-cavity-lower" d="M8 700L42 717V842L34 848L21 836V713Z"/>
         <path class="dream-banshee-cavity-upper-rail" transform="translate(1261 0) scale(-1 1)" d="M0 65L35 101V188L18 207V700H7V214L28 191V108L0 77Z"/>
         <path class="dream-banshee-cavity-lower" d="M1253 700L1219 717V842L1227 848L1240 836V713Z"/>
+      </g>
+      <g class="dream-banshee-cavity-rest-light">
+        <path class="dream-banshee-cavity-rest-light-side" d="M0 65L35 101V188L18 207V700L34 717V848L21 836V713L7 700V214L28 191V108L0 77Z"/>
+        <path class="dream-banshee-cavity-rest-light-side" transform="translate(1261 0) scale(-1 1)" d="M0 65L35 101V188L18 207V700L34 717V848L21 836V713L7 700V214L28 191V108L0 77Z"/>
+        <path class="dream-banshee-cavity-rest-light-center" d="M492 49H517L530 56H731L744 49H769L756 66H505Z"/>
+      </g>
+      <g class="dream-banshee-cavity-outline">
+        <path d="M0 65L35 101V188L18 207V700L34 717V848L21 836V713L7 700V214L28 191V108L0 77Z"/>
+        <path transform="translate(1261 0) scale(-1 1)" d="M0 65L35 101V188L18 207V700L34 717V848L21 836V713L7 700V214L28 191V108L0 77Z"/>
       </g>
       <g class="dream-banshee-seam dream-banshee-seam-s1 dream-banshee-seam-outer dream-banshee-seam-rear">
         <path d="M5 6H171L226 51H1035L1090 6H1256V932H5Z"/>

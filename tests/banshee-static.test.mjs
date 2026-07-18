@@ -96,6 +96,10 @@ test("Banshee selectors are pack-scoped and its motion/accessibility fallbacks e
   assert.match(css, /isolation:isolate;/);
   assert.match(css, /dream-banshee-seam-s1/);
   assert.match(css, /dream-banshee-seam-s2/);
+  const cavityRestLightRule = css.match(/\.dream-banshee-cavity-rest-light\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
+  assert.match(cavityRestLightRule, /fill:rgba\(217,162,62,\.075\)/);
+  assert.match(cavityRestLightRule, /stroke:none/);
+  assert.doesNotMatch(cavityRestLightRule, /animation|filter|drop-shadow/);
   const hiddenSuggestions = css.match(/\[data-dream-surface="cards"\]\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
   assert.match(hiddenSuggestions, /display:none !important/);
   assert.doesNotMatch(css, /\[data-dream-surface="cards"\] button/);
@@ -149,7 +153,7 @@ test("legacy Dream structure is isolated behind its own pack class", () => {
 
 test("renderer supports artless switching, pack cleanup, neutral chrome, and one epoch", () => {
   const source = read("assets/renderer-inject.js");
-  assert.match(source, /const STYLE_VERSION = "21"/);
+  assert.match(source, /const STYLE_VERSION = "22"/);
   assert.match(source, /THEME_ART_MODES/);
   assert.match(source, /bansheeRuntime\.artVariables/);
   assert.match(source, /cls\.startsWith\("dream-pack-"\)/);
@@ -177,6 +181,17 @@ test("renderer supports artless switching, pack cleanup, neutral chrome, and one
   assert.match(source, /dream-banshee-spine-plate/);
   assert.match(source, /dream-banshee-cavity-upper-rail" d="M0 65L35 101V188L18 207V700H7V214L28 191V108L0 77Z"/);
   assert.match(source, /dream-banshee-cavity-upper-rail" transform="translate\(1261 0\) scale\(-1 1\)" d="M0 65L35 101V188L18 207V700H7V214L28 191V108L0 77Z"/);
+  const cavityMarkup = source.match(/<g class="dream-banshee-cavity">([\s\S]*?)<\/g>/)?.[1] ?? "";
+  const cavityLightMarkup = source.match(/<g class="dream-banshee-cavity-rest-light">([\s\S]*?)<\/g>/)?.[1] ?? "";
+  const cavityPaths = [...cavityMarkup.matchAll(/<path(?: class="[^"]+")?(?: transform="([^"]+)")? d="([^"]+)"\/>/g)].map((match) => (match[1] ?? "") + "|" + match[2]);
+  assert.equal(cavityPaths.length, 4);
+  const sideRestLightPath = "M0 65L35 101V188L18 207V700L34 717V848L21 836V713L7 700V214L28 191V108L0 77Z";
+  assert.ok(cavityLightMarkup.includes('<path class="dream-banshee-cavity-rest-light-side" d="' + sideRestLightPath + '"/>'));
+  assert.ok(cavityLightMarkup.includes('<path class="dream-banshee-cavity-rest-light-side" transform="translate(1261 0) scale(-1 1)" d="' + sideRestLightPath + '"/>'));
+  assert.match(cavityLightMarkup, /M492 49H517L530 56H731L744 49H769L756 66H505Z/);
+  const cavityOutlineMarkup = source.match(/<g class="dream-banshee-cavity-outline">([\s\S]*?)<\/g>/)?.[1] ?? "";
+  assert.ok(cavityOutlineMarkup.includes('<path d="' + sideRestLightPath + '"/>'));
+  assert.ok(cavityOutlineMarkup.includes('<path transform="translate(1261 0) scale(-1 1)" d="' + sideRestLightPath + '"/>'));
   assert.doesNotMatch(source, /dream-banshee-cavity-(?:upper-cut|conduit-slot|return-cut|long-slot)/);
   assert.match(source, /dream-banshee-conduit-upper" d="M31\.5 113V184"/);
   assert.match(source, /dream-banshee-conduit-upper" d="M1229\.5 113V184"/);
