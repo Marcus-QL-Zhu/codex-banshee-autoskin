@@ -32,6 +32,23 @@ html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"][dat
   --inline-mention-color:var(--inline-mention-resolved-base-color) !important;
 }
 
+/* Fast-on keeps Codex's native slider, thumb, icons, and hit targets intact.
+   Only the native emitted-energy surfaces inherit the awakening palette; the
+   available-but-off state remains entirely native. */
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"][data-dream-fast="on"] [data-model-picker-power-slider] [data-fast-mode="true"] [class*="_Range_"] {
+  background-color:var(--dream-banshee-energy-core) !important;
+}
+
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"][data-dream-fast="on"] [data-model-picker-power-slider] [data-fast-mode="true"] [class*="_TrackParticle_"] {
+  background-color:rgba(var(--dream-banshee-emission-crest-rgb),.78) !important;
+}
+
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"][data-dream-fast="on"] [data-fast-mode-enabled="true"],
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"][data-dream-fast="on"] [data-fast-mode-enabled="true"] [class*="_FastModeIcon_"],
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"][data-dream-fast="on"] [data-dream-capability="fast-mode"] [class*="ModelPickerTriggerInlineFastIcon"] {
+  color:var(--dream-banshee-energy-core) !important;
+}
+
 html.codex-dream-skin.dream-pack-banshee body {
   color:var(--dream-banshee-text-primary) !important;
   background:

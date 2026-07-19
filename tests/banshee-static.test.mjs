@@ -171,6 +171,15 @@ test("Banshee selectors are pack-scoped and its motion/accessibility fallbacks e
   assert.match(fastFileReference, /--inline-mention-resolved-base-color:var\(--inline-mention-base-color\) !important/);
   assert.match(fastFileReference, /--inline-mention-color:var\(--inline-mention-resolved-base-color\) !important/);
   assert.doesNotMatch(fastFileReference, /(?:^|\n)\s*(?:color|pointer-events|display|visibility):/);
+  const fastSliderRange = css.match(/\[data-dream-fast="on"\] \[data-model-picker-power-slider\] \[data-fast-mode="true"\] \[class\*="_Range_"\]\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
+  assert.match(fastSliderRange, /background-color:var\(--dream-banshee-energy-core\) !important/);
+  const fastSliderParticles = css.match(/\[data-dream-fast="on"\] \[data-model-picker-power-slider\] \[data-fast-mode="true"\] \[class\*="_TrackParticle_"\]\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
+  assert.match(fastSliderParticles, /background-color:rgba\(var\(--dream-banshee-emission-crest-rgb\),\.78\) !important/);
+  const fastMarkerRule = css.match(/\[data-dream-fast="on"\] \[data-fast-mode-enabled="true"\],[\s\S]*?\[class\*="ModelPickerTriggerInlineFastIcon"\]\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
+  assert.match(fastMarkerRule, /color:var\(--dream-banshee-energy-core\) !important/);
+  for (const fastNativeBlock of [fastSliderRange, fastSliderParticles, fastMarkerRule]) {
+    assert.doesNotMatch(fastNativeBlock, /(?:^|\n)\s*(?:pointer-events|display|visibility|width|height|transform):/);
+  }
   assert.doesNotMatch(css, /rgba\((?:217,162,62|240,197,111|183,68,8|143,50,6|219,90,13|244,119,22|255,173,54|255,140,32),/);
 });
 
@@ -192,7 +201,7 @@ test("legacy Dream structure is isolated behind its own pack class", () => {
 
 test("renderer supports artless switching, pack cleanup, neutral chrome, and one epoch", () => {
   const source = read("assets/renderer-inject.js");
-  assert.match(source, /const STYLE_VERSION = "39"/);
+  assert.match(source, /const STYLE_VERSION = "40"/);
   assert.match(source, /THEME_ART_MODES/);
   assert.match(source, /bansheeRuntime\.artVariables/);
   assert.match(source, /cls\.startsWith\("dream-pack-"\)/);

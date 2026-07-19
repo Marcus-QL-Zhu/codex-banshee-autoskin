@@ -9,7 +9,7 @@
   const INJECTION_ID = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const LAYOUT_STORAGE_KEY = "codex-dream-skin.layout";
   const THEME_STORAGE_KEY = "codex-dream-skin.theme";
-  const STYLE_VERSION = "39";
+  const STYLE_VERSION = "40";
   const LAYOUTS = new Set(["banner", "fullscreen"]);
   // Sidebar "new task" row gets a marker class so the structure CSS can restyle
   // it as a capsule. Text matching only; the real button stays fully native.
