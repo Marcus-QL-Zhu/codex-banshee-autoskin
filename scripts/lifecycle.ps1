@@ -80,9 +80,28 @@ function Get-DreamSkinNodePreflight([string]$NodePath, [version]$MinimumVersion 
 
 function Get-DreamSkinDirectoryBytes([string]$Path) {
   if (-not (Test-Path -LiteralPath $Path -PathType Container)) { return [long]0 }
+  $rootFull = Get-DreamSkinNormalizedPath $Path
+  Assert-DreamSkinNoReparsePath -Path $rootFull -Boundary $rootFull
+  $extendedRoot = if ($rootFull.StartsWith('\\?\')) { $rootFull } else { '\\?\' + $rootFull }
+  $directories = [Collections.Generic.Stack[string]]::new()
+  $directories.Push($extendedRoot)
   $sum = [long]0
-  foreach ($file in @(Get-ChildItem -LiteralPath $Path -Recurse -File -Force -ErrorAction Stop)) {
-    $sum += [long]$file.Length
+  while ($directories.Count -gt 0) {
+    $current = $directories.Pop()
+    foreach ($directory in [IO.Directory]::EnumerateDirectories($current)) {
+      $attributes = [IO.File]::GetAttributes($directory)
+      if (($attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
+        throw "Directory-size scan refuses reparse point: $directory"
+      }
+      $directories.Push($directory)
+    }
+    foreach ($file in [IO.Directory]::EnumerateFiles($current)) {
+      $attributes = [IO.File]::GetAttributes($file)
+      if (($attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
+        throw "Directory-size scan refuses reparse point: $file"
+      }
+      $sum += [long]([IO.FileInfo]::new($file).Length)
+    }
   }
   return $sum
 }

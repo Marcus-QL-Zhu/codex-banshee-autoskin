@@ -137,6 +137,8 @@ try {
   $extendedLongDirectory = '\\?\' + $longDirectory
   [IO.Directory]::CreateDirectory($extendedLongDirectory) | Out-Null
   [IO.File]::WriteAllText(($extendedLongDirectory + '\addon.node'), 'native-addon', [Text.UTF8Encoding]::new($false))
+  $longDirectoryBytes = Get-DreamSkinDirectoryBytes -Path $longSource
+  Assert-True ($longDirectoryBytes -gt 0) 'Directory-size accounting must support paths longer than MAX_PATH.'
   $longCritical = @(Get-DreamSkinCriticalFiles -Root $longSource)
   Assert-True (@($longCritical | Where-Object { [string]$_['path'] -like '*addon.node' }).Count -eq 1) 'Critical-file enumeration must support paths longer than MAX_PATH.'
   [IO.Directory]::Delete(('\\?\' + $longSource), $true)
