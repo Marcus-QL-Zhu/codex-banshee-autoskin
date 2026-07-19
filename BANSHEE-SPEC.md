@@ -111,7 +111,7 @@ The approved fourth concept establishes a **minimum seam coverage**, not merely 
 | Sidebar crown | One broad diagonal cut, a recessed lower seam, and one short gold conduit; the crown must read as a separate shoulder plate. |
 | Sidebar/content boundary | An interrupted vertical spine with at least three depth changes and two angled joints; it may not render as one plain divider. |
 | Main top frame | Mirrored shoulder plates plus a stepped center spine with nested seams; the center remains abstract and contains no emblem, head, or machine silhouette. |
-| Main side frame | Left/right segmented rails with upper, middle, and lower interruptions, chamfered transfers, and low-energy conduit segments. |
+| Main side frame | Left/right segmented rails with upper, middle, and lower interruptions, chamfered transfers, and paired continuous cavity-light fields. Independent upper/lower vertical conduit strokes are removed once those fields own the energy role. |
 | Main corners/footer | Double-frame corner joints and a geometrically continuous lower rail, with the outer and inner plates visibly separated at rest. The composer occludes that rail as an opaque foreground plate; the rail is never authored as a fixed composer-shaped gap. |
 | Context/composer tray | A separate upper context plate, clipped outer corners, an inset inner seam, and a stepped top conduit without covering native controls. |
 
@@ -135,15 +135,15 @@ The user-approved 1580×1000 reference is the canonical silhouette. The main she
 
 - each top shoulder transfers through a diagonal joint into its corresponding side rail;
 - the top center contains at least three nested horizontal levels, including a narrow recessed conduit;
-- each side contains two parallel structural seams, an upper illuminated slot, a long recessed mid-rail, a lower illuminated slot, and an angled transfer into the bottom corner;
-- each upper side cavity reads as four visibly distinct segments in this order: a broad diagonal cut running outward-to-inward and downward; an extremely narrow vertical conduit slot whose resting gold line nearly fills the opening; a return diagonal cut running inward-to-outward and downward that is slightly narrower than the first cut; and only then a long straight recessed vertical slot. The cavity is authored as one continuous closed SVG outline formed by two boundary polylines with shared miter vertices, never as overlapping rectangles or separately stroked polygons. It must not collapse into one filled chevron or hexagonal face;
+- each side contains two parallel structural seams, an upper cavity window, a long recessed mid-rail, a lower cavity window, and an angled transfer into the bottom corner; the cavity fields supply all illumination and no independent vertical conduit stroke overlays either window;
+- each upper side cavity reads as four visibly distinct segments in this order: a broad diagonal cut running outward-to-inward and downward; an extremely narrow vertical cavity throat whose light is supplied only by the shared resting/pulse field; a return diagonal cut running inward-to-outward and downward that is slightly narrower than the first cut; and only then a long straight recessed vertical slot. The cavity is authored as one continuous closed SVG outline formed by two boundary polylines with shared miter vertices, never as overlapping rectangles or separately stroked polygons. It must not collapse into one filled chevron or hexagonal face;
 - cavity resting light remains a separate, non-animated paint layer. Each side is painted once as one continuous closed outline. At the upper-to-lower transfer, the left boundary keeps its accepted left-edge connection while the right boundary turns into the inset edge of the long light slot; it must not follow the farther-out armor rail. This yields a shorter, steeper right-downward diagonal and a narrow vertical luminous cavity matching the reference. Above that base layer, one continuous vertical luminance field is clipped to the exact left/right cavity outlines. Its `2400`-unit extra-long soft band uses a shallow, continuous falloff and translates only along the screen Y axis from top to bottom: it does not follow, rotate with, or bend along the cavity contour. The band is a smooth gradient, never a stack of visible lamp or tube primitives. Both sides share the same band and phase. The accepted closed cavity paths remain as fill geometry but carry no independent stroke, because their closure edges would cross the illuminated transfer. One separate continuous outline path restores the luminous cavity border without an internal join line. The light and outline introduce no overlapping patch, mask, or glow outside this inset envelope. The top-center recess uses the same restrained static fill as an independently registered path;
 - the top-center resting light uses the raster-verified canonical closed path `M492 49H517L530 56H731L744 49H769L756 66H505Z`. It is painted after the opaque spine plate and beneath the clipped full-width pulse, so the fill is visible without changing or covering the accepted cavity edges. The former narrow `dream-banshee-conduit-origin` line is removed because the full-width cavity light now owns this energy role;
 - neither side rail may disappear behind the page background or collapse to a single one-pixel divider;
 - the lower corners visibly join the bottom rail while leaving the native composer unobstructed;
 - the dim frame must expose the entire construction; animation enhances the structure but never supplies missing geometry.
 
-The current baseline retains the approved composer split pulse and the existing low-output breathing of the narrow frame conduits. The old short frame `seam-travel` crest remains removed completely. The side cavities add only the continuous vertically descending luminance field defined above. The top-center cavity adds one clipped full-width breathing pulse; no contour-following frame crest is reintroduced.
+The current baseline retains the approved composer split pulse and low-output breathing only on the two top-shoulder horizontal conduits. The four independent upper/lower vertical side conduits are removed because the continuous side-cavity resting field and descending band now own those energy zones. The old short frame `seam-travel` crest remains removed completely. The side cavities add only the continuous vertically descending luminance field defined above. The top-center cavity adds one clipped full-width breathing pulse; no contour-following frame crest is reintroduced.
 
 ### 4.3 Global energy wave
 
@@ -154,12 +154,66 @@ Energy behavior is deliberately constrained:
 - The side cavities use one `2400`-unit continuous gradient band with a shallow head/tail falloff. It completes one top-to-bottom pass in `3.2s`, then becomes invisible and waits for the next global start. The restrained peak opacity is `.62`, with the surrounding stops reduced proportionally so the moving field remains quieter than the narrow static conduits. It descends in screen space from top to bottom and is revealed only where the accepted cavity clip is present. At the first frame the band is wholly above the cavity and its lower edge touches the cavity top at `y=65`; at the end of its active pass the band is wholly below the cavity and its upper edge touches the cavity bottom at `y=848`. With the `909`-unit SVG view box this is encoded as `translateY(-256.876%)` to `translateY(93.289%)`. The reset occurs only after the band is outside the clip and invisible.
 - The side pulse contains no discrete horizontal lamp/tube elements. Its apparent long-band body and feathered head/tail are produced by continuous vertical opacity stops.
 - The left and right cavity reveals are simultaneous and phase-identical because one full-width band is clipped into both side shapes.
-- All remaining narrow frame conduits share the same zero-delay breathing phase. Their active envelope returns to the low resting output by `t=3s` and remains there until the next common start.
+- The two remaining top-shoulder horizontal conduits share the same zero-delay breathing phase. Their active envelope returns to the low resting output by `t=3s` and remains there until the next common start.
 - The old `.dream-banshee-conduit-travel` SVG group, `.dream-banshee-energy-*` paths, and `dream-banshee-seam-travel` keyframes are absent.
 - The top-center cavity begins at the common zero-delay start and completes its breathing pass in exactly `3s`. Its luminance mountain is authored on a centered gradient canvas equal to `300%` of the cavity width, then clipped by the unchanged canonical cavity path. This three-times-wide field makes the visible crest broader and flatter across the recess without modifying, replacing, or enlarging any armor or cavity geometry. Its color stops exactly mirror the side-cavity field: transparent deep burnt orange `rgba(143,50,6,0)`, restrained red-orange transition stops, and a warm orange `rgba(255,173,54,.62)` crest; the former pale-gold active token is not used. After reaching its peak, the complete mountain remains geometrically fixed and fades uniformly as one field: background width, position, and clipping never animate. Therefore no split, inward return, elastic rebound, changing dark-zone length, or secondary crest is permitted.
-- Left/right matching narrow conduits retain identical delays.
+- The left/right top-shoulder conduits retain identical delays.
 - Runtime attaches every dynamic Banshee light to one monotonic `document.timeline.currentTime` epoch. Their start-time skew is `0ms`, and production timing exposes only the single zero-delay phase.
-- `prefers-reduced-motion: reduce` disables motion while leaving the stable low-energy cavity and conduit layers.
+- `prefers-reduced-motion: reduce` disables motion while leaving the stable low-energy cavity and top-shoulder conduit layers.
+
+### 4.4 Fast-mode awakening palette
+
+Native Fast mode is also the shell's semantic **awakening-state trigger**. When, and only when, the existing Codex Fast control reports its enabled state, every decorative Banshee energy surface changes from the normal amber/gold system to one coherent awakening psychoframe palette. This is a palette-state transition only: it must not modify the accepted armor/cavity SVG paths, geometry, masks, stacking order, pulse widths, animation timing, global epoch, native DOM identity, or hit targets.
+
+The state owns all theme-authored yellow, gold, amber, orange, and burnt-orange illumination, including:
+
+- top-center cavity resting fill and full-width breathing field;
+- both side-cavity resting fills, descending pulse field, and energy halos; the cool structural cavity outlines remain structural blue;
+- every remaining narrow frame conduit and localized seam-energy reveal;
+- the composer/input top resting line, its center-to-split pulse, and the left/right traveling bands;
+- decorative active glints attached to selected armor seams where those glints use the energy palette.
+
+It does **not** recolor native semantic warning, error, success, diff, focus, model, microphone, or Fast lightning glyph colors. Armor planes and cool structural seam lines also remain unchanged. Fast unavailable and Fast available-but-off both retain the normal palette; ambiguous state detection fails closed to the normal palette. The implementation must derive state from the existing native Fast control and expose one pack-scoped root state marker or token set. It may not synthesize a second Fast control, intercept clicks, replace the lightning icon, or infer activation from label text alone.
+
+Awakening colors are defined by role rather than ad-hoc selector overrides: `resting core`, `active body`, `hot crest`, `outer bloom`, and `deep falloff`. Every owned light consumes the same role tokens, while each zone retains its accepted opacity envelope.
+
+#### Evidence and calibrated palette
+
+Official Bandai descriptions consistently define the awakened/final-battle psychoframe as **green**, not gold: Premium Bandai states that the Banshee Norn's internal psychoframe changes to green and reproduces it with green clear molding; GUNDAM.INFO calls it the green resonance-luminescence color; TAMASHII WEB states that the awakened frame is reproduced with IRIS plating and color. Official product photography shows that this nominal green is spectrally blue-green against the near-black armor rather than lime or yellow-green. Sampled shadow/body facets cluster near `#007080`, while illuminated facets cluster near `#40c8b0`; animation-frame cross-checks support a pale mint-white emission crest rather than a blue-white crest.
+
+The sources do not publish canonical RGB or paint codes. The following values are therefore calibrated interface tokens derived from those official descriptions and images, not claimed franchise master colors:
+
+| Role | Awakening token | Visual job |
+|---|---:|---|
+| Deep falloff | `#00343a` | Transparent gradient endpoint and recess depth |
+| Resting core | `#007080` | Low-output exposed frame color |
+| Active body | `#40c8b0` | Readable green-cyan psychoframe emission |
+| Hot crest | `#b8ffe4` | Narrow mint-white peak without turning blue |
+| Outer bloom | `rgba(64,200,176,.34)` | Restrained halo over dark armor |
+
+Zone mapping is fixed as follows:
+
+| Zone | Fast-on color contract |
+|---|---|
+| Top and side cavity light bands | resting fill `rgba(0,112,128,.07)`; symmetric band stops `rgba(0,52,58,0)` → `rgba(0,112,128,.035)` → `rgba(18,145,149,.12)` → `rgba(64,200,176,.36)` → `rgba(184,255,228,.62)` and back through the same stops |
+| Narrow top-shoulder conduits and energy seam glints | `#40c8b0` at the accepted resting opacity; breathing brightness may approach `#b8ffe4`, with bloom derived only from `rgba(64,200,176,*)` |
+| Composer/input persistent top line | `rgba(0,112,128,.46)` at rest and `rgba(184,255,228,.64)` on native focus-within |
+| Composer center-to-split traveling bands | shoulder/falloff `rgba(64,200,176,.22)`, body `rgba(64,200,176,.76)`, and outer bloom `rgba(64,200,176,.30)` / `.50` for idle/focus-within |
+
+The official awakened design still retains physical gold armor and horn details, so solid armor-accent gold, text/icon semantics, the native Fast lightning glyph, and the accessibility focus outline are not automatically recolored. Only elements classified above as emitted energy switch palette. The sidebar crown slash and selected-row embedded S3 glint do switch because they are authored as energy-reveal seams rather than physical gold plates.
+
+#### Runtime contract and feasibility
+
+The renderer already uniquely classifies the native Fast button, verifies SVG/control parity, and reads its `aria-pressed` state for the compatibility report. Implementation therefore adds no new control discovery path: after the existing verified/parity gate, it sets `data-dream-fast="on"` on the pack root only when `aria-pressed="true"`, and removes the marker for off, unavailable, ambiguous, or failed-parity states. Palette variables are overridden beneath that single marker. The switch must not restart the shared animation epoch, alter phase, or rebuild SVG chrome.
+
+Current CSS contains approximately thirty hard-coded amber/orange light-color occurrences across the crown/selection glints, composer, cavity fields, halos, and conduit keyframes. They must first be replaced by semantic energy variables; otherwise a partial selector override will inevitably leave mixed gold/green frames. This is a bounded refactor with high feasibility, but it requires fixture coverage for Fast absent/off/on, live mutation observation after toggling, and a visual audit of every owned zone before release.
+
+Evidence record:
+
+- [Premium Bandai final-battle Banshee Norn](https://p-bandai.jp/press/2015/03/1000001717/)
+- [GUNDAM.INFO green resonance-luminescence description](https://www.gundam.info/news/gunpla/news_gunpla_20120224_6701p.html)
+- [TAMASHII WEB awakened IRIS-plated Banshee Norn](https://tamashiiweb.com/item/10875/GUNDAM/)
+
 ## 5. DOM capability adapter
 
 ### 5.1 Responsibilities

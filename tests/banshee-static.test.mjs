@@ -175,7 +175,7 @@ test("legacy Dream structure is isolated behind its own pack class", () => {
 
 test("renderer supports artless switching, pack cleanup, neutral chrome, and one epoch", () => {
   const source = read("assets/renderer-inject.js");
-  assert.match(source, /const STYLE_VERSION = "36"/);
+  assert.match(source, /const STYLE_VERSION = "37"/);
   assert.match(source, /THEME_ART_MODES/);
   assert.match(source, /bansheeRuntime\.artVariables/);
   assert.match(source, /cls\.startsWith\("dream-pack-"\)/);
@@ -199,7 +199,7 @@ test("renderer supports artless switching, pack cleanup, neutral chrome, and one
   assert.doesNotMatch(source, /dream-banshee-energy-far/);
   assert.doesNotMatch(source, /dream-banshee-conduit-origin/);
   assert.match(source, /dream-banshee-conduit-upper/);
-  assert.match(source, /dream-banshee-conduit-lower/);
+  assert.doesNotMatch(source, /dream-banshee-conduit-lower/);
   assert.match(source, /dream-banshee-spine-plate/);
   assert.match(source, /dream-banshee-cavity-upper-rail" d="M0 65L35 101V188L18 207V700H7V214L28 191V108L0 77Z"/);
   assert.match(source, /dream-banshee-cavity-upper-rail" transform="translate\(1261 0\) scale\(-1 1\)" d="M0 65L35 101V188L18 207V700H7V214L28 191V108L0 77Z"/);
@@ -230,8 +230,10 @@ test("renderer supports artless switching, pack cleanup, neutral chrome, and one
   assert.ok(cavityOutlineMarkup.includes('<path d="' + sideRestLightPath + '"/>'));
   assert.ok(cavityOutlineMarkup.includes('<path transform="translate(1261 0) scale(-1 1)" d="' + sideRestLightPath + '"/>'));
   assert.doesNotMatch(source, /dream-banshee-cavity-(?:upper-cut|conduit-slot|return-cut|long-slot)/);
-  assert.match(source, /dream-banshee-conduit-upper" d="M31\.5 113V184"/);
-  assert.match(source, /dream-banshee-conduit-upper" d="M1229\.5 113V184"/);
+  assert.doesNotMatch(source, /dream-banshee-conduit-upper" d="M31\.5 113V184"/);
+  assert.doesNotMatch(source, /dream-banshee-conduit-upper" d="M1229\.5 113V184"/);
+  assert.doesNotMatch(source, /dream-banshee-conduit-lower" d="M34 743V837"/);
+  assert.doesNotMatch(source, /dream-banshee-conduit-lower" d="M1227 743V837"/);
   assert.match(source, /dream-banshee-content-mask/);
   assert.match(source, /dream-banshee-composer-occluder/);
   assert.match(source, /maskUnits="userSpaceOnUse"/);
@@ -272,6 +274,9 @@ test("renderer supports artless switching, pack cleanup, neutral chrome, and one
   assert.match(preview, /dream-banshee-composer-occluder/);
   assert.match(preview, /dream-banshee-conduit-upper" d="M5 6H171"/);
   assert.match(preview, /dream-banshee-conduit-upper" d="M1090 6H1256"/);
+  assert.doesNotMatch(preview, /dream-banshee-conduit-upper" d="M31\.5 113V184"/);
+  assert.doesNotMatch(preview, /dream-banshee-conduit-upper" d="M1229\.5 113V184"/);
+  assert.doesNotMatch(preview, /dream-banshee-conduit-lower/);
   assert.doesNotMatch(preview, /dream-banshee-conduit-origin/);
   assert.match(preview, /dream-banshee-cavity-upper-rail" d="M0 65L35 101V188L18 207V700H7V214L28 191V108L0 77Z"/);
   assert.match(preview, /dream-banshee-cavity-upper-rail" transform="translate\(1261 0\) scale\(-1 1\)"/);
@@ -293,6 +298,7 @@ test("renderer supports artless switching, pack cleanup, neutral chrome, and one
   assert.match(spec, /all dynamic zones begin brightening within ≤100ms/);
   assert.match(spec, /continuous vertical luminance field/);
   assert.match(spec, /never a stack of visible lamp or tube primitives/);
+  assert.match(spec, /independent upper\/lower vertical conduit strokes are removed/i);
   assert.match(spec, /suggestion-shortcut group is intentionally suppressed/);
 });
 
@@ -375,6 +381,7 @@ test("live verifier reports synchronized Banshee motion and native capability hi
   assert.match(injector, /stablePasses/);
   assert.match(injector, /verified\.suggestionsSuppressed === true/);
   assert.match(injector, /result\.suggestionsSuppressed = suggestionsSuppressed/);
+  assert.match(injector, /waveAnimations\.length >= 5/);
   assert.match(injector, /filter\(\(card\) => card\.width > 0 && card\.height > 0\)/);
   assert.match(injector, /dream-banshee-\(wave\|center-cavity-wave\|conduit-breathe\|cavity-pulse\)/);
   assert.match(injector, /startTimeSkewMs/);

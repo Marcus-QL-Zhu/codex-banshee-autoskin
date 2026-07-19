@@ -933,7 +933,7 @@ async function verifySession(session) {
       delaysMs: waveDelaysMs,
       pass: reducedMotion
         ? waveAnimations.length === 0 || waveStartSkewMs === 0
-        : waveAnimations.length >= 6 && waveStartTimes.length === waveAnimations.length && waveStartSkewMs <= 1,
+        : waveAnimations.length >= 5 && waveStartTimes.length === waveAnimations.length && waveStartSkewMs <= 1,
     };
     const capabilities = {
       microphone: nativeControl('microphone'),
