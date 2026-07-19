@@ -172,6 +172,7 @@ The state owns all theme-authored yellow, gold, amber, orange, and burnt-orange 
 - every remaining narrow frame conduit and localized seam-energy reveal;
 - the composer/input top resting line, its center-to-split pulse, and the left/right traveling bands;
 - decorative active glints attached to selected armor seams where those glints use the energy palette.
+- native file-reference mentions rendered inside conversation content, including their inherited file icon, while preserving the native reference node and interaction behavior.
 
 It does **not** recolor native semantic warning, error, success, diff, focus, model, microphone, or Fast lightning glyph colors. Armor planes and cool structural seam lines also remain unchanged. Fast unavailable and Fast available-but-off both retain the normal palette; ambiguous state detection fails closed to the normal palette. The implementation must derive state from the existing native Fast control and expose one pack-scoped root state marker or token set. It may not synthesize a second Fast control, intercept clicks, replace the lightning icon, or infer activation from label text alone.
 
@@ -199,6 +200,7 @@ Zone mapping is fixed as follows:
 | Narrow top-shoulder conduits and energy seam glints | `#40c8b0` at the accepted resting opacity; breathing brightness may approach `#b8ffe4`, with bloom derived only from `rgba(64,200,176,*)` |
 | Composer/input persistent top line | `rgba(0,112,128,.46)` at rest and `rgba(184,255,228,.64)` on native focus-within |
 | Composer center-to-split traveling bands | shoulder/falloff `rgba(64,200,176,.22)`, body `rgba(64,200,176,.76)`, and outer bloom `rgba(64,200,176,.30)` / `.50` for idle/focus-within |
+| Conversation file references | brand-aware mention color mixes `#40c8b0` at `82%` with primary text at `18%`; the native icon inherits the same color |
 
 The official awakened design still retains physical gold armor and horn details, so solid armor-accent gold, text/icon semantics, the native Fast lightning glyph, and the accessibility focus outline are not automatically recolored. Only elements classified above as emitted energy switch palette. The sidebar crown slash and selected-row embedded S3 glint do switch because they are authored as energy-reveal seams rather than physical gold plates.
 

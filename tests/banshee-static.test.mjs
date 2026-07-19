@@ -166,6 +166,11 @@ test("Banshee selectors are pack-scoped and its motion/accessibility fallbacks e
   assert.match(awakeningTokens, /--dream-banshee-emission-body-rgb:64,200,176/);
   assert.match(awakeningTokens, /--dream-banshee-emission-crest-rgb:184,255,228/);
   assert.match(awakeningTokens, /--dream-banshee-emission-bloom-rgb:64,200,176/);
+  const fastFileReference = css.match(/\[data-dream-fast="on"\] \[data-file-reference="true"\] \.inline-mention-brand-aware\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
+  assert.match(fastFileReference, /--inline-mention-base-color:color-mix\(in srgb,rgb\(var\(--dream-banshee-emission-body-rgb\)\) 82%,var\(--dream-banshee-text-primary\) 18%\) !important/);
+  assert.match(fastFileReference, /--inline-mention-resolved-base-color:var\(--inline-mention-base-color\) !important/);
+  assert.match(fastFileReference, /--inline-mention-color:var\(--inline-mention-resolved-base-color\) !important/);
+  assert.doesNotMatch(fastFileReference, /(?:^|\n)\s*(?:color|pointer-events|display|visibility):/);
   assert.doesNotMatch(css, /rgba\((?:217,162,62|240,197,111|183,68,8|143,50,6|219,90,13|244,119,22|255,173,54|255,140,32),/);
 });
 
@@ -187,7 +192,7 @@ test("legacy Dream structure is isolated behind its own pack class", () => {
 
 test("renderer supports artless switching, pack cleanup, neutral chrome, and one epoch", () => {
   const source = read("assets/renderer-inject.js");
-  assert.match(source, /const STYLE_VERSION = "38"/);
+  assert.match(source, /const STYLE_VERSION = "39"/);
   assert.match(source, /THEME_ART_MODES/);
   assert.match(source, /bansheeRuntime\.artVariables/);
   assert.match(source, /cls\.startsWith\("dream-pack-"\)/);
@@ -316,6 +321,7 @@ test("renderer supports artless switching, pack cleanup, neutral chrome, and one
   assert.match(spec, /continuous vertical luminance field/);
   assert.match(spec, /never a stack of visible lamp or tube primitives/);
   assert.match(spec, /independent upper\/lower vertical conduit strokes are removed/i);
+  assert.match(spec, /native file-reference mentions rendered inside conversation content/i);
   assert.match(spec, /suggestion-shortcut group is intentionally suppressed/);
 });
 

@@ -23,6 +23,15 @@ html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"][dat
   --dream-banshee-emission-band-bloom-rgb:64,200,176;
 }
 
+/* File references are native interactive mentions. Fast mode changes only the
+   brand-aware color variables, so icon, text, hover underline, role, and click
+   behavior stay owned by Codex. */
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"][data-dream-fast="on"] [data-file-reference="true"] .inline-mention-brand-aware {
+  --inline-mention-base-color:color-mix(in srgb,rgb(var(--dream-banshee-emission-body-rgb)) 82%,var(--dream-banshee-text-primary) 18%) !important;
+  --inline-mention-resolved-base-color:var(--inline-mention-base-color) !important;
+  --inline-mention-color:var(--inline-mention-resolved-base-color) !important;
+}
+
 html.codex-dream-skin.dream-pack-banshee body {
   color:var(--dream-banshee-text-primary) !important;
   background:
