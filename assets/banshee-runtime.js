@@ -8,11 +8,18 @@
     return (hash >>> 0).toString(16).padStart(8, "0");
   };
 
+  const evidenceScore = (evidence) => {
+    if (Array.isArray(evidence)) return evidence.filter(Boolean).length;
+    if (evidence && typeof evidence === 'object') {
+      return Object.values(evidence).filter(Boolean).length;
+    }
+    return Number(evidence) || 0;
+  };
   const classifyCandidates = (candidates, evidenceFor) => {
     const verified = [];
     for (const candidate of candidates) {
       const evidence = evidenceFor(candidate);
-      const score = Array.isArray(evidence) ? evidence.filter(Boolean).length : Number(evidence) || 0;
+      const score = evidenceScore(evidence);
       if (score >= 2) verified.push(candidate);
     }
     if (verified.length === 1) return { state: "verified", node: verified[0] };
@@ -40,13 +47,28 @@
     };
   };
 
-  const compareControl = (baseline, node, styleFor, hitTestFor) => {
+  const compareControl = (baseline, node, styleFor, hitTestFor, options = {}) => {
     const current = snapshotControl(node, styleFor, hitTestFor);
     if (!baseline || !current) return { pass: false, reasons: ["missing"] };
     const reasons = [];
     if (baseline.node !== node) reasons.push("identity");
     for (const key of ["role", "name", "tabIndex", "svgHash"]) {
       if (baseline[key] !== current[key]) reasons.push(key);
+    }
+    if (options.compareState) {
+      for (const key of ['disabled', 'pressed', 'checked']) {
+        if (baseline[key] !== current[key]) reasons.push(key);
+      }
+    }
+    if (options.compareRect) {
+      const [baseX, baseY, baseWidth, baseHeight] = baseline.rect;
+      const [x, y, width, height] = current.rect;
+      const positionTolerance = Number(options.positionTolerance ?? 4);
+      const sizeTolerance = Number(options.sizeTolerance ?? 1);
+      if (Math.abs(baseX - x) > positionTolerance || Math.abs(baseY - y) > positionTolerance) reasons.push('position');
+      if (Math.abs(baseWidth - width) > sizeTolerance || Math.abs(baseHeight - height) > sizeTolerance) reasons.push('size');
+      const minimumHitSize = Number(options.minimumHitSize ?? 24);
+      if (width < minimumHitSize || height < minimumHitSize) reasons.push('hitArea');
     }
     if (!current.visible) reasons.push("visibility");
     if (!current.hitTarget) reasons.push("hitTarget");
@@ -123,6 +145,31 @@
     const top = [...(stack ?? [])].find((candidate) => (styleFor?.(candidate)?.pointerEvents ?? "auto") !== "none");
     return Boolean(top && (top === node || node?.contains?.(top)));
   };
+  const parseRgb = (value) => {
+    const match = String(value ?? '').match(/^rgba?\(\s*([\d.]+)[, ]+\s*([\d.]+)[, ]+\s*([\d.]+)/i);
+    return match ? match.slice(1, 4).map(Number) : null;
+  };
+  const isAmberStatusColor = (value) => {
+    const rgb = parseRgb(value);
+    if (!rgb) return false;
+    const [red, green, blue] = rgb;
+    return red >= 150 && green >= 85 && green <= 220 && blue <= 130 &&
+      red >= green + 20 && green >= blue + 20 && green >= red * .58;
+  };
+  const isIdleCompletedStatusDot = (node, styleFor) => {
+    if (!node?.classList) return false;
+    const legacySemantic = node.classList.contains('size-2') &&
+      node.classList.contains('rounded-full') &&
+      node.classList.contains('bg-token-charts-yellow');
+    const inlineFallback = node.tagName === 'SPAN' &&
+      node.classList.contains('absolute') &&
+      node.classList.contains('inset-0') &&
+      node.classList.contains('rounded-full') &&
+      String(node.getAttribute?.('style') ?? '').includes('--vscode-textLink-foreground');
+    if (!legacySemantic && !inlineFallback) return false;
+    const style = styleFor?.(node);
+    return isAmberStatusColor(style?.backgroundColor ?? node.style?.backgroundColor ?? '');
+  };
   const isBansheeWaveAnimation = (animation) =>
     /^dream-banshee-(wave|center-cavity-wave|conduit-breathe|cavity-pulse)$/.test(animation?.animationName ?? "");
 
@@ -131,5 +178,5 @@
     return Math.round(normalized * Math.max(0, Number(travelMs) || 0));
   };
 
-  return { artVariables, classifyCandidates, compareControl, createDebouncedScheduler, createOwnershipRegistry, fastModeState, hashText, hitTestControl, isBansheeWaveAnimation, isFastAwakeningActive, propagationDelay, selectCapabilityEnhancements, snapshotControl };
+  return { artVariables, classifyCandidates, compareControl, createDebouncedScheduler, createOwnershipRegistry, fastModeState, hashText, hitTestControl, isAmberStatusColor, isBansheeWaveAnimation, isFastAwakeningActive, isIdleCompletedStatusDot, propagationDelay, selectCapabilityEnhancements, snapshotControl };
 })()

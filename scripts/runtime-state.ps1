@@ -1,5 +1,12 @@
 Set-StrictMode -Version Latest
 
+
+function Assert-DreamSkinPort([int]$Port, [switch]$AllowZero) {
+  if ($AllowZero -and $Port -eq 0) { return }
+  if ($Port -lt 1024 -or $Port -gt 65535) {
+    throw "Dream Skin port must be between 1024 and 65535: $Port"
+  }
+}
 function Get-DreamSkinFreePort {
   for ($attempt = 0; $attempt -lt 32; $attempt++) {
     $ipv4 = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, 0)
@@ -22,6 +29,7 @@ function Get-DreamSkinFreePort {
   }
 }
 function Get-DreamSkinPersistedPort([string]$StateRoot, [int]$RequestedPort, [switch]$Allocate) {
+  Assert-DreamSkinPort -Port $RequestedPort -AllowZero
   if ($RequestedPort -gt 0) { return $RequestedPort }
   foreach ($file in @('install-transaction.json', 'state.json', 'watcher-state.json')) {
     $path = Join-Path $StateRoot $file
@@ -33,6 +41,26 @@ function Get-DreamSkinPersistedPort([string]$StateRoot, [int]$RequestedPort, [sw
   }
   if ($Allocate) { return Get-DreamSkinFreePort }
   return 9335
+}
+
+function Test-DreamSkinLoopbackPortFree([int]$Port) {
+  Assert-DreamSkinPort -Port $Port
+  $ipv4 = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, $Port)
+  $ipv6 = $null
+  try {
+    $ipv4.Server.ExclusiveAddressUse = $true
+    $ipv4.Start()
+    $ipv6 = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::IPv6Loopback, $Port)
+    $ipv6.Server.DualMode = $false
+    $ipv6.Server.ExclusiveAddressUse = $true
+    $ipv6.Start()
+    return $true
+  } catch {
+    return $false
+  } finally {
+    if ($ipv6) { $ipv6.Stop() }
+    $ipv4.Stop()
+  }
 }
 
 function Get-DreamSkinShortcutDisposition([string]$ShortcutPath, [object[]]$Records) {

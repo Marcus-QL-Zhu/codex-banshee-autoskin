@@ -11,16 +11,22 @@ $SkillRoot = Split-Path -Parent $PSScriptRoot
 $Injector = Join-Path $PSScriptRoot 'injector.mjs'
 $StateRoot = Join-Path $env:LOCALAPPDATA 'CodexDreamSkin'
 . (Join-Path $PSScriptRoot 'runtime-state.ps1')
+. (Join-Path $PSScriptRoot 'lifecycle.ps1')
 . (Join-Path $PSScriptRoot 'standalone-runtime.ps1')
+Assert-DreamSkinStateRootSafe -StateRoot $StateRoot
 New-Item -ItemType Directory -Force -Path $StateRoot | Out-Null
 # Build and verify the user-writable runtime before inspecting or stopping any
 # running Codex process. A failed copy therefore cannot disrupt the official app.
 $StandaloneRuntime = Ensure-DreamSkinStandaloneRuntime -StateRoot $StateRoot
-$node = (Get-Command node -ErrorAction Stop).Source
+$Package = Get-TrustedCodexStorePackage
+$nodeRuntime = Get-DreamSkinNodePreflight -NodePath $StandaloneRuntime.NodeExecutable
+$node = $nodeRuntime.Path
 $Port = Get-DreamSkinPersistedPort -StateRoot $StateRoot -RequestedPort $Port
 $StatePath = Join-Path $StateRoot 'state.json'
 $StdoutPath = Join-Path $StateRoot 'injector.log'
 $StderrPath = Join-Path $StateRoot 'injector-error.log'
+$TrustedCodexExecutables = @($Package.Executable, $StandaloneRuntime.Executable) + @(Get-DreamSkinOwnedRuntimeExecutables -StateRoot $StateRoot)
+$TrustedCodexExecutables = @($TrustedCodexExecutables | Sort-Object -Unique)
 
 function Test-CodexPortOwner([int]$CandidatePort) {
   try {
@@ -51,25 +57,15 @@ function Test-CodexDebugPort([int]$CandidatePort) {
 }
 
 function Stop-CodexCompletely {
-  $visible = @(Get-Process ChatGPT -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -ne 0 })
-  foreach ($process in $visible) { [void]$process.CloseMainWindow() }
-  Start-Sleep -Seconds 2
-  $deadline = (Get-Date).AddSeconds(12)
-  while ((Get-Date) -lt $deadline) {
-    $procs = @(Get-Process ChatGPT -ErrorAction SilentlyContinue)
-    if ($procs.Count -eq 0) { break }
-    $procs | Stop-Process -Force -ErrorAction SilentlyContinue
-    Start-Sleep -Milliseconds 300
-  }
-  # Windows can auto-respawn a force-killed app moments later; give it a beat and swat once more,
-  # otherwise the unflagged respawn wins the single-instance lock and the debug flag is silently lost.
-  Start-Sleep -Milliseconds 900
-  Get-Process ChatGPT -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
-  Start-Sleep -Milliseconds 300
+  Stop-DreamSkinTrustedCodexProcesses -ExecutablePaths $TrustedCodexExecutables
 }
 
 $debugReady = Test-CodexDebugPort $Port
-$mainProcesses = @(Get-Process ChatGPT -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -ne 0 })
+$mainProcesses = @(Get-DreamSkinTrustedCodexProcesses -ExecutablePaths $TrustedCodexExecutables -VisibleOnly)
+
+if (-not $debugReady -and -not (Test-DreamSkinLoopbackPortFree -Port $Port)) {
+  throw "Dream Skin port $Port is occupied by an unrelated process; Codex was left untouched. Reinstall to allocate a new port."
+}
 
 if (-not $debugReady -and -not $ProfilePath -and $mainProcesses.Count -gt 0) {
   if (-not $RestartExisting) {
@@ -113,10 +109,8 @@ while (-not (Test-CodexDebugPort $Port)) {
 }
 
 if (Test-Path -LiteralPath $StatePath) {
-  try {
-    $old = Get-Content -LiteralPath $StatePath -Raw | ConvertFrom-Json
-    if ($old.injectorPid) { Stop-Process -Id ([int]$old.injectorPid) -Force -ErrorAction SilentlyContinue }
-  } catch {}
+  [void](Convert-DreamSkinLegacyProcessState -StatePath $StatePath -IdentityProperty 'injectorIdentity' -PidProperty 'injectorPid' -ExpectedExecutableNames @('node.exe') -RequiredCommandTokens @('injector.mjs', '--watch'))
+  [void](Stop-DreamSkinProcessStateSafely -StatePath $StatePath -IdentityProperty 'injectorIdentity' -Force)
 }
 
 if ($ForegroundInjector) {
@@ -126,9 +120,19 @@ if ($ForegroundInjector) {
 
 $injectorArgs = @("`"$Injector`"", '--watch', '--port', "$Port")
 $daemon = Start-Process -FilePath $node -ArgumentList $injectorArgs -WindowStyle Hidden -PassThru -RedirectStandardOutput $StdoutPath -RedirectStandardError $StderrPath
+$injectorIdentity = $null
+for ($identityAttempt = 0; $identityAttempt -lt 20 -and -not $injectorIdentity; $identityAttempt++) {
+  Start-Sleep -Milliseconds 100
+  $injectorIdentity = Get-DreamSkinProcessIdentity -ProcessId $daemon.Id
+}
+if (-not $injectorIdentity) {
+  try { $daemon.Kill() } catch {}
+  throw 'Injector started but its process ownership identity could not be captured.'
+}
 @{
   port = $Port
   injectorPid = $daemon.Id
+  injectorIdentity = $injectorIdentity
   startedAt = (Get-Date).ToString('o')
   skillRoot = $SkillRoot
   profilePath = $ProfilePath
@@ -142,5 +146,9 @@ for ($attempt = 0; $attempt -lt 45; $attempt++) {
   & $node $Injector --verify --port $Port *> $null
   if ($LASTEXITCODE -eq 0) { $verified = $true; break }
 }
-if (-not $verified) { throw 'Dream skin launched but verification failed. See injector logs.' }
+if (-not $verified) {
+  [void](Stop-DreamSkinOwnedProcess -Expected $injectorIdentity -Force)
+  Remove-Item -LiteralPath $StatePath -Force -ErrorAction SilentlyContinue
+  throw 'Dream skin launched but verification failed. See injector logs.'
+}
 Write-Host "Codex Dream Skin is active on port $Port."

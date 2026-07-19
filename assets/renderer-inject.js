@@ -17,6 +17,11 @@
   const SIDEBAR_SEARCH_LABELS = new Set(["Search", "\u641c\u7d22"]);
   const MICROPHONE_LABELS = new Set(["Microphone", "Voice input", "Dictation", "麦克风", "语音输入", "听写"]);
   const FAST_MODE_LABELS = new Set(["Fast mode", "快速模式"]);
+  const OWNED_ATTRIBUTE_NAMES = [
+    'data-dream-owner', 'data-dream-surface', 'data-dream-capability',
+    'data-dream-status-dot', 'data-dream-sidebar-crown-controls',
+    'data-dream-composer-host', 'data-dream-composer-context',
+  ];
   // Canonical Banshee shell geometry is traced in the approved reference's
   // 1261 x 941 main-frame coordinate space. Rear seams are painted first;
   // the opaque shoulder band then hides their construction overlap before
@@ -120,6 +125,7 @@
   const THEME_STICKERS = manifest.stickers ?? {};
   const THEME_PACKS = manifest.packs ?? {};
   const THEME_ART_MODES = manifest.artModes ?? {};
+  const THEME_ART_HASHES = manifest.artHashes ?? {};
   const DEFAULT_THEME = THEMES.has(manifest.defaultTheme) ? manifest.defaultTheme : THEME_ORDER[0];
   const DEFAULT_LAYOUT = LAYOUTS.has(manifest.defaultLayout) ? manifest.defaultLayout : "fullscreen";
   window.__CODEX_DREAM_SKIN_DISABLED__ = false;
@@ -127,6 +133,7 @@
   const previous = window[STATE_KEY];
   if (previous?.observer) previous.observer.disconnect();
   if (previous?.resizeObserver) previous.resizeObserver.disconnect();
+  if (previous?.fastObserver) previous.fastObserver.disconnect();
   if (previous?.timer) clearInterval(previous.timer);
   previous?.scheduler?.cancel?.();
   previous?.restoreOwned?.();
@@ -142,26 +149,36 @@
     for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
     return URL.createObjectURL(new Blob([bytes], { type: mime }));
   };
-  // Cheap per-theme art fingerprint (data URL lengths + base64 tail). Blob URLs
-  // from a previous injection are only reused when the fingerprints still match,
-  // so replacing a theme's art file takes effect on live re-injection without a
-  // renderer reload (stale blobs are revoked below).
-  const artSignature = (assets) =>
-    `${assets.home.length}:${assets.home.slice(-24)}|${assets.chat.length}:${assets.chat.slice(-24)}`;
+  // The injector supplies full SHA-256 asset digests. The full-string fallback
+  // keeps direct/older payloads correct without relying on length or file tails.
+  const artSignature = (theme, assets) => {
+    const hashes = THEME_ART_HASHES[theme];
+    return hashes?.home && hashes?.chat
+      ? `${hashes.home}|${hashes.chat}`
+      : `${bansheeRuntime.hashText(assets.home)}|${bansheeRuntime.hashText(assets.chat)}`;
+  };
   const artSigs = Object.fromEntries(
-    Object.entries(artAssets).map(([theme, assets]) => [theme, artSignature(assets)])
+    Object.entries(artAssets).map(([theme, assets]) => [theme, artSignature(theme, assets)])
   );
   const previousUrlsUsable = previous?.artUrls && previous?.artSigs &&
     THEME_ORDER.every((theme) => THEME_ART_MODES[theme] === "none" ||
       (previous.artUrls[theme]?.home && previous.artSigs[theme] === artSigs[theme]));
-  const artUrls = previousUrlsUsable ? previous.artUrls : Object.fromEntries(
-    Object.entries(artAssets).map(([theme, assets]) => [theme, {
-      home: createObjectUrl(assets.home),
-      chat: assets.chat === assets.home ? null : createObjectUrl(assets.chat),
-    }])
-  );
+  const artUrls = previousUrlsUsable
+    ? Object.fromEntries(Object.entries(previous.artUrls).filter(([theme]) => THEMES.has(theme)))
+    : Object.fromEntries(
+      Object.entries(artAssets).map(([theme, assets]) => [theme, {
+        home: createObjectUrl(assets.home),
+        chat: assets.chat === assets.home ? null : createObjectUrl(assets.chat),
+      }])
+    );
   if (!previousUrlsUsable && previous?.artUrls) {
     for (const assets of Object.values(previous.artUrls)) {
+      if (assets.home) URL.revokeObjectURL(assets.home);
+      if (assets.chat && assets.chat !== assets.home) URL.revokeObjectURL(assets.chat);
+    }
+  } else if (previousUrlsUsable) {
+    for (const [theme, assets] of Object.entries(previous.artUrls)) {
+      if (THEMES.has(theme)) continue;
       if (assets.home) URL.revokeObjectURL(assets.home);
       if (assets.chat && assets.chat !== assets.home) URL.revokeObjectURL(assets.chat);
     }
@@ -273,6 +290,23 @@
     metrics.globalScans += 1;
     const root = document.documentElement;
     if (!root) return;
+    if ((THEME_PACKS[activeTheme] ?? 'dream') === 'banshee') {
+      // Probe native geometry, not geometry left over from the preceding pass.
+      // This also clears owned markers from nodes React has reused for a new role.
+      root.removeAttribute('data-dream-pack-ready');
+      root.removeAttribute('data-dream-fast');
+      restoreOwned();
+    }
+    // Route transitions may reuse native nodes after changing their role or
+    // ancestry. Clear the three legacy class markers globally before assigning
+    // them to the current verified nodes so stale deep-layout rules cannot leak.
+    document.querySelectorAll('.dream-home, .dream-home-shell, .dream-new-task').forEach((node) => {
+      node.classList.remove('dream-home', 'dream-home-shell', 'dream-new-task');
+    });
+    document.querySelectorAll(OWNED_ATTRIBUTE_NAMES.map((name) => `[${name}]`).join(',')).forEach((node) => {
+      if (node.getAttribute('data-dream-owner') === INJECTION_ID) return;
+      for (const name of OWNED_ATTRIBUTE_NAMES) node.removeAttribute(name);
+    });
     root.classList.add("codex-dream-skin");
     applyLayout(activeLayout, false);
     applyTheme(activeTheme, false);
@@ -290,33 +324,42 @@
 
     // Fail-closed capability adapter: every structural surface needs one unique
     // candidate and two independent signals before it receives a marker.
+    const isRenderedSurface = (node) => {
+      const rect = node.getBoundingClientRect();
+      const style = getComputedStyle(node);
+      return rect.width > 0 && rect.height > 0 && style.display !== 'none' &&
+        style.visibility !== 'hidden' && style.visibility !== 'collapse' && Number(style.opacity || 1) !== 0;
+    };
     const sideResult = bansheeRuntime.classifyCandidates(
-      [...document.querySelectorAll("aside.app-shell-left-panel")],
-      (node) => [node.tagName === "ASIDE", node.classList.contains("app-shell-left-panel")]
+      [...document.querySelectorAll('aside')],
+      (node) => ({ stableClass: node.classList.contains('app-shell-left-panel'), rendered: isRenderedSurface(node) })
     );
     const mainResult = bansheeRuntime.classifyCandidates(
-      [...document.querySelectorAll("main.main-surface")],
-      (node) => [node.tagName === "MAIN", node.classList.contains("main-surface")]
+      [...document.querySelectorAll('main')],
+      (node) => ({ stableClass: node.classList.contains('main-surface'), rendered: isRenderedSurface(node) })
     );
     const composerResult = bansheeRuntime.classifyCandidates(
       [...document.querySelectorAll(".composer-surface-chrome")],
-      (node) => [node.classList.contains("composer-surface-chrome"), Boolean(node.querySelector("textarea, [contenteditable='true']"))]
+      (node) => ({
+        editor: Boolean(node.querySelector("textarea, [contenteditable='true']")),
+        inMain: Boolean(mainResult.node?.contains(node)),
+        rendered: isRenderedSurface(node),
+      })
     );
     const cardsResult = bansheeRuntime.classifyCandidates(
       [...document.querySelectorAll(".group\\/home-suggestions")],
-      (node) => [node.classList.contains("group/home-suggestions"), node.querySelectorAll("button").length > 0]
+      (node) => ({ buttons: node.querySelectorAll('button').length > 0, inHome: Boolean(node.closest('[role="main"]')) })
     );
     const threadHeaderCandidates = mainResult.node
       ? [...mainResult.node.querySelectorAll(":scope > header.app-header-tint")]
       : [];
     const threadHeaderResult = bansheeRuntime.classifyCandidates(
       threadHeaderCandidates,
-      (node) => [
-        node.tagName === "HEADER",
-        node.classList.contains("app-header-tint"),
-        node.parentElement === mainResult.node,
-        Boolean(node.querySelector("button")),
-      ]
+      (node) => ({
+        directChild: node.parentElement === mainResult.node,
+        controls: Boolean(node.querySelector('button')),
+        rendered: isRenderedSurface(node),
+      })
     );
     const homeCandidates = document.querySelectorAll('[role="main"]:has([data-testid="home-icon"])');
     const home = homeCandidates.length === 1 ? homeCandidates[0] : null;
@@ -359,6 +402,19 @@
       return [dedicatedFastControl || nativeModelTrigger, Boolean(button.querySelector("svg")),
         dedicatedFastControl ? button.hasAttribute("aria-pressed") : nativeModelTrigger];
     });
+    const nextFastNode = fastModeResult.state === 'verified' ? fastModeResult.node : null;
+    if (fastObserver && observedFastNode !== nextFastNode) {
+      fastObserver.disconnect();
+      observedFastNode = nextFastNode;
+      if (observedFastNode) {
+        fastObserver.observe(observedFastNode, {
+          attributes: true,
+          childList: true,
+          subtree: true,
+          attributeFilter: ['aria-pressed', 'class', 'viewBox', 'fill', 'data-fast-mode-enabled', 'data-fast-mode'],
+        });
+      }
+    }
     const styleForControl = (node) => getComputedStyle(node);
     const hitTestControl = (node, rect) => {
       const stack = document.elementsFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2);
@@ -407,10 +463,12 @@
     }
 
     const microphoneParity = microphoneResult.node && activationBaselines.has("microphone")
-      ? bansheeRuntime.compareControl(activationBaselines.get("microphone"), microphoneResult.node, styleForControl, hitTestControl)
+      ? bansheeRuntime.compareControl(activationBaselines.get("microphone"), microphoneResult.node, styleForControl, hitTestControl,
+        { compareState: true, compareRect: true, minimumHitSize: 24 })
       : null;
     const fastModeParity = fastModeResult.node && activationBaselines.has("fast-mode")
-      ? bansheeRuntime.compareControl(activationBaselines.get("fast-mode"), fastModeResult.node, styleForControl, hitTestControl)
+      ? bansheeRuntime.compareControl(activationBaselines.get("fast-mode"), fastModeResult.node, styleForControl, hitTestControl,
+        { compareState: true, compareRect: true, minimumHitSize: 24 })
       : null;
     const capabilityEntries = [
       { key: "microphone", result: microphoneResult, parity: microphoneParity },
@@ -432,6 +490,18 @@
     const fastModeState = bansheeRuntime.fastModeState(fastModeResult, fastModeParity);
     if (fastAwakeningActive) root.setAttribute("data-dream-fast", "on");
     else root.removeAttribute("data-dream-fast");
+
+    if (bansheeActive) {
+      const statusCandidates = document.querySelectorAll(
+        '[data-app-action-sidebar-thread-row] .size-2.rounded-full.bg-token-charts-yellow, ' +
+        '[data-app-action-sidebar-thread-row] span.absolute.inset-0.rounded-full[style*="--vscode-textLink-foreground"]'
+      );
+      for (const candidate of statusCandidates) {
+        if (!bansheeRuntime.isIdleCompletedStatusDot(candidate, styleForControl)) continue;
+        setOwnedAttribute(candidate, 'data-dream-status-dot', 'idle-completed');
+        setOwnedAttribute(candidate, 'data-dream-owner', INJECTION_ID);
+      }
+    }
 
     if (bansheeActive) {
       const report = JSON.stringify({
@@ -508,6 +578,12 @@
       if (observedShell) resizeObserver.unobserve(observedShell);
       resizeObserver.observe(shellMain);
       observedShell = shellMain;
+    }
+    const nextObservedComposer = composerResult.state === 'verified' ? composerResult.node : null;
+    if (resizeObserver && observedComposer !== nextObservedComposer) {
+      if (observedComposer) resizeObserver.unobserve(observedComposer);
+      if (nextObservedComposer) resizeObserver.observe(nextObservedComposer);
+      observedComposer = nextObservedComposer;
     }
     shellMain.classList.toggle("dream-home-shell", Boolean(home));
     document.getElementById(LEGACY_CONTROLS_ID)?.remove();
@@ -619,6 +695,7 @@
       rootElement.removeAttribute("data-dream-fast");
     }
     restoreOwned();
+    document.querySelectorAll('[data-dream-status-dot]').forEach((node) => node.removeAttribute('data-dream-status-dot'));
     document.querySelectorAll(".dream-home").forEach((node) => node.classList.remove("dream-home"));
     document.querySelectorAll(".dream-home-shell").forEach((node) => node.classList.remove("dream-home-shell"));
     document.querySelectorAll(".dream-new-task").forEach((node) => node.classList.remove("dream-new-task"));
@@ -628,6 +705,7 @@
     const state = window[STATE_KEY];
     state?.observer?.disconnect();
     state?.resizeObserver?.disconnect();
+    state?.fastObserver?.disconnect();
     if (state?.timer) clearInterval(state.timer);
     state?.scheduler?.cancel?.();
     for (const assets of Object.values(state?.artUrls || {})) {
@@ -642,7 +720,10 @@
   const scheduler = bansheeRuntime.createDebouncedScheduler(setTimeout, clearTimeout, ensure, 180);
   const scheduleEnsure = scheduler.schedule;
   let observedShell = null;
+  let observedComposer = null;
   const resizeObserver = typeof ResizeObserver === "function" ? new ResizeObserver(scheduleEnsure) : null;
+  let observedFastNode = null;
+  const fastObserver = typeof MutationObserver === 'function' ? new MutationObserver(scheduleEnsure) : null;
   const observer = new MutationObserver((mutations) => {
     metrics.mutationBatches += 1;
     for (const mutation of mutations) metrics.addedNodes += mutation.addedNodes?.length ?? 0;
@@ -658,6 +739,7 @@
     scheduler,
     metrics,
     resizeObserver,
+    fastObserver,
     artUrls,
     artSigs,
     waveEpoch,

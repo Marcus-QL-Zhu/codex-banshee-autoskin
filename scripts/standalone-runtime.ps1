@@ -1,5 +1,9 @@
 Set-StrictMode -Version Latest
 
+if (-not (Get-Command Assert-DreamSkinNoReparsePath -ErrorAction SilentlyContinue)) {
+  . (Join-Path $PSScriptRoot 'lifecycle.ps1')
+}
+
 $script:DreamSkinExpectedPublisherId = '2p2nqsd0c76g0'
 $script:DreamSkinRuntimeMarkerName = '.codex-dream-skin-runtime.json'
 
@@ -9,6 +13,7 @@ function Resolve-DreamSkinContainedPath([string]$Path, [string]$Parent, [string]
   if (-not $pathFull.StartsWith($parentFull, [StringComparison]::OrdinalIgnoreCase)) {
     throw "$Purpose escaped its verified parent directory: $pathFull"
   }
+  Assert-DreamSkinNoReparsePath -Path $pathFull -Boundary $Parent
   return $pathFull
 }
 
@@ -26,7 +31,8 @@ function Get-TrustedCodexStorePackage {
   $sourceRoot = Resolve-DreamSkinContainedPath -Path (Join-Path $packageRoot 'app') -Parent $packageRoot -Purpose 'Codex app payload'
   $executable = Resolve-DreamSkinContainedPath -Path (Join-Path $sourceRoot 'ChatGPT.exe') -Parent $sourceRoot -Purpose 'Codex executable'
   $asar = Resolve-DreamSkinContainedPath -Path (Join-Path $sourceRoot 'resources\app.asar') -Parent $sourceRoot -Purpose 'Codex application archive'
-  foreach ($criticalPath in @($executable, $asar)) {
+  $nodeExecutable = Resolve-DreamSkinContainedPath -Path (Join-Path $sourceRoot 'resources\cua_node\bin\node.exe') -Parent $sourceRoot -Purpose 'Bundled Node executable'
+  foreach ($criticalPath in @($executable, $asar, $nodeExecutable)) {
     if (-not (Test-Path -LiteralPath $criticalPath -PathType Leaf)) { throw "Codex package is missing a critical file: $criticalPath" }
   }
 
@@ -44,22 +50,55 @@ function Get-TrustedCodexStorePackage {
     SourceRoot = $sourceRoot
     Executable = $executable
     Asar = $asar
+    NodeExecutable = $nodeExecutable
   }
 }
 
+function Get-DreamSkinCriticalRelativePaths([string]$Root) {
+  $extensions = @('.exe', '.dll', '.node', '.asar', '.bin', '.pak', '.dat')
+  $rootFull = [IO.Path]::GetFullPath($Root).TrimEnd('\')
+  Assert-DreamSkinNoReparsePath -Path $rootFull -Boundary $rootFull
+  $extendedRoot = if ($rootFull.StartsWith('\\?\')) { $rootFull } else { '\\?\' + $rootFull }
+  $directories = [Collections.Generic.Stack[string]]::new()
+  $directories.Push($extendedRoot)
+  $relativePaths = @()
+  while ($directories.Count -gt 0) {
+    $current = $directories.Pop()
+    foreach ($directory in [IO.Directory]::EnumerateDirectories($current)) {
+      $attributes = [IO.File]::GetAttributes($directory)
+      if (($attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
+        throw "Runtime manifest refuses reparse point: $directory"
+      }
+      $directories.Push($directory)
+    }
+    foreach ($file in [IO.Directory]::EnumerateFiles($current)) {
+      $attributes = [IO.File]::GetAttributes($file)
+      if (($attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
+        throw "Runtime manifest refuses reparse point: $file"
+      }
+      if ($extensions -notcontains [IO.Path]::GetExtension($file).ToLowerInvariant()) { continue }
+      $relativePaths += $file.Substring($extendedRoot.Length).TrimStart('\')
+    }
+  }
+  $relativePaths = @($relativePaths | Sort-Object -Unique)
+  foreach ($required in @('ChatGPT.exe', 'resources\app.asar', 'resources\cua_node\bin\node.exe')) {
+    if ($relativePaths -notcontains $required) { throw "Runtime is missing a critical file: $required" }
+  }
+  return @($relativePaths)
+}
+
 function Get-DreamSkinCriticalFiles([string]$Root) {
-  $relativePaths = @('ChatGPT.exe', 'resources\app.asar')
-  $optionalCodex = Join-Path $Root 'resources\codex.exe'
-  if (Test-Path -LiteralPath $optionalCodex -PathType Leaf) { $relativePaths += 'resources\codex.exe' }
+  $relativePaths = @(Get-DreamSkinCriticalRelativePaths -Root $Root)
   $records = @()
   foreach ($relativePath in $relativePaths) {
     $fullPath = Resolve-DreamSkinContainedPath -Path (Join-Path $Root $relativePath) -Parent $Root -Purpose 'Runtime critical file'
-    if (-not (Test-Path -LiteralPath $fullPath -PathType Leaf)) { throw "Runtime is missing a critical file: $fullPath" }
-    $item = Get-Item -LiteralPath $fullPath
+    $ioPath = if ($fullPath.StartsWith('\\?\')) { $fullPath } else { '\\?\' + $fullPath }
+    if (-not [IO.File]::Exists($ioPath)) { throw "Runtime is missing a critical file: $fullPath" }
+    $item = [IO.FileInfo]::new($ioPath)
     $records += [ordered]@{
       path = $relativePath
       length = [long]$item.Length
-      sha256 = (Get-FileHash -LiteralPath $fullPath -Algorithm SHA256).Hash.ToLowerInvariant()
+      sha256 = (Get-FileHash -LiteralPath $ioPath -Algorithm SHA256).Hash.ToLowerInvariant()
     }
   }
   return @($records)
@@ -67,14 +106,18 @@ function Get-DreamSkinCriticalFiles([string]$Root) {
 
 function Test-DreamSkinCriticalFiles([string]$Root, [object[]]$Expected) {
   try {
+    $actualPaths = @(Get-DreamSkinCriticalRelativePaths -Root $Root)
+    $expectedPaths = @($Expected | ForEach-Object { [string]$_.path } | Sort-Object -Unique)
+    if (($actualPaths -join "`n") -ne ($expectedPaths -join "`n")) { return $false }
     foreach ($record in @($Expected)) {
       $relativePath = [string]$record.path
       if ([string]::IsNullOrWhiteSpace($relativePath)) { return $false }
       $fullPath = Resolve-DreamSkinContainedPath -Path (Join-Path $Root $relativePath) -Parent $Root -Purpose 'Runtime marker file'
-      if (-not (Test-Path -LiteralPath $fullPath -PathType Leaf)) { return $false }
-      $item = Get-Item -LiteralPath $fullPath
+      $ioPath = if ($fullPath.StartsWith('\\?\')) { $fullPath } else { '\\?\' + $fullPath }
+      if (-not [IO.File]::Exists($ioPath)) { return $false }
+      $item = [IO.FileInfo]::new($ioPath)
       if ([long]$item.Length -ne [long]$record.length) { return $false }
-      $hash = (Get-FileHash -LiteralPath $fullPath -Algorithm SHA256).Hash.ToLowerInvariant()
+      $hash = (Get-FileHash -LiteralPath $ioPath -Algorithm SHA256).Hash.ToLowerInvariant()
       if ($hash -ne ([string]$record.sha256).ToLowerInvariant()) { return $false }
     }
     return $true
@@ -93,10 +136,14 @@ function Read-DreamSkinStandaloneRuntime([string]$RuntimeRoot, [object]$Package)
         [string]$marker.packageFullName -ne $Package.PackageFullName -or
         [string]$marker.version -ne $Package.Version -or
         [string]$marker.sourceRoot -ne $Package.SourceRoot) { return $null }
+    # PackageFullName and SourceRoot come from the verified Store package. The
+    # source was fully hashed when this marker was created; rehashing the same
+    # 1+ GiB read-only Store payload on every launch only doubles startup work.
     if (-not (Test-DreamSkinCriticalFiles -Root $versionRoot -Expected @($marker.criticalFiles))) { return $null }
     return [pscustomobject]@{
       Root = $versionRoot
       Executable = Join-Path $versionRoot 'ChatGPT.exe'
+      NodeExecutable = Join-Path $versionRoot 'resources\cua_node\bin\node.exe'
       Version = $Package.Version
       PackageFullName = $Package.PackageFullName
       MarkerPath = $markerPath
@@ -117,7 +164,11 @@ function Ensure-DreamSkinStandaloneRuntime([string]$StateRoot) {
   $runtimeRoot = Resolve-DreamSkinContainedPath -Path (Join-Path $StateRoot 'runtime') -Parent $StateRoot -Purpose 'Standalone runtime root'
   New-Item -ItemType Directory -Force -Path $runtimeRoot | Out-Null
   $existing = Read-DreamSkinStandaloneRuntime -RuntimeRoot $runtimeRoot -Package $package
-  if ($existing) { return $existing }
+  if ($existing) {
+    try { Remove-DreamSkinObsoleteRuntimes -StateRoot $StateRoot -KeepRoots @($existing.Root) | Out-Null }
+    catch { Write-Warning "Skipped obsolete runtime cleanup: $($_.Exception.Message)" }
+    return $existing
+  }
 
   $versionRoot = Resolve-DreamSkinContainedPath -Path (Join-Path $runtimeRoot $package.Version) -Parent $runtimeRoot -Purpose 'Versioned runtime'
   $staging = Resolve-DreamSkinContainedPath -Path (Join-Path $runtimeRoot ('.staging-' + [guid]::NewGuid().ToString('N'))) -Parent $runtimeRoot -Purpose 'Runtime staging directory'
@@ -157,6 +208,8 @@ function Ensure-DreamSkinStandaloneRuntime([string]$StateRoot) {
     $ready = Read-DreamSkinStandaloneRuntime -RuntimeRoot $runtimeRoot -Package $package
     if (-not $ready) { throw 'Standalone runtime failed final marker verification.' }
     if ($retired -and (Test-Path -LiteralPath $retired)) { Remove-Item -LiteralPath $retired -Recurse -Force }
+    try { Remove-DreamSkinObsoleteRuntimes -StateRoot $StateRoot -KeepRoots @($versionRoot) | Out-Null }
+    catch { Write-Warning "Skipped obsolete runtime cleanup: $($_.Exception.Message)" }
     return $ready
   } catch {
     if ($retired -and (Test-Path -LiteralPath $retired) -and -not (Test-Path -LiteralPath $versionRoot)) {

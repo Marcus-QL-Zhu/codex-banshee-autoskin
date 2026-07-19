@@ -1,7 +1,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { createHash } from 'node:crypto';
 import { fileURLToPath } from "node:url";
-import { isLoopbackEndpoint, isMainRendererTarget } from "./lib/target-selection.mjs";
+import { fetchTargetsFromLoopback, isLoopbackEndpoint, isMainRendererTarget, paletteOnlyForMainTargets } from "./lib/target-selection.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "..");
@@ -31,37 +32,61 @@ function parseArgs(argv) {
 }
 
 class CdpSession {
-  constructor(target) {
+  constructor(target, { openTimeoutMs = 5000, requestTimeoutMs = 10000 } = {}) {
     this.target = target;
     this.ws = new WebSocket(target.webSocketDebuggerUrl);
     this.nextId = 1;
     this.pending = new Map();
     this.listeners = new Map();
     this.closed = false;
+    this.openTimeoutMs = openTimeoutMs;
+    this.requestTimeoutMs = requestTimeoutMs;
   }
 
   async open() {
     await new Promise((resolve, reject) => {
-      this.ws.addEventListener("open", resolve, { once: true });
-      this.ws.addEventListener("error", reject, { once: true });
+      const finish = (callback, value) => {
+        clearTimeout(timer);
+        this.ws.removeEventListener('open', onOpen);
+        this.ws.removeEventListener('error', onError);
+        callback(value);
+      };
+      const onOpen = () => finish(resolve);
+      const onError = () => finish(reject, new Error('CDP socket error'));
+      const timer = setTimeout(() => {
+        finish(reject, new Error(`CDP socket open timed out after ${this.openTimeoutMs}ms`));
+        this.close();
+      }, this.openTimeoutMs);
+      this.ws.addEventListener('open', onOpen, { once: true });
+      this.ws.addEventListener('error', onError, { once: true });
     });
     this.ws.addEventListener("message", (event) => this.onMessage(event));
     this.ws.addEventListener("close", () => {
       this.closed = true;
-      for (const waiter of this.pending.values()) waiter.reject(new Error("CDP socket closed"));
+      for (const waiter of this.pending.values()) {
+        clearTimeout(waiter.timer);
+        waiter.reject(new Error("CDP socket closed"));
+      }
       this.pending.clear();
     });
-    await this.send("Runtime.enable");
-    await this.send("Page.enable");
-    return this;
+    try {
+      await this.send("Runtime.enable");
+      await this.send("Page.enable");
+      return this;
+    } catch (error) {
+      this.close();
+      throw error;
+    }
   }
 
   onMessage(event) {
-    const message = JSON.parse(String(event.data));
+    let message;
+    try { message = JSON.parse(String(event.data)); } catch { return; }
     if (message.id) {
       const waiter = this.pending.get(message.id);
       if (!waiter) return;
       this.pending.delete(message.id);
+      clearTimeout(waiter.timer);
       if (message.error) waiter.reject(new Error(`${message.error.message} (${message.error.code})`));
       else waiter.resolve(message.result);
       return;
@@ -79,8 +104,18 @@ class CdpSession {
     if (this.closed) return Promise.reject(new Error("CDP session is closed"));
     return new Promise((resolve, reject) => {
       const id = this.nextId++;
-      this.pending.set(id, { resolve, reject });
-      this.ws.send(JSON.stringify({ id, method, params }));
+      const timer = setTimeout(() => {
+        this.pending.delete(id);
+        reject(new Error(`CDP ${method} timed out after ${this.requestTimeoutMs}ms`));
+      }, this.requestTimeoutMs);
+      this.pending.set(id, { resolve, reject, timer });
+      try {
+        this.ws.send(JSON.stringify({ id, method, params }));
+      } catch (error) {
+        clearTimeout(timer);
+        this.pending.delete(id);
+        reject(error);
+      }
     });
   }
 
@@ -99,7 +134,14 @@ class CdpSession {
   }
 
   close() {
-    if (!this.closed) this.ws.close();
+    for (const waiter of this.pending.values()) {
+      clearTimeout(waiter.timer);
+      waiter.reject(new Error('CDP session closed'));
+    }
+    this.pending.clear();
+    if (!this.closed) {
+      try { this.ws.close(); } catch {}
+    }
     this.closed = true;
   }
 }
@@ -108,27 +150,17 @@ class CdpSession {
 // Chromium binds the DevTools server to a single loopback address, and which
 // stack it picks can change between boots (observed: 127.0.0.1 before a reboot,
 // [::1] after). Probe both and stick with whichever answers.
-const HOST_CANDIDATES = ["127.0.0.1", "[::1]"];
 let preferredHost = null;
 
 async function fetchTargets(port) {
-  const hosts = preferredHost
-    ? [preferredHost, ...HOST_CANDIDATES.filter((host) => host !== preferredHost)]
-    : [...HOST_CANDIDATES];
-  let lastError;
-  for (const host of hosts) {
-    try {
-      const response = await fetch(`http://${host}:${port}/json/list`);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const targets = await response.json();
-      preferredHost = host;
-      return targets;
-    } catch (error) {
-      lastError = error;
-    }
+  try {
+    const result = await fetchTargetsFromLoopback(port, { preferredHost, timeoutMs: 1500 });
+    preferredHost = result.host;
+    return result.targets;
+  } catch (error) {
+    preferredHost = null;
+    throw error;
   }
-  preferredHost = null;
-  throw lastError ?? new Error("no loopback endpoint responded");
 }
 
 async function waitForTargets(port, timeoutMs, { includeAuxiliary = false } = {}) {
@@ -452,10 +484,12 @@ async function loadThemeDir(baseName, dirName) {
   }
   const art = config.art ?? {};
   let artUrls = null;
+  let artHashes = null;
   if (artMode === "image") {
     const homeFile = art.home ?? "art.png";
     const chatFile = art.chat ?? homeFile;
     artUrls = {};
+    artHashes = {};
     for (const [role, file] of Object.entries({ home: homeFile, chat: chatFile })) {
       if (typeof file !== "string" || !ART_FILE_PATTERN.test(file) || path.basename(file) !== file) {
         warn(`theme "${name}" skipped: art.${role} ("${file}") must be a plain png/jpg/webp filename inside the theme folder`);
@@ -463,6 +497,7 @@ async function loadThemeDir(baseName, dirName) {
       }
       if (role === "chat" && file === homeFile && artUrls.home) {
         artUrls.chat = artUrls.home;
+        artHashes.chat = artHashes.home;
         continue;
       }
       try {
@@ -472,6 +507,7 @@ async function loadThemeDir(baseName, dirName) {
         const buffer = await fs.readFile(assetPath);
         const mime = MIME_BY_EXT[path.extname(file).toLowerCase()] ?? "image/png";
         artUrls[role] = `data:${mime};base64,${buffer.toString("base64")}`;
+        artHashes[role] = createHash('sha256').update(buffer).digest('hex');
       } catch {
         warn(`theme "${name}" skipped: art file not found or unsafe: ${path.join(baseName, dirName, file)}`);
         return null;
@@ -509,6 +545,7 @@ async function loadThemeDir(baseName, dirName) {
     stickers: normalizeStickers(name, config.stickers),
     extraCss,
     artUrls,
+    artHashes,
   };
 }
 
@@ -609,6 +646,7 @@ async function loadPayload() {
     stickers: Object.fromEntries(themes.map((theme) => [theme.name, theme.stickers])),
     packs: Object.fromEntries(themes.map((theme) => [theme.name, theme.stylePack])),
     artModes: Object.fromEntries(themes.map((theme) => [theme.name, theme.artMode])),
+    artHashes: Object.fromEntries(themes.filter((theme) => theme.artHashes).map((theme) => [theme.name, theme.artHashes])),
     defaultTheme,
     defaultLayout: DEFAULT_LAYOUT,
   };
@@ -652,10 +690,14 @@ async function removeFromSession(session) {
     document.querySelectorAll('.dream-home').forEach((node) => node.classList.remove('dream-home'));
     document.querySelectorAll('.dream-home-shell').forEach((node) => node.classList.remove('dream-home-shell'));
     document.querySelectorAll('.dream-new-task').forEach((node) => node.classList.remove('dream-new-task'));
-    document.querySelectorAll('[data-dream-owner], [data-dream-surface], [data-dream-capability]').forEach((node) => {
+    document.querySelectorAll('[data-dream-owner], [data-dream-surface], [data-dream-capability], [data-dream-status-dot], [data-dream-sidebar-crown-controls], [data-dream-composer-host], [data-dream-composer-context]').forEach((node) => {
       node.removeAttribute('data-dream-owner');
       node.removeAttribute('data-dream-surface');
       node.removeAttribute('data-dream-capability');
+      node.removeAttribute('data-dream-status-dot');
+      node.removeAttribute('data-dream-sidebar-crown-controls');
+      node.removeAttribute('data-dream-composer-host');
+      node.removeAttribute('data-dream-composer-context');
     });
     document.getElementById('codex-dream-skin-style')?.remove();
     document.getElementById('codex-dream-skin-chrome')?.remove();
@@ -764,7 +806,8 @@ async function verifySession(session) {
       if (!node) return { enhanced: false };
       const rect = node.getBoundingClientRect();
       const stack = document.elementsFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2);
-      const hitPass = stack.some((candidate) => candidate === node || node.contains(candidate));
+      const topHit = stack.find((candidate) => getComputedStyle(candidate).pointerEvents !== 'none') ?? null;
+      const hitPass = Boolean(topHit && (topHit === node || node.contains(topHit)));
       const nativeFastIndicator = key === 'fast-mode' && [...node.querySelectorAll('svg')].some((icon) =>
         String(icon.getAttribute('class') || '').includes('ModelPickerTriggerInlineFastIcon') &&
         icon.getAttribute('viewBox') === '0 0 24 24' && Boolean(icon.querySelector('path[fill="currentColor"]'))
@@ -1249,6 +1292,7 @@ async function runWatch(options) {
   const sessions = new Map();
   const cleanedAuxiliary = new Set();
   let stopping = false;
+  let desiredPaletteOnly = true;
   const stop = () => { stopping = true; };
   process.on("SIGINT", stop);
   process.on("SIGTERM", stop);
@@ -1264,6 +1308,7 @@ async function runWatch(options) {
     }
 
     const targets = allTargets.filter(isMainRendererTarget);
+    desiredPaletteOnly = paletteOnlyForMainTargets(allTargets);
     const activeAllIds = new Set(allTargets.map((target) => target.id));
     for (const id of cleanedAuxiliary) {
       if (!activeAllIds.has(id)) cleanedAuxiliary.delete(id);
@@ -1292,16 +1337,32 @@ async function runWatch(options) {
       if (sessions.has(target.id)) continue;
       try {
         const session = await connectTarget(target);
+        session.appliedPaletteOnly = null;
         session.on("Page.loadEventFired", () => {
-          setTimeout(() => applyToSession(session, payload, { paletteOnly: targets.length !== 1 }).catch((error) => {
-            console.error(`[dream-skin] reinject failed: ${error.message}`);
-          }), 250);
+          setTimeout(async () => {
+            const mode = desiredPaletteOnly;
+            try {
+              await applyToSession(session, payload, { paletteOnly: mode });
+              if (!session.closed) session.appliedPaletteOnly = mode;
+            } catch (error) {
+              console.error(`[dream-skin] reinject failed: ${error.message}`);
+            }
+          }, 250);
         });
-        await applyToSession(session, payload, { paletteOnly: targets.length !== 1 });
         sessions.set(target.id, session);
-        console.log(`[dream-skin] injected target ${target.id} (${target.title || target.url})`);
+        console.log(`[dream-skin] connected target ${target.id} (${target.title || target.url})`);
       } catch (error) {
         console.error(`[dream-skin] inject failed for ${target.id}: ${error.message}`);
+      }
+    }
+    for (const [id, session] of sessions) {
+      if (session.closed || session.appliedPaletteOnly === desiredPaletteOnly) continue;
+      try {
+        await applyToSession(session, payload, { paletteOnly: desiredPaletteOnly });
+        session.appliedPaletteOnly = desiredPaletteOnly;
+        console.log(`[dream-skin] applied target ${id} paletteOnly=${desiredPaletteOnly}`);
+      } catch (error) {
+        console.error(`[dream-skin] policy apply failed for ${id}: ${error.message}`);
       }
     }
     await new Promise((resolve) => setTimeout(resolve, 900));

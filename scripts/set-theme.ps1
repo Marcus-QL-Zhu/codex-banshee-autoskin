@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
-  [int]$Port = 0,
-  [string]$ScreenshotPath
+  [Parameter(ValueFromRemainingArguments = $true)]
+  [string[]]$ThemeArguments
 )
 
 $ErrorActionPreference = 'Stop'
@@ -10,12 +10,9 @@ $StateRoot = Join-Path $env:LOCALAPPDATA 'CodexDreamSkin'
 . (Join-Path $PSScriptRoot 'lifecycle.ps1')
 . (Join-Path $PSScriptRoot 'standalone-runtime.ps1')
 Assert-DreamSkinStateRootSafe -StateRoot $StateRoot
-$Port = Get-DreamSkinPersistedPort -StateRoot $StateRoot -RequestedPort $Port
 $runtime = Get-DreamSkinStandaloneRuntime -StateRoot $StateRoot
 if (-not $runtime) { throw 'Verified Dream Skin runtime is unavailable; rerun the installer.' }
 $node = (Get-DreamSkinNodePreflight -NodePath $runtime.NodeExecutable).Path
-$injector = Join-Path $PSScriptRoot 'injector.mjs'
-$arguments = @($injector, '--verify', '--port', "$Port")
-if ($ScreenshotPath) { $arguments += @('--screenshot', $ScreenshotPath) }
-& $node @arguments
+$switcher = Join-Path $PSScriptRoot 'set-theme.mjs'
+& $node $switcher @ThemeArguments
 exit $LASTEXITCODE

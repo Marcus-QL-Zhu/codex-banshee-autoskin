@@ -13,13 +13,18 @@ param(
 $ErrorActionPreference = 'Continue'
 $StateRoot = Join-Path $env:LOCALAPPDATA 'CodexDreamSkin'
 . (Join-Path $PSScriptRoot 'runtime-state.ps1')
+. (Join-Path $PSScriptRoot 'lifecycle.ps1')
 . (Join-Path $PSScriptRoot 'standalone-runtime.ps1')
+Assert-DreamSkinStateRootSafe -StateRoot $StateRoot
 $Port = Get-DreamSkinPersistedPort -StateRoot $StateRoot -RequestedPort $Port
 $StatePath = Join-Path $StateRoot 'state.json'
 $WatcherStatePath = Join-Path $StateRoot 'watcher-state.json'
 $LogPath = Join-Path $StateRoot 'watcher.log'
 $StartScript = Join-Path $PSScriptRoot 'start-dream-skin.ps1'
+$Injector = Join-Path $PSScriptRoot 'injector.mjs'
 New-Item -ItemType Directory -Force -Path $StateRoot | Out-Null
+
+if (Test-DreamSkinAutoRecoverDisabled -StateRoot $StateRoot) { exit 0 }
 
 $createdNew = $false
 $mutex = New-Object System.Threading.Mutex($true, "Local\CodexDreamSkinWatcher-$Port", [ref]$createdNew)
@@ -40,6 +45,7 @@ function Update-DreamSkinRuntimeRecord([object]$Runtime) {
       runtimeRoot = [string]$Runtime.Root
       runtimeVersion = [string]$Runtime.Version
       runtimePackageFullName = [string]$Runtime.PackageFullName
+      nodePath = [string]$Runtime.NodeExecutable
     }
     $changed = $false
     foreach ($name in $next.Keys) {
@@ -68,6 +74,11 @@ function Sync-DreamSkinStandaloneRuntime {
     return $null
   }
   if ($existing) {
+    try { [void](Get-DreamSkinNodePreflight -NodePath $existing.NodeExecutable) }
+    catch {
+      Write-WatcherLog "Verified runtime files are present, but bundled Node is not ready yet; recovery will retry without touching Codex. $($_.Exception.Message)"
+      return $null
+    }
     Update-DreamSkinRuntimeRecord -Runtime $existing
     return $existing
   }
@@ -78,6 +89,7 @@ function Sync-DreamSkinStandaloneRuntime {
   Write-WatcherLog 'Standalone runtime is missing or stale; securely refreshing it from the verified Codex Store package before recovery.'
   try {
     $refreshed = Ensure-DreamSkinStandaloneRuntime -StateRoot $StateRoot
+    [void](Get-DreamSkinNodePreflight -NodePath $refreshed.NodeExecutable)
     Update-DreamSkinRuntimeRecord -Runtime $refreshed
     Write-WatcherLog "Standalone runtime refresh completed for Codex $($refreshed.Version); the running Codex process was not interrupted during the copy."
     return $refreshed
@@ -87,10 +99,10 @@ function Sync-DreamSkinStandaloneRuntime {
   }
 }
 
-$StandaloneRuntime = Sync-DreamSkinStandaloneRuntime
-if (-not $StandaloneRuntime) { exit 2 }
+$StandaloneRuntime = $null
 
 function Test-CodexPortOwner([int]$CandidatePort) {
+  if (-not $StandaloneRuntime) { return $false }
   try {
     $listeners = @(Get-NetTCPConnection -State Listen -LocalPort $CandidatePort -ErrorAction Stop | Where-Object {
       $_.LocalAddress -in @('127.0.0.1', '::1')
@@ -118,20 +130,32 @@ function Test-DreamDebugPort {
   return $false
 }
 
+$lastInjectorProbeAt = [datetime]::MinValue
+$lastInjectorProbeResult = $false
 function Test-InjectorHealthy {
   if (-not (Test-Path -LiteralPath $StatePath)) { return $false }
   try {
     $state = Get-Content -LiteralPath $StatePath -Raw | ConvertFrom-Json
-    if (-not $state.injectorPid) { return $false }
-    $process = Get-Process -Id ([int]$state.injectorPid) -ErrorAction Stop
-    return $process.ProcessName -eq 'node'
+    if ($state.PSObject.Properties.Name -notcontains 'injectorIdentity') { return $false }
+    $current = Get-DreamSkinProcessIdentity -ProcessId ([int]$state.injectorIdentity.processId)
+    if (-not (Test-DreamSkinProcessIdentity -Expected $state.injectorIdentity -Current $current)) { return $false }
+    if ($lastInjectorProbeResult -and ((Get-Date) - $lastInjectorProbeAt).TotalSeconds -lt 15) { return $true }
+    if (-not $StandaloneRuntime) { return $false }
+    $nodeRuntime = Get-DreamSkinNodePreflight -NodePath $StandaloneRuntime.NodeExecutable
+    & $nodeRuntime.Path $Injector --verify --port $Port --timeout-ms 3000 *> $null
+    $script:lastInjectorProbeAt = Get-Date
+    $script:lastInjectorProbeResult = $LASTEXITCODE -eq 0
+    return $lastInjectorProbeResult
   } catch {
     return $false
   }
 }
 
+$watcherIdentity = Get-DreamSkinProcessIdentity -ProcessId $PID
+if (-not $watcherIdentity) { throw 'Watcher could not capture its process ownership identity.' }
 @{
   watcherPid = $PID
+  watcherIdentity = $watcherIdentity
   port = $Port
   startedAt = (Get-Date).ToString('o')
   scriptPath = $PSCommandPath
@@ -142,9 +166,38 @@ $consecutiveFailures = 0
 $suspendedUntil = $null
 $missedProbes = 0
 $restartTimes = New-Object System.Collections.Generic.List[datetime]
+$runtimeRetryAt = [datetime]::MinValue
+$runtimeRetrySeconds = 2
+
+function Get-WatcherTrustedCodexExecutables {
+  $paths = @(Get-DreamSkinOwnedRuntimeExecutables -StateRoot $StateRoot)
+  if ($StandaloneRuntime) { $paths += [string]$StandaloneRuntime.Executable }
+  try { $paths += [string](Get-TrustedCodexStorePackage).Executable } catch {}
+  return @($paths | Where-Object { $_ } | Sort-Object -Unique)
+}
 
 try {
   while ($true) {
+    if (Test-DreamSkinAutoRecoverDisabled -StateRoot $StateRoot) {
+      Write-WatcherLog 'Auto-recovery is disabled; watcher is exiting without touching Codex.'
+      break
+    }
+    if (-not $StandaloneRuntime) {
+      if ((Get-Date) -lt $runtimeRetryAt) {
+        Start-Sleep -Seconds ([Math]::Max(1, $PollSeconds))
+        continue
+      }
+      $StandaloneRuntime = Sync-DreamSkinStandaloneRuntime
+      if (-not $StandaloneRuntime) {
+        $runtimeRetryAt = (Get-Date).AddSeconds($runtimeRetrySeconds)
+        $runtimeRetrySeconds = [Math]::Min(300, $runtimeRetrySeconds * 2)
+        Start-Sleep -Seconds ([Math]::Max(1, $PollSeconds))
+        continue
+      }
+      $runtimeRetrySeconds = 2
+      $runtimeRetryAt = [datetime]::MinValue
+      Write-WatcherLog "Verified runtime is ready: $($StandaloneRuntime.Version)."
+    }
     $debugReady = Test-DreamDebugPort
     if ($debugReady) { $missedProbes = 0 }
 
@@ -178,7 +231,14 @@ try {
       Write-WatcherLog 'Debug port is available but injector is missing; restarting injector.'
       try { & $StartScript -Port $Port | Out-Null } catch { $failed = $true; $failureReason = $_.Exception.Message }
     } else {
-      $mainProcesses = @(Get-Process ChatGPT -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -ne 0 })
+      $trustedExecutables = @(Get-WatcherTrustedCodexExecutables)
+      try {
+        $mainProcesses = @(Get-DreamSkinTrustedCodexProcesses -ExecutablePaths $trustedExecutables -VisibleOnly)
+      } catch {
+        Write-WatcherLog "Process ownership could not be verified; recovery will retry without touching Codex. $($_.Exception.Message)"
+        Start-Sleep -Seconds ([Math]::Max(5, $PollSeconds))
+        continue
+      }
       if ($mainProcesses.Count -eq 0) {
         $missedProbes = 0
         Start-Sleep -Seconds ([Math]::Max(1, $PollSeconds))
@@ -186,7 +246,7 @@ try {
       }
       $now = Get-Date
       $oldEnough = @($mainProcesses | Where-Object {
-        try { ($now - $_.StartTime).TotalSeconds -ge $LaunchGraceSeconds } catch { $true }
+        try { ($now - $_.Process.StartTime).TotalSeconds -ge $LaunchGraceSeconds } catch { $false }
       })
       if ($oldEnough.Count -eq 0) {
         Start-Sleep -Seconds ([Math]::Max(1, $PollSeconds))
@@ -202,6 +262,16 @@ try {
       }
       $missedProbes = 0
 
+      if (-not (Test-DreamSkinLoopbackPortFree -Port $Port)) {
+        $consecutiveFailures++
+        Write-WatcherLog "Recovery skipped because port $Port is owned by an unrelated process; Codex remains open."
+        if ($consecutiveFailures -ge $MaxConsecutiveFailures) {
+          $suspendedUntil = (Get-Date).AddMinutes($CooldownMinutes)
+        }
+        Start-Sleep -Seconds ([Math]::Max(5, $PollSeconds))
+        continue
+      }
+
       # Codex can update from the Store while the watcher remains alive. Refresh
       # the verified runtime reference immediately before any recovery so the
       # owner-path check and the launcher agree on the same package version.
@@ -216,6 +286,7 @@ try {
         continue
       }
       $StandaloneRuntime = $refreshedRuntime
+      $lastInjectorProbeResult = $false
 
       # Rate limit: even "successful" recoveries must not loop. If we already restarted
       # Codex $MaxRestartsPerWindow times inside the window, something is systemically

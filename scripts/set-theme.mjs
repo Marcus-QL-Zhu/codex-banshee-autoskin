@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { fetchTargetsFromLoopback, requireSingleMainRendererTarget } from './lib/target-selection.mjs';
 
 // Programmatic theme/layout switcher for the running Codex Dream Skin.
 // The skin intentionally has no on-screen switch UI; agents (or users through
@@ -41,38 +42,18 @@ function persistedPort() {
   } catch {}
   return 9335;
 }
-// Chromium may bind DevTools to either loopback stack; probe both (see runtime-notes.md).
-async function fetchTargets(port) {
-  let lastError;
-  for (const host of ["127.0.0.1", "[::1]"]) {
-    try {
-      const response = await fetch(`http://${host}:${port}/json/list`);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      return await response.json();
-    } catch (error) {
-      lastError = error;
-    }
-  }
-  throw new Error(`CDP unreachable on 127.0.0.1/[::1]:${port}: ${lastError?.message ?? "no response"}`);
-}
-
-function isMainRendererTarget(target) {
-  try {
-    const url = new URL(target.url);
-    return target.type === "page" && url.protocol === "app:" && url.hostname === "-" &&
-      url.pathname === "/index.html" && !url.searchParams.has("initialRoute");
-  } catch {
-    return false;
-  }
-}
-
 async function evaluateOnce(target, expression) {
   const ws = new WebSocket(target.webSocketDebuggerUrl);
-  await new Promise((resolve, reject) => {
-    ws.addEventListener("open", resolve, { once: true });
-    ws.addEventListener("error", () => reject(new Error("CDP socket error")), { once: true });
-  });
   try {
+    await new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error('CDP socket open timed out')), 5000);
+      const finish = (callback, value) => {
+        clearTimeout(timeout);
+        callback(value);
+      };
+      ws.addEventListener('open', () => finish(resolve), { once: true });
+      ws.addEventListener('error', () => finish(reject, new Error('CDP socket error')), { once: true });
+    });
     const result = await new Promise((resolve, reject) => {
       const timeout = setTimeout(() => reject(new Error("CDP evaluate timed out")), 10000);
       ws.addEventListener("message", (event) => {
@@ -93,16 +74,18 @@ async function evaluateOnce(target, expression) {
     }
     return result.result?.value;
   } finally {
-    ws.close();
+    try { ws.close(); } catch {}
   }
 }
 
 const options = parseArgs(process.argv.slice(2));
 options.port ??= persistedPort();
-const targets = await fetchTargets(options.port);
-const main = targets.find(isMainRendererTarget);
-if (!main) {
-  console.error(JSON.stringify({ ok: false, error: `no main Codex renderer on port ${options.port}` }));
+const { targets } = await fetchTargetsFromLoopback(options.port, { timeoutMs: 1500 });
+let main;
+try {
+  main = requireSingleMainRendererTarget(targets);
+} catch (error) {
+  console.error(JSON.stringify({ ok: false, error: `${error.message} on port ${options.port}` }));
   process.exit(1);
 }
 

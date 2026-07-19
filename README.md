@@ -2,7 +2,7 @@
 
 **发一张图给你的 Codex，它自己给自己换肤。**
 
-这是 Windows Codex 桌面端的换肤引擎 2.0 版：不改任何官方文件，通过 Chromium DevTools Protocol（CDP）把皮肤"注入"到官方渲染器里，随时一键还原。主题是纯数据（一个文件夹：`theme.json` + 一张图），而配套的 [THEME-SPEC.md](THEME-SPEC.md) 是一份**写给 AI agent 读的定制规范**——把这个仓库和一张图丢给你的 Codex / Claude，它就能照着规范自己产出一套完整主题、自己截图调参、自己交付。你的 Codex，自己给自己换肤。
+这是 Windows Codex 桌面端的换肤引擎 2.3.0：不改任何官方文件，通过 Chromium DevTools Protocol（CDP）把皮肤"注入"到官方渲染器里，随时一键还原。主题是纯数据（一个文件夹：`theme.json` + 一张图），而配套的 [THEME-SPEC.md](THEME-SPEC.md) 是一份**写给 AI agent 读的定制规范**——把这个仓库和一张图丢给你的 Codex / Claude，它就能照着规范自己产出一套完整主题、自己截图调参、自己交付。你的 Codex，自己给自己换肤。
 
 | Aurora Veil（内置 demo） | Ember Bloom（内置 demo） |
 |---|---|
@@ -17,11 +17,11 @@
 
 **AutoSkin 是我对这个想法的全面重写**：v1 回答的是"能不能给 Codex 换肤"，AutoSkin 回答的是"怎么让**任何人发一张图**就得到一套自己的皮肤"——重点从"肤"挪到了"Auto"。
 
-## 2.0 新在哪
+## 2.3.0 新在哪
 
 1. **Manifest 驱动引擎**——主题与引擎彻底解耦。加一个主题 = 往 `themes/` 放一个文件夹，零改码；注入器启动时自动扫描、校验、打包。删掉文件夹主题就消失，引擎代码里没有任何主题名。
 2. **THEME-SPEC.md：规范即生成器**（全项目最大卖点）——这不是给人读的开发文档，而是给 agent 读的作业指导书：28 个取色 token 的逐个取法、四种画面角色的裁剪调参流程、"干净图 vs 带字截图"决策树、逐项验收清单。用户只要把一张图和这个仓库丢给自己的 Codex / Claude，agent 读完 spec 就能独立产出主题并自测交付。**不用等作者更新主题包，你的 agent 就是主题生成器。**
-3. **一句话切换**——`node scripts/set-theme.mjs <theme> [layout]` 程序化切主题/版式，选择自动持久化。界面上刻意不放切换控件：跟你的 agent 说"换成极光"就行。
+3. **一句话切换**——`.\scripts\set-theme.ps1 <theme> [layout]` 使用经校验的随包 Node 程序化切主题/版式，选择自动持久化。界面上刻意不放切换控件：跟你的 agent 说"换成极光"就行。
 4. **风格包 v1.2 视觉**——花饰边框卡片、渐变圆徽章 + 可配置定制图标、建议卡副标题、可配置装饰贴纸（气泡/推广牌/角饰，默认关闭）、输入框占位文案，全部是主题里的可选声明字段，向后兼容。
 5. **久经实战的健壮性**——这些坑都替你踩完了：CDP 回环双栈探测（Chromium 重启后可能只绑 `[::1]`）、watcher 防抖 + 频率熔断（绝不把 Codex 打进重启死循环）、换图 blob 指纹修复（换图重注入不再吃旧缓存）、`elementsFromPoint` 命中测试 QA（装饰层永远不吃掉真实控件的点击）。细节见 `references/runtime-notes.md`。
 
@@ -31,22 +31,47 @@
 
 **一句话版**：把整个仓库（或 zip）给你自己的 Codex / Claude agent，说：**"安装这个皮肤"**。
 
-**手动版**（PowerShell，需要 Node.js ≥ 20）：
+### 支持范围与前置条件
+
+| 项目 | 支持范围 |
+|---|---|
+| 操作系统 | Windows 10 / 11（当前用户安装，无需管理员权限） |
+| Codex | Microsoft Store 版，包名 `OpenAI.Codex` |
+| PowerShell | Windows PowerShell 5.1 |
+| Node.js | 普通安装和运行**无需另装**；使用经校验的 Store Codex 随包 Node。只有直接运行源码 JS 工具的开发者才需要 Node.js 22.4+ |
+| 磁盘 | 首次安装约需一个 Store `app` 负载；建议至少预留 4 GiB 供安装与更新暂存 |
+
+目前不支持 macOS、非 Store 版 Codex 或远程 CDP。安装会创建一个仅绑定本机回环地址的随机端口并持久化使用。为了避免未保存内容受到影响，建议先保存工作并关闭 Codex，再安装。
+
+### 一键安装
+
+完整解压 GitHub ZIP 后，双击仓库根目录的 **`Install.cmd`**。它只负责调用正式 PowerShell installer，不包含另一套安装逻辑。全新配置默认使用 `banshee-armor` 全屏主题；已有 AutoSkin 配置会保留有效的主题选择。安装成功后，正常点击原来的 Codex 图标即可；隐藏 watcher 会在需要时用已保存的随机回环端口恢复皮肤，过程中 Codex 可能关闭并重新打开一次。
+
+如果更习惯终端，可运行：
 
 ```powershell
-scripts\install-dream-skin.ps1        # 一次性：写入配套的官方浅色主题、创建快捷方式和自恢复守护
-scripts\start-dream-skin.ps1          # 启动带调试端口的 Codex 并注入皮肤
-scripts\verify-dream-skin.ps1 -ScreenshotPath shot.png   # 验证 + 截图
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\install-dream-skin.ps1
 ```
+
+需要立即显式启动和验证时，再运行：
+
+```powershell
+.\scripts\start-dream-skin.ps1          # 使用持久化端口启动并注入皮肤
+.\scripts\verify-dream-skin.ps1 -ScreenshotPath shot.png
+```
+
+installer 会写入配套的官方**暗色**基础配色、创建快捷方式和登录自恢复 watcher，并使用可信 Store Codex payload 内随包、复制后再次哈希验证的 Node，不依赖用户的系统 `PATH`。安装日志与状态位于 `%LOCALAPPDATA%\CodexDreamSkin`；遇到问题先查看该目录内的日志。完整安全边界见 [SECURITY.md](SECURITY.md)。
 
 > 脚本名和内部标识沿用 `dream` 前缀——那是默认风格包的名字，也算对 v1 的致敬。
 
 ## 换主题
 
 ```powershell
-node scripts\set-theme.mjs --list                 # 看有哪些主题
-node scripts\set-theme.mjs aurora-veil fullscreen # 切主题 + 版式（banner / fullscreen），自动持久化
+.\scripts\set-theme.ps1 --list                 # 看有哪些主题
+.\scripts\set-theme.ps1 aurora-veil fullscreen # 切主题 + 版式（banner / fullscreen），自动持久化
 ```
+
+`set-theme.ps1` 会定位已验证 runtime 内的随包 Node；只有开发者直接运行 `set-theme.mjs` 时才需要系统 Node.js 22.4+。
 
 或者更简单——跟你的 Codex 说："**切到花瓣主题**"。
 
@@ -60,14 +85,16 @@ node scripts\set-theme.mjs aurora-veil fullscreen # 切主题 + 版式（banner 
 
 ## 工作原理与安全
 
-- **CDP 注入**：先校验当前 Store 包的身份与关键文件，再把官方 `app` 负载复制到用户目录，以 `--remote-debugging-port=<persisted-loopback-port>` 启动这个只读来源的独立运行副本，随后通过 DevTools 协议往主渲染器注入 CSS + JS。端口只绑定**本机回环**，不要暴露到局域网。
-- **不改任何官方文件**：不写入 `WindowsApps`、不修改 `app.asar`、不替换 Store 安装；独立副本位于 `%LOCALAPPDATA%\CodexDreamSkin\runtime`，约占用与 Store `app` 负载相同的磁盘空间（当前版本约 1.8 GiB）。
+- **CDP 注入**：先校验当前 Store 包的身份与关键文件，再把官方 `app` 负载复制到用户目录，以 `--remote-debugging-port=<persisted-loopback-port>` 启动这个只读来源的独立运行副本，随后通过 DevTools 协议往主渲染器注入 CSS + JS。installer 会分配并保存一个可用端口；端口只绑定**本机回环**，不要暴露到局域网。
+- **不改任何官方文件**：不写入 `WindowsApps`、不修改 `app.asar`、不替换 Store 安装；独立副本位于 `%LOCALAPPDATA%\CodexDreamSkin\runtime`，约占用与 Store `app` 负载相同的磁盘空间（当前版本约 1.8 GiB），更新暂存期间会短暂需要额外空间。
 - **随时还原**：`scripts\restore-dream-skin.ps1` 现场移除所有注入内容，DOM 恢复得干干净净；加 `-Uninstall -RestoreBaseTheme` 连快捷方式和安装前的配色备份一起还原。所有运行时状态都在 `%LOCALAPPDATA%\CodexDreamSkin`，删掉即无痕。
 - **Codex 更新后**：watcher 会先验证新 Store 包，在临时目录构建新的版本化运行副本并校验关键文件哈希；只有全部通过后才允许恢复主题。复制或校验失败时保留当前 Codex 进程，仅退回基础配色，不会把应用打进重启循环。也可以手动重跑 `install` + `start`。
 - **自恢复**：一个隐藏 watcher 在正常重启 Codex 后自动补皮肤（防抖、频率熔断、失败冷却，不会跟应用打架）。
 - **辅助窗口保护**：桌面宠物等 `initialRoute` 辅助渲染器永远不注入、保持透明。
 
 ## 卸载
+
+双击安装时创建的桌面快捷方式 **`Codex Dream Skin - Restore`** 可临时移除当前注入；双击 **`Codex Dream Skin - Uninstall`** 会完整卸载、移除自恢复并还原安装前的基础配色。命令行等价操作为：
 
 ```powershell
 scripts\restore-dream-skin.ps1 -Uninstall -RestoreBaseTheme
@@ -84,7 +111,7 @@ scripts\restore-dream-skin.ps1 -Uninstall -RestoreBaseTheme
 
 ## License
 
-[MIT](LICENSE) © Vikicc　·　当前版本 **v2.0.0**
+[MIT](LICENSE) © Vikicc　·　当前版本 **v2.3.0**
 
 ---
 
@@ -96,21 +123,21 @@ Codex AutoSkin — a manifest-driven skin engine for the Windows Codex desktop a
 
 It injects CSS/JS into the official renderer over the Chrome DevTools Protocol — no app files are modified, fully reversible, login/session untouched, CDP bound to loopback only.
 
-What's new in 2.0:
+What's new in 2.3.0:
 
 - **Manifest-driven engine** — adding a theme = dropping a folder into `themes/` (`theme.json` + one image). Zero engine changes.
 - **[THEME-SPEC.md](THEME-SPEC.md) is the generator** — an agent-readable spec (28 color tokens, crop workflow, decision tree, QA checklist). Hand this repo plus one picture to your Codex/Claude agent and it authors, tunes, and ships a complete theme on its own.
-- **One-liner switching** — `node scripts/set-theme.mjs <theme> [banner|fullscreen]` (or just tell your agent). No on-screen switcher by design.
+- **One-liner switching** — `.\scripts\set-theme.ps1 <theme> [banner|fullscreen]` uses the verified bundled Node (or just tell your agent). No on-screen switcher by design.
 - **Style-pack visuals** — ornamented cards, custom badge icons, card subtitles, opt-in stickers, composer placeholder — all optional per-theme declarations.
 - **Battle-tested robustness** — dual-stack loopback CDP probing, watcher debounce + circuit breaker (never kill-loops Codex), art-blob fingerprinting for image swaps, hit-testing QA so decorations never steal clicks.
 
-Currently **Windows (Store Codex) only** — macOS is on the roadmap and PRs are very welcome ([CONTRIBUTING.md](CONTRIBUTING.md)).
+Currently **Windows 10/11 with the Microsoft Store `OpenAI.Codex` package only** — macOS is on the roadmap and PRs are very welcome ([CONTRIBUTING.md](CONTRIBUTING.md)). Windows PowerShell 5.1 is required. End users do not need a separate Node.js installation: AutoSkin uses the bundled Node from the trusted Store Codex payload and verifies it again after copying. Node.js 22.4+ is needed only by contributors who run the JavaScript source tools directly. Installation is per-user and does not require an administrator shell. Reserve roughly 4 GiB for the verified runtime and update staging.
 
-Quick start: hand this repo to your agent and say "install this skin", or run `scripts\install-dream-skin.ps1` then `scripts\start-dream-skin.ps1` (Node.js ≥ 20, PowerShell). Uninstall: `scripts\restore-dream-skin.ps1 -Uninstall -RestoreBaseTheme`.
+Quick start: hand this repo to your agent and say "install this skin", or extract the GitHub ZIP and double-click the root-level `Install.cmd`. It delegates to the PowerShell installer. A fresh profile defaults to fullscreen `banshee-armor`; an existing valid AutoSkin selection is preserved. After installation, open Codex from its normal icon; the watcher restores the saved theme on a persisted random loopback port. Explicit launch remains available through `scripts\start-dream-skin.ps1`. Use the generated `Codex Dream Skin - Restore` desktop shortcut for live removal or `Codex Dream Skin - Uninstall` for a complete uninstall and base-theme restore.
 
 Bundled demo art is 100% procedurally generated (`tools/generate-demo-art.py`); no photos of real people in this repo. Do not publish themes using a real person's likeness — keep private themes in the git-ignored `themes-private/`. Decorative community project, not affiliated with OpenAI; Codex and related marks belong to their respective owners.
 
-[MIT](LICENSE) © Vikicc · **v2.0.0**
+[MIT](LICENSE) © Vikicc · **v2.3.0**
 
 ---
 
@@ -119,16 +146,17 @@ Bundled demo art is 100% procedurally generated (`tools/generate-demo-art.py`); 
 This fork adds an artless dark structural pack:
 
 ```powershell
-node scripts\set-theme.mjs banshee-armor fullscreen
+.\scripts\set-theme.ps1 banshee-armor fullscreen
 ```
 
-It preserves the official Codex renderer and restyles native controls in place. The pack uses abstract blue-black armor planes, cut panel seams, and one synchronized 9.6-second gold energy wave. It contains no character, machine, emblem, or franchise artwork. The original image-theme workflow in `THEME-SPEC.md` remains unchanged. Engine-extension requirements and the pre/post-restart acceptance gates are documented separately in `BANSHEE-SPEC.md`.
+It preserves the official Codex renderer and restyles native controls in place. The pack uses abstract blue-black armor planes, cut panel seams, and one synchronized 10-second gold energy wave. It contains no character, machine, emblem, or franchise artwork. The original image-theme workflow in `THEME-SPEC.md` remains unchanged. Engine-extension requirements and the pre/post-restart acceptance gates are documented separately in `BANSHEE-SPEC.md`.
 
 Before restarting Codex, run:
 
 ```powershell
-node --test --test-isolation=none tests\banshee-static.test.mjs
+node tests\banshee-static.test.mjs
 node scripts\injector.mjs --themes
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools\release-check.ps1 -SkipWorktreeClean
 ```
 
-These offline checks validate schema compatibility, artless packaging, pack isolation, cleanup contracts, target selection, and motion/accessibility fallbacks. They do not replace the real-renderer native-parity and hit-testing pass required after restart.
+These offline checks validate schema compatibility, artless packaging, pack isolation, cleanup contracts, target selection, and motion/accessibility fallbacks. Running the test module directly keeps the check compatible with the Node 22.4 baseline and restricted development sandboxes. These checks do not replace the real-renderer native-parity and hit-testing pass required after restart.

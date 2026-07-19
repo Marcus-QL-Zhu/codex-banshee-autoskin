@@ -105,6 +105,25 @@ html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [da
   z-index:1;
 }
 
+/* Fail-closed chrome baseline. The renderer may retain the inert chrome node
+   while a capability probe is unknown or palette-only is requested; keep that
+   node out of layout and paint until the structural ready gate is present. */
+html.codex-dream-skin.dream-pack-banshee #codex-dream-skin-chrome {
+  display:none;
+  position:fixed;
+  z-index:4;
+  inset:auto;
+  overflow:hidden;
+  contain:strict;
+  pointer-events:none !important;
+}
+
+html.codex-dream-skin.dream-pack-banshee #codex-dream-skin-chrome *,
+html.codex-dream-skin.dream-pack-banshee #codex-dream-skin-chrome *::before,
+html.codex-dream-skin.dream-pack-banshee #codex-dream-skin-chrome *::after {
+  pointer-events:none !important;
+}
+
 /* The accepted crown plate places the native mode/search group on the optical
    center of its cell. Move the verified group as one unit; its internal layout
    and both hit targets remain native. */
@@ -222,8 +241,7 @@ html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [da
 /* Native idle/completed thread dots use the charts-yellow status token. In
    awakening mode only that amber emission changes; green/red/purple semantic
    statuses are deliberately left native. */
-html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"][data-dream-fast="on"] [data-app-action-sidebar-thread-row] .size-2.rounded-full.bg-token-charts-yellow,
-html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"][data-dream-fast="on"] [data-app-action-sidebar-thread-row] span.absolute.inset-0.rounded-full[style*="--vscode-textLink-foreground"] {
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"][data-dream-fast="on"] [data-dream-status-dot="idle-completed"] {
   background-color:var(--dream-banshee-energy-core) !important;
   box-shadow:0 0 7px rgba(var(--dream-banshee-emission-crest-rgb),.42) !important;
 }
@@ -374,6 +392,7 @@ html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] :fo
 
 /* Full-shell chrome: layered plate ribbon, recessed cavity, structural seams, and energy. */
 html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] #codex-dream-skin-chrome {
+  display:block;
   position:fixed;
   z-index:4;
   overflow:hidden;
@@ -691,8 +710,7 @@ html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] #co
     filter:none !important;
     box-shadow: none !important;
   }
-  html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"][data-dream-fast="on"] [data-app-action-sidebar-thread-row] .size-2.rounded-full.bg-token-charts-yellow,
-  html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"][data-dream-fast="on"] [data-app-action-sidebar-thread-row] span.absolute.inset-0.rounded-full[style*="--vscode-textLink-foreground"] {
+  html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"][data-dream-fast="on"] [data-dream-status-dot="idle-completed"] {
     background:Highlight !important;
     box-shadow:none !important;
   }
