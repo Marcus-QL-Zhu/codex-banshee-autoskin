@@ -47,6 +47,11 @@ test("Banshee is a schema-v2 artless whitelisted pack theme", () => {
   assert.equal(theme.art, undefined);
   assert.match(theme.tokens["--dream-banshee-wave-cycle"], /^10s$/);
   assert.equal(theme.tokens["--dream-banshee-energy-core"], "#d9a23e");
+  assert.equal(theme.tokens["--dream-banshee-accent-gold"], "#f0c56f");
+  assert.equal(theme.tokens["--dream-banshee-emission-deep-rgb"], "143, 50, 6");
+  assert.equal(theme.tokens["--dream-banshee-emission-rest-rgb"], "183, 68, 8");
+  assert.equal(theme.tokens["--dream-banshee-emission-body-rgb"], "244, 119, 22");
+  assert.equal(theme.tokens["--dream-banshee-emission-crest-rgb"], "255, 173, 54");
   assert.doesNotMatch(JSON.stringify(theme), /gundam|unicorn|robot|mecha|logo/i);
 });
 
@@ -95,7 +100,7 @@ test("Banshee selectors are pack-scoped and its motion/accessibility fallbacks e
   assert.match(css, /dream-banshee-seam-s1/);
   assert.match(css, /dream-banshee-seam-s2/);
   const cavityRestLightRule = css.match(/\.dream-banshee-cavity-rest-light\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
-  assert.match(cavityRestLightRule, /fill:rgba\(183,68,8,\.07\)/);
+  assert.match(cavityRestLightRule, /fill:rgba\(var\(--dream-banshee-emission-rest-rgb\),\.07\)/);
   assert.match(cavityRestLightRule, /stroke:none/);
   assert.doesNotMatch(cavityRestLightRule, /animation|filter|drop-shadow/);
   assert.match(css, /animation:dream-banshee-cavity-pulse var\(--dream-banshee-wave-cycle\) linear infinite/);
@@ -114,8 +119,8 @@ test("Banshee selectors are pack-scoped and its motion/accessibility fallbacks e
   assert.match(css, /min-height:clamp\(108px,12\.7vh,116px\) !important/);
   assert.match(css, /\[data-dream-composer-context="home"\]/);
   assert.match(css, /clip-path:polygon\(12px 0,calc\(100% - 12px\) 0,100% 12px/);
-  assert.match(css, /--dream-banshee-composer-top-seam:rgba\(217,162,62,\.46\)/);
-  assert.match(css, /--dream-banshee-composer-top-seam:rgba\(240,197,111,\.64\)/);
+  assert.match(css, /--dream-banshee-composer-top-seam:rgba\(var\(--dream-banshee-emission-bloom-rgb\),\.46\)/);
+  assert.match(css, /--dream-banshee-composer-top-seam:rgba\(var\(--dream-banshee-emission-active-rgb\),\.64\)/);
   assert.match(css, /var\(--dream-banshee-composer-top-seam\)/);
   assert.match(css, /inset 0 4px 0 var\(--dream-banshee-composer-top-seam\)/);
   assert.match(css, /border:0 !important/);
@@ -141,8 +146,8 @@ test("Banshee selectors are pack-scoped and its motion/accessibility fallbacks e
   const centerCavityPulse = css.match(/\.dream-banshee-center-cavity-pulse-field \{([\s\S]*?)\n\}/)?.[1] ?? "";
   assert.match(centerCavityPulse, /background-size:300% 100%/);
   assert.equal((centerCavityPulse.match(/linear-gradient/g) ?? []).length, 1);
-  assert.match(centerCavityPulse, /rgba\(143,50,6,0\) 0/);
-  assert.match(centerCavityPulse, /rgba\(255,173,54,\.62\) 50%/);
+  assert.match(centerCavityPulse, /rgba\(var\(--dream-banshee-emission-deep-rgb\),0\) 0/);
+  assert.match(centerCavityPulse, /rgba\(var\(--dream-banshee-emission-crest-rgb\),\.62\) 50%/);
   assert.doesNotMatch(centerCavityPulse, /var\(--dream-banshee-energy-active\)/);
   assert.match(centerCavityPulse, /animation:dream-banshee-center-cavity-wave/);
   const centerCavityWave = css.match(/@keyframes dream-banshee-center-cavity-wave \{([\s\S]*?)\n\}/)?.[1] ?? "";
@@ -155,6 +160,13 @@ test("Banshee selectors are pack-scoped and its motion/accessibility fallbacks e
   assert.doesNotMatch(css, /(^|[\s,>])svg\b/m);
   assert.doesNotMatch(css, /outline\s*:\s*none/i);
   assert.doesNotMatch(css, /@import|url\(\s*["']?https?:/i);
+  const awakeningTokens = css.match(/\[data-dream-fast="on"\]\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
+  assert.match(awakeningTokens, /--dream-banshee-emission-deep-rgb:0,52,58/);
+  assert.match(awakeningTokens, /--dream-banshee-emission-rest-rgb:0,112,128/);
+  assert.match(awakeningTokens, /--dream-banshee-emission-body-rgb:64,200,176/);
+  assert.match(awakeningTokens, /--dream-banshee-emission-crest-rgb:184,255,228/);
+  assert.match(awakeningTokens, /--dream-banshee-emission-bloom-rgb:64,200,176/);
+  assert.doesNotMatch(css, /rgba\((?:217,162,62|240,197,111|183,68,8|143,50,6|219,90,13|244,119,22|255,173,54|255,140,32),/);
 });
 
 test("legacy Dream structure is isolated behind its own pack class", () => {
@@ -175,7 +187,7 @@ test("legacy Dream structure is isolated behind its own pack class", () => {
 
 test("renderer supports artless switching, pack cleanup, neutral chrome, and one epoch", () => {
   const source = read("assets/renderer-inject.js");
-  assert.match(source, /const STYLE_VERSION = "37"/);
+  assert.match(source, /const STYLE_VERSION = "38"/);
   assert.match(source, /THEME_ART_MODES/);
   assert.match(source, /bansheeRuntime\.artVariables/);
   assert.match(source, /cls\.startsWith\("dream-pack-"\)/);
@@ -222,8 +234,8 @@ test("renderer supports artless switching, pack cleanup, neutral chrome, and one
   assert.match(source, /class="dream-banshee-center-cavity-pulse-field"/);
   assert.match(source, /id="dream-banshee-cavity-pulse-clip" clipPathUnits="userSpaceOnUse"/);
   assert.match(source, /id="dream-banshee-cavity-pulse-fill" x1="0" y1="0" x2="0" y2="1"/);
-  assert.match(source, /stop-color="#8f3206" stop-opacity="0"/);
-  assert.match(source, /stop-color="#ffad36" stop-opacity="\.62"/);
+  assert.match(source, /class="dream-banshee-emission-stop-deep" offset="0" stop-opacity="0"/);
+  assert.match(source, /class="dream-banshee-emission-stop-crest" offset="\.5" stop-opacity="\.62"/);
   assert.match(source, /class="dream-banshee-cavity-pulse-band" x="0" y="0" width="1261" height="2400"/);
   assert.doesNotMatch(source, /dream-banshee-cavity-(?:lamp|tube)/);
   const cavityOutlineMarkup = source.match(/<g class="dream-banshee-cavity-outline">([\s\S]*?)<\/g>/)?.[1] ?? "";
@@ -247,6 +259,11 @@ test("renderer supports artless switching, pack cleanup, neutral chrome, and one
   assert.match(source, /viewBox="0 0 1261 941" preserveAspectRatio="none"/);
   assert.match(source, /dream-banshee-top-plate-fill/);
   assert.match(source, /threadHeaderResult/);
+  assert.match(source, /bansheeRuntime\.isFastAwakeningActive\(fastModeResult, fastModeParity\)/);
+  assert.match(source, /data-codex-intelligence-trigger/);
+  assert.match(source, /data-composer-navigation-target/);
+  assert.match(source, /root\.setAttribute\("data-dream-fast", "on"\)/);
+  assert.match(source, /attributeFilter: \["aria-pressed"\]/);
   assert.match(source, /\[threadHeaderResult, "thread-header"\]/);
   assert.match(source, /dream-banshee-spine-shoulder-fill/);
   assert.match(source, /M410 51H500L510 61H751L761 51H851L841 66H761L751 71H510L500 66H420Z/);
@@ -397,6 +414,9 @@ test("live verifier reports synchronized Banshee motion and native capability hi
   assert.match(injector, /composerContextTree/);
   assert.match(injector, /waveStartSkewMs <= 1/);
   assert.match(injector, /data-dream-capability/);
+  assert.match(injector, /fastAwakeningActive/);
+  assert.match(injector, /result\.fastAwakening\.pass/);
+  assert.match(injector, /nativeFastIndicator/);
   assert.match(injector, /node\.contains\(candidate\)/);
   assert.match(injector, /tagName === 'BUTTON'/);
   assert.match(injector, /svgPresent && control\.hitPass/);
@@ -414,6 +434,19 @@ test("runtime capability classifier is double-signal and fail-closed", () => {
     { key: "fast-mode", result: { state: "verified" }, parity: { pass: true } },
   ]);
   assert.deepEqual(Array.from(enhanced), ["fast-mode"]);
+  const fastNode = { getAttribute: (name) => name === "aria-pressed" ? "true" : null };
+  assert.equal(runtime.isFastAwakeningActive({ state: "verified", node: fastNode }, { pass: true }), true);
+  assert.equal(runtime.isFastAwakeningActive({ state: "verified", node: fastNode }, { pass: false }), false);
+  assert.equal(runtime.isFastAwakeningActive({ state: "ambiguous", node: fastNode }, { pass: true }), false);
+  assert.equal(runtime.isFastAwakeningActive({ state: "verified", node: { getAttribute: () => "false" } }, { pass: true }), false);
+  const inlineIcon = {
+    getAttribute: (name) => name === "class" ? "_ModelPickerTriggerInlineFastIcon_hash" : name === "viewBox" ? "0 0 24 24" : null,
+    querySelector: (selector) => selector === 'path[fill="currentColor"]' ? {} : null,
+  };
+  const modelPicker = { getAttribute: () => null, querySelectorAll: () => [inlineIcon] };
+  assert.equal(runtime.fastModeState({ state: "verified", node: modelPicker }, { pass: true }), "on");
+  assert.equal(runtime.fastModeState({ state: "verified", node: { getAttribute: () => null, querySelectorAll: () => [] } }, { pass: true }), "off");
+  assert.equal(runtime.fastModeState({ state: "verified", node: modelPicker }, { pass: false }), "unavailable");
 });
 
 test("native control parity preserves identity and SVG while allowing state changes", () => {

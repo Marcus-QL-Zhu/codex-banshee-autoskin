@@ -5,6 +5,24 @@ html.codex-dream-skin.dream-pack-banshee {
   background:var(--dream-banshee-armor-950) !important;
 }
 
+/* Native Fast mode is the only awakening-state trigger. These semantic energy
+   roles recolor emitted light without touching armor, geometry, native control
+   semantics, or the shared animation clock. */
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"][data-dream-fast="on"] {
+  --dream-banshee-energy-low:rgba(64,200,176,.46);
+  --dream-banshee-energy-core:#40c8b0;
+  --dream-banshee-energy-active:#b8ffe4;
+  --dream-banshee-energy-bright:#b8ffe4;
+  --dream-banshee-emission-deep-rgb:0,52,58;
+  --dream-banshee-emission-rest-rgb:0,112,128;
+  --dream-banshee-emission-shoulder-rgb:18,145,149;
+  --dream-banshee-emission-body-rgb:64,200,176;
+  --dream-banshee-emission-crest-rgb:184,255,228;
+  --dream-banshee-emission-bloom-rgb:64,200,176;
+  --dream-banshee-emission-active-rgb:184,255,228;
+  --dream-banshee-emission-band-bloom-rgb:64,200,176;
+}
+
 html.codex-dream-skin.dream-pack-banshee body {
   color:var(--dream-banshee-text-primary) !important;
   background:
@@ -33,7 +51,7 @@ html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [da
   right:3px;
   height:37px;
   background:
-    linear-gradient(135deg,transparent 0 47%,rgba(240,197,111,.92) 48.2% 49.6%,transparent 50.8%) 76% 1px/35px 29px no-repeat,
+    linear-gradient(135deg,transparent 0 47%,rgba(var(--dream-banshee-emission-active-rgb),.92) 48.2% 49.6%,transparent 50.8%) 76% 1px/35px 29px no-repeat,
     linear-gradient(180deg,rgba(24,39,62,.94),rgba(14,27,46,.98));
   border-top:1px solid rgba(132,160,199,.2);
   border-bottom:1px solid rgba(119,151,194,.4);
@@ -69,17 +87,17 @@ html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [da
 html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="sidebar"] button:hover,
 html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="sidebar"] a:hover {
   color:var(--dream-banshee-text-primary) !important;
-  background:linear-gradient(100deg,rgba(217,162,62,.07),rgba(23,38,61,.52) 72%) !important;
+  background:linear-gradient(100deg,rgba(var(--dream-banshee-emission-bloom-rgb),.07),rgba(23,38,61,.52) 72%) !important;
 }
 
 html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="sidebar"] [aria-current="page"] {
   position:relative;
-  color:var(--dream-banshee-energy-active) !important;
+  color:var(--dream-banshee-accent-gold) !important;
   background:
-    linear-gradient(90deg,transparent 0 8%,rgba(217,162,62,.72) 8% 26%,transparent 26%) bottom/100% 1px no-repeat,
+    linear-gradient(90deg,transparent 0 8%,rgba(var(--dream-banshee-emission-bloom-rgb),.72) 8% 26%,transparent 26%) bottom/100% 1px no-repeat,
     linear-gradient(100deg,rgba(31,49,75,.9),rgba(12,23,39,.94) 72%) !important;
   border:1px solid rgba(91,122,166,.46) !important;
-  border-left-color:rgba(217,162,62,.42) !important;
+  border-left-color:rgba(var(--dream-banshee-emission-bloom-rgb),.42) !important;
   box-shadow:
     inset 0 1px 0 rgba(164,190,224,.13),
     inset 0 -3px 0 rgba(1,5,10,.76),
@@ -162,8 +180,8 @@ html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [da
   isolation:isolate;
   overflow:hidden;
   color:var(--dream-banshee-text-primary) !important;
-  --dream-banshee-composer-top-seam:rgba(217,162,62,.46);
-  --dream-banshee-composer-pulse:rgba(217,162,62,.76);
+  --dream-banshee-composer-top-seam:rgba(var(--dream-banshee-emission-bloom-rgb),.46);
+  --dream-banshee-composer-pulse:rgba(var(--dream-banshee-emission-bloom-rgb),.76);
   background:
     linear-gradient(90deg,transparent 10px,var(--dream-banshee-composer-top-seam) 10px calc(100% - 10px),transparent calc(100% - 10px)) top/100% 1px no-repeat,
     linear-gradient(90deg,transparent 10px,rgba(98,130,174,.46) 10px calc(100% - 10px),transparent calc(100% - 10px)) bottom/100% 1px no-repeat,
@@ -199,18 +217,18 @@ html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [da
   height:2px;
   opacity:.08;
   background-image:
-    linear-gradient(90deg,transparent 0,rgba(217,162,62,.22) 18%,var(--dream-banshee-composer-pulse) 50%,rgba(217,162,62,.22) 82%,transparent 100%),
-    linear-gradient(90deg,transparent 0,rgba(217,162,62,.22) 18%,var(--dream-banshee-composer-pulse) 50%,rgba(217,162,62,.22) 82%,transparent 100%);
+    linear-gradient(90deg,transparent 0,rgba(var(--dream-banshee-emission-bloom-rgb),.22) 18%,var(--dream-banshee-composer-pulse) 50%,rgba(var(--dream-banshee-emission-bloom-rgb),.22) 82%,transparent 100%),
+    linear-gradient(90deg,transparent 0,rgba(var(--dream-banshee-emission-bloom-rgb),.22) 18%,var(--dream-banshee-composer-pulse) 50%,rgba(var(--dream-banshee-emission-bloom-rgb),.22) 82%,transparent 100%);
   background-repeat:no-repeat;
   background-position:50% 0,50% 0;
   background-size:2% 100%,2% 100%;
-  box-shadow:0 0 5px rgba(217,162,62,.3);
+  box-shadow:0 0 5px rgba(var(--dream-banshee-emission-bloom-rgb),.3);
   animation:dream-banshee-wave var(--dream-banshee-wave-cycle) linear infinite;
   will-change:background-position,background-size,opacity,filter;
 }
 
 html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="composer"]:focus-within {
-  --dream-banshee-composer-top-seam:rgba(240,197,111,.64);
+  --dream-banshee-composer-top-seam:rgba(var(--dream-banshee-emission-active-rgb),.64);
   --dream-banshee-composer-pulse:var(--dream-banshee-energy-active);
   box-shadow:
     inset 0 3px 0 var(--dream-banshee-gap),
@@ -219,7 +237,7 @@ html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [da
 }
 
 html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="composer"]:focus-within::after {
-  box-shadow:0 0 7px rgba(217,162,62,.5);
+  box-shadow:0 0 7px rgba(var(--dream-banshee-emission-bloom-rgb),.5);
 }
 
 html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="composer"] > * {
@@ -316,8 +334,24 @@ html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] #co
 }
 
 html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] #codex-dream-skin-chrome .dream-banshee-cavity-rest-light {
-  fill:rgba(183,68,8,.07);
+  fill:rgba(var(--dream-banshee-emission-rest-rgb),.07);
   stroke:none;
+}
+
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] #codex-dream-skin-chrome .dream-banshee-emission-stop-deep {
+  stop-color:rgb(var(--dream-banshee-emission-deep-rgb));
+}
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] #codex-dream-skin-chrome .dream-banshee-emission-stop-rest {
+  stop-color:rgb(var(--dream-banshee-emission-rest-rgb));
+}
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] #codex-dream-skin-chrome .dream-banshee-emission-stop-shoulder {
+  stop-color:rgb(var(--dream-banshee-emission-shoulder-rgb));
+}
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] #codex-dream-skin-chrome .dream-banshee-emission-stop-body {
+  stop-color:rgb(var(--dream-banshee-emission-body-rgb));
+}
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] #codex-dream-skin-chrome .dream-banshee-emission-stop-crest {
+  stop-color:rgb(var(--dream-banshee-emission-crest-rgb));
 }
 
 html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] #codex-dream-skin-chrome .dream-banshee-center-cavity-pulse-field {
@@ -325,19 +359,19 @@ html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] #co
   height:100%;
   opacity:.08;
   background-image:linear-gradient(90deg,
-    rgba(143,50,6,0) 0,
-    rgba(183,68,8,.035) 12%,
-    rgba(219,90,13,.12) 28%,
-    rgba(244,119,22,.36) 42%,
-    rgba(255,173,54,.62) 50%,
-    rgba(244,119,22,.36) 58%,
-    rgba(219,90,13,.12) 72%,
-    rgba(183,68,8,.035) 88%,
-    rgba(143,50,6,0) 100%);
+    rgba(var(--dream-banshee-emission-deep-rgb),0) 0,
+    rgba(var(--dream-banshee-emission-rest-rgb),.035) 12%,
+    rgba(var(--dream-banshee-emission-shoulder-rgb),.12) 28%,
+    rgba(var(--dream-banshee-emission-body-rgb),.36) 42%,
+    rgba(var(--dream-banshee-emission-crest-rgb),.62) 50%,
+    rgba(var(--dream-banshee-emission-body-rgb),.36) 58%,
+    rgba(var(--dream-banshee-emission-shoulder-rgb),.12) 72%,
+    rgba(var(--dream-banshee-emission-rest-rgb),.035) 88%,
+    rgba(var(--dream-banshee-emission-deep-rgb),0) 100%);
   background-repeat:no-repeat;
   background-position:50% 0;
   background-size:300% 100%;
-  box-shadow:inset 0 0 5px rgba(217,162,62,.16);
+  box-shadow:inset 0 0 5px rgba(var(--dream-banshee-emission-bloom-rgb),.16);
   animation:dream-banshee-center-cavity-wave var(--dream-banshee-wave-cycle) linear infinite;
   will-change:opacity,filter;
 }
@@ -353,7 +387,7 @@ html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] #co
   transform-box:view-box;
   transform-origin:0 0;
   will-change:transform;
-  filter:drop-shadow(0 0 5px rgba(255,140,32,.34));
+  filter:drop-shadow(0 0 5px rgba(var(--dream-banshee-emission-band-bloom-rgb),.34));
   animation:dream-banshee-cavity-pulse var(--dream-banshee-wave-cycle) linear infinite;
 }
 
@@ -367,7 +401,7 @@ html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] #co
   stroke:var(--dream-banshee-energy-core);
   stroke-width:1.2;
   opacity:.38;
-  filter:drop-shadow(0 0 2px rgba(217,162,62,.28));
+  filter:drop-shadow(0 0 2px rgba(var(--dream-banshee-emission-bloom-rgb),.28));
   animation:dream-banshee-conduit-breathe var(--dream-banshee-wave-cycle) linear infinite;
 }
 
@@ -462,10 +496,10 @@ html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] #co
 }
 
 @keyframes dream-banshee-conduit-breathe {
-  0%,30%,100% { opacity:.26; filter:brightness(.7) drop-shadow(0 0 2px rgba(217,162,62,.24)); }
-  11.52% { opacity:.46; filter:brightness(.96) drop-shadow(0 0 4px rgba(217,162,62,.4)); }
-  17.28% { opacity:.86; filter:brightness(1.36) drop-shadow(0 0 8px rgba(217,162,62,.68)); }
-  25.92% { opacity:.34; filter:brightness(.84) drop-shadow(0 0 3px rgba(217,162,62,.3)); }
+  0%,30%,100% { opacity:.26; filter:brightness(.7) drop-shadow(0 0 2px rgba(var(--dream-banshee-emission-bloom-rgb),.24)); }
+  11.52% { opacity:.46; filter:brightness(.96) drop-shadow(0 0 4px rgba(var(--dream-banshee-emission-bloom-rgb),.4)); }
+  17.28% { opacity:.86; filter:brightness(1.36) drop-shadow(0 0 8px rgba(var(--dream-banshee-emission-bloom-rgb),.68)); }
+  25.92% { opacity:.34; filter:brightness(.84) drop-shadow(0 0 3px rgba(var(--dream-banshee-emission-bloom-rgb),.3)); }
 }
 
 @keyframes dream-banshee-cavity-pulse {

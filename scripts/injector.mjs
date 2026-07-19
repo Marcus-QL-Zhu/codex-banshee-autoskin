@@ -765,11 +765,16 @@ async function verifySession(session) {
       const rect = node.getBoundingClientRect();
       const stack = document.elementsFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2);
       const hitPass = stack.some((candidate) => candidate === node || node.contains(candidate));
+      const nativeFastIndicator = key === 'fast-mode' && [...node.querySelectorAll('svg')].some((icon) =>
+        String(icon.getAttribute('class') || '').includes('ModelPickerTriggerInlineFastIcon') &&
+        icon.getAttribute('viewBox') === '0 0 24 24' && Boolean(icon.querySelector('path[fill="currentColor"]'))
+      );
       return {
         enhanced: true,
         tagName: node.tagName,
         ariaLabel: node.getAttribute('aria-label') || node.getAttribute('title') || null,
         ariaPressed: node.getAttribute('aria-pressed'),
+        nativeFastIndicator,
         svgPresent: Boolean(node.querySelector('svg')),
         hitPass,
         box: box(node),
@@ -939,6 +944,15 @@ async function verifySession(session) {
       microphone: nativeControl('microphone'),
       fastMode: nativeControl('fast-mode'),
     };
+    const fastAwakeningExpected = capabilities.fastMode.enhanced &&
+      (capabilities.fastMode.ariaPressed === 'true' ||
+        (capabilities.fastMode.ariaPressed === null && capabilities.fastMode.nativeFastIndicator));
+    const fastAwakeningActive = document.documentElement.getAttribute('data-dream-fast') === 'on';
+    const fastAwakening = {
+      expected: fastAwakeningExpected,
+      active: fastAwakeningActive,
+      pass: fastAwakeningActive === fastAwakeningExpected,
+    };
     const markedCapabilitiesPass = Object.values(capabilities).every((control) =>
       !control.enhanced || (control.tagName === 'BUTTON' && control.svgPresent && control.hitPass && Boolean(control.box))
     );
@@ -983,6 +997,7 @@ async function verifySession(session) {
       },
       wave,
       capabilities,
+      fastAwakening,
       composerControlHints,
       topRegion: {
         main: box(mainNode),
@@ -1007,7 +1022,7 @@ async function verifySession(session) {
       ['banner', 'fullscreen'].includes(result.layout) &&
       !result.legacyControlsPresent &&
       result.chromePointerEvents === 'none' && Boolean(result.composer) && Boolean(result.sidebar) &&
-      (!bansheeActive || (result.wave.pass && markedCapabilitiesPass)) &&
+      (!bansheeActive || (result.wave.pass && markedCapabilitiesPass && result.fastAwakening.pass)) &&
       result.topRegion.pass &&
       (!result.homePresent || (Boolean(result.hero) &&
         (!result.suggestionsPresent || result.suggestionsSuppressed || (result.cards.length >= 1 && result.cards.length <= 4 &&

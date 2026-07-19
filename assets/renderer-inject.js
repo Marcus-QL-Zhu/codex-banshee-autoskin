@@ -9,7 +9,7 @@
   const INJECTION_ID = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const LAYOUT_STORAGE_KEY = "codex-dream-skin.layout";
   const THEME_STORAGE_KEY = "codex-dream-skin.theme";
-  const STYLE_VERSION = "37";
+  const STYLE_VERSION = "38";
   const LAYOUTS = new Set(["banner", "fullscreen"]);
   // Sidebar "new task" row gets a marker class so the structure CSS can restyle
   // it as a capsule. Text matching only; the real button stays fully native.
@@ -36,15 +36,15 @@
           <path d="M492 49H517L530 56H731L744 49H769L756 66H505Z"/>
         </clipPath>
         <linearGradient id="dream-banshee-cavity-pulse-fill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#8f3206" stop-opacity="0"/>
-          <stop offset=".12" stop-color="#b74408" stop-opacity=".035"/>
-          <stop offset=".28" stop-color="#db5a0d" stop-opacity=".12"/>
-          <stop offset=".42" stop-color="#f47716" stop-opacity=".36"/>
-          <stop offset=".5" stop-color="#ffad36" stop-opacity=".62"/>
-          <stop offset=".58" stop-color="#f47716" stop-opacity=".36"/>
-          <stop offset=".72" stop-color="#db5a0d" stop-opacity=".12"/>
-          <stop offset=".88" stop-color="#b74408" stop-opacity=".035"/>
-          <stop offset="1" stop-color="#8f3206" stop-opacity="0"/>
+          <stop class="dream-banshee-emission-stop-deep" offset="0" stop-opacity="0"/>
+          <stop class="dream-banshee-emission-stop-rest" offset=".12" stop-opacity=".035"/>
+          <stop class="dream-banshee-emission-stop-shoulder" offset=".28" stop-opacity=".12"/>
+          <stop class="dream-banshee-emission-stop-body" offset=".42" stop-opacity=".36"/>
+          <stop class="dream-banshee-emission-stop-crest" offset=".5" stop-opacity=".62"/>
+          <stop class="dream-banshee-emission-stop-body" offset=".58" stop-opacity=".36"/>
+          <stop class="dream-banshee-emission-stop-shoulder" offset=".72" stop-opacity=".12"/>
+          <stop class="dream-banshee-emission-stop-rest" offset=".88" stop-opacity=".035"/>
+          <stop class="dream-banshee-emission-stop-deep" offset="1" stop-opacity="0"/>
         </linearGradient>      </defs>
       <g class="dream-banshee-chrome-content" mask="url(#dream-banshee-content-mask)">
       <g class="dream-banshee-plate-fills">
@@ -350,7 +350,14 @@
       return [labels.has(label), Boolean(button.querySelector("svg"))];
     });
     const microphoneResult = classifyControl(MICROPHONE_LABELS);
-    const fastModeResult = classifyControl(FAST_MODE_LABELS);
+    const fastModeResult = bansheeRuntime.classifyCandidates(buttons, (button) => {
+      const label = (button.getAttribute("aria-label") || button.getAttribute("title") || "").trim();
+      const dedicatedFastControl = FAST_MODE_LABELS.has(label);
+      const nativeModelTrigger = button.getAttribute("data-codex-intelligence-trigger") === "true" &&
+        button.getAttribute("data-composer-navigation-target") === "reasoning";
+      return [dedicatedFastControl || nativeModelTrigger, Boolean(button.querySelector("svg")),
+        dedicatedFastControl ? button.hasAttribute("aria-pressed") : nativeModelTrigger];
+    });
     const styleForControl = (node) => getComputedStyle(node);
     const hitTestControl = (node, rect) => {
       const stack = document.elementsFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2);
@@ -362,6 +369,7 @@
     // permits legitimate Fast/microphone glyph changes and React node replacement.
     if (bansheeActive) {
       root.removeAttribute("data-dream-pack-ready");
+      root.removeAttribute("data-dream-fast");
       restoreOwned();
     }
     const activationBaselines = new Map();
@@ -418,9 +426,13 @@
         setOwnedAttribute(entry.result.node, "data-dream-owner", INJECTION_ID);
       }
     }
+    const fastAwakeningActive = bansheeActive && enhancedCapabilities.has("fast-mode") &&
+      bansheeRuntime.isFastAwakeningActive(fastModeResult, fastModeParity);
+    const fastModeState = bansheeRuntime.fastModeState(fastModeResult, fastModeParity);
+    if (fastAwakeningActive) root.setAttribute("data-dream-fast", "on");
+    else root.removeAttribute("data-dream-fast");
 
     if (bansheeActive) {
-      const fastPressed = fastModeResult.node?.getAttribute("aria-pressed");
       const report = JSON.stringify({
         surfaces: {
           sidebar: sideResult.state,
@@ -432,8 +444,9 @@
         microphone: { state: microphoneResult.state, parity: microphoneParity?.pass ?? null },
         fastMode: {
           state: fastModeResult.state,
-          availability: fastModeResult.state === "verified" ? (fastPressed === "true" ? "on" : "off") : "unavailable",
+          availability: fastModeState,
           parity: fastModeParity?.pass ?? null,
+          awakening: fastAwakeningActive,
         },
       });
       if (report !== lastCapabilityReport) {
@@ -569,6 +582,7 @@
       rootElement.style.removeProperty("--dream-chat-art");
       rootElement.style.removeProperty("--dream-banshee-wave-epoch-offset");
       rootElement.removeAttribute("data-dream-pack-ready");
+      rootElement.removeAttribute("data-dream-fast");
     }
     restoreOwned();
     document.querySelectorAll(".dream-home").forEach((node) => node.classList.remove("dream-home"));
@@ -600,7 +614,7 @@
     for (const mutation of mutations) metrics.addedNodes += mutation.addedNodes?.length ?? 0;
     scheduleEnsure();
   });
-  observer.observe(document.documentElement, { childList: true, subtree: true });
+  observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ["aria-pressed"] });
   const timer = setInterval(ensure, 5000);
   window[STATE_KEY] = {
     ensure,

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Banshee Armored Shell Preview</title>
-  <link rel="stylesheet" href="../styles/banshee/style.css?v=23">
+  <link rel="stylesheet" href="../styles/banshee/style.css?v=24">
   <style>
     :root {
       --dream-ink:#dce7f8; --dream-purple:#6d7f9c; --dream-violet:#8699b7; --dream-pink:#d9a23e;
@@ -12,6 +12,11 @@
       --dream-banshee-armor-700:#1a2a42; --dream-banshee-gap:#02060c; --dream-banshee-seam:rgba(91,122,166,.30);
       --dream-banshee-seam-strong:rgba(119,151,194,.48); --dream-banshee-energy-low:rgba(217,162,62,.46);
       --dream-banshee-energy-core:#d9a23e; --dream-banshee-energy-active:#f0c56f; --dream-banshee-energy-bright:#fff0bd;
+      --dream-banshee-accent-gold:#f0c56f;
+      --dream-banshee-emission-deep-rgb:143,50,6; --dream-banshee-emission-rest-rgb:183,68,8;
+      --dream-banshee-emission-shoulder-rgb:219,90,13; --dream-banshee-emission-body-rgb:244,119,22;
+      --dream-banshee-emission-crest-rgb:255,173,54; --dream-banshee-emission-bloom-rgb:217,162,62;
+      --dream-banshee-emission-active-rgb:240,197,111; --dream-banshee-emission-band-bloom-rgb:255,140,32;
       --dream-banshee-text-primary:#dce7f8; --dream-banshee-text-secondary:#aebed6; --dream-banshee-focus:#f0c56f;
       --dream-banshee-wave-cycle:10s;
     }
@@ -119,15 +124,15 @@
           <path d="M492 49H517L530 56H731L744 49H769L756 66H505Z"/>
         </clipPath>
         <linearGradient id="dream-banshee-cavity-pulse-fill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#8f3206" stop-opacity="0"/>
-          <stop offset=".12" stop-color="#b74408" stop-opacity=".035"/>
-          <stop offset=".28" stop-color="#db5a0d" stop-opacity=".12"/>
-          <stop offset=".42" stop-color="#f47716" stop-opacity=".36"/>
-          <stop offset=".5" stop-color="#ffad36" stop-opacity=".62"/>
-          <stop offset=".58" stop-color="#f47716" stop-opacity=".36"/>
-          <stop offset=".72" stop-color="#db5a0d" stop-opacity=".12"/>
-          <stop offset=".88" stop-color="#b74408" stop-opacity=".035"/>
-          <stop offset="1" stop-color="#8f3206" stop-opacity="0"/>
+          <stop class="dream-banshee-emission-stop-deep" offset="0" stop-opacity="0"/>
+          <stop class="dream-banshee-emission-stop-rest" offset=".12" stop-opacity=".035"/>
+          <stop class="dream-banshee-emission-stop-shoulder" offset=".28" stop-opacity=".12"/>
+          <stop class="dream-banshee-emission-stop-body" offset=".42" stop-opacity=".36"/>
+          <stop class="dream-banshee-emission-stop-crest" offset=".5" stop-opacity=".62"/>
+          <stop class="dream-banshee-emission-stop-body" offset=".58" stop-opacity=".36"/>
+          <stop class="dream-banshee-emission-stop-shoulder" offset=".72" stop-opacity=".12"/>
+          <stop class="dream-banshee-emission-stop-rest" offset=".88" stop-opacity=".035"/>
+          <stop class="dream-banshee-emission-stop-deep" offset="1" stop-opacity="0"/>
         </linearGradient>      </defs>
       <g class="dream-banshee-chrome-content" mask="url(#dream-banshee-content-mask)">
       <g class="dream-banshee-plate-fills">

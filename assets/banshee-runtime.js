@@ -106,6 +106,19 @@
   const selectCapabilityEnhancements = (entries) => entries
     .filter((entry) => entry?.result?.state === "verified" && entry?.parity?.pass === true)
     .map((entry) => entry.key);
+  const fastModeState = (result, parity) => {
+    if (result?.state !== "verified" || parity?.pass !== true || !result.node) return "unavailable";
+    const pressed = result.node.getAttribute?.("aria-pressed");
+    if (pressed === "true") return "on";
+    if (pressed === "false") return "off";
+    const nativeInlineIcon = [...(result.node.querySelectorAll?.("svg") ?? [])].some((icon) =>
+      String(icon.getAttribute?.("class") ?? "").includes("ModelPickerTriggerInlineFastIcon") &&
+      icon.getAttribute?.("viewBox") === "0 0 24 24" &&
+      Boolean(icon.querySelector?.('path[fill="currentColor"]'))
+    );
+    return nativeInlineIcon ? "on" : "off";
+  };
+  const isFastAwakeningActive = (result, parity) => fastModeState(result, parity) === "on";
   const hitTestControl = (node, stack, styleFor) => {
     const top = [...(stack ?? [])].find((candidate) => (styleFor?.(candidate)?.pointerEvents ?? "auto") !== "none");
     return Boolean(top && (top === node || node?.contains?.(top)));
@@ -118,5 +131,5 @@
     return Math.round(normalized * Math.max(0, Number(travelMs) || 0));
   };
 
-  return { artVariables, classifyCandidates, compareControl, createDebouncedScheduler, createOwnershipRegistry, hashText, hitTestControl, isBansheeWaveAnimation, propagationDelay, selectCapabilityEnhancements, snapshotControl };
+  return { artVariables, classifyCandidates, compareControl, createDebouncedScheduler, createOwnershipRegistry, fastModeState, hashText, hitTestControl, isBansheeWaveAnimation, isFastAwakeningActive, propagationDelay, selectCapabilityEnhancements, snapshotControl };
 })()
