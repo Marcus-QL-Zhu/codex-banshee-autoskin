@@ -106,6 +106,35 @@ function Get-DreamSkinDirectoryBytes([string]$Path) {
   return $sum
 }
 
+function Remove-DreamSkinDirectoryTreeLongPath([string]$Path, [string]$Boundary) {
+  $pathFull = Get-DreamSkinNormalizedPath $Path
+  $boundaryFull = Get-DreamSkinNormalizedPath $Boundary
+  if (-not $pathFull -or -not $boundaryFull -or
+      -not $pathFull.StartsWith($boundaryFull + '\', [StringComparison]::OrdinalIgnoreCase)) {
+    throw "Directory deletion escaped its verified boundary: $pathFull"
+  }
+  $extendedPath = if ($pathFull.StartsWith('\\?\')) { $pathFull } else { '\\?\' + $pathFull }
+  if (-not [IO.Directory]::Exists($extendedPath)) { return $false }
+  $directories = [Collections.Generic.Stack[string]]::new()
+  $directories.Push($extendedPath)
+  while ($directories.Count -gt 0) {
+    $current = $directories.Pop()
+    $attributes = [IO.File]::GetAttributes($current)
+    if (($attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
+      throw "Directory deletion refuses reparse point: $current"
+    }
+    foreach ($entry in [IO.Directory]::EnumerateFileSystemEntries($current)) {
+      $entryAttributes = [IO.File]::GetAttributes($entry)
+      if (($entryAttributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
+        throw "Directory deletion refuses reparse point: $entry"
+      }
+      if (($entryAttributes -band [IO.FileAttributes]::Directory) -ne 0) { $directories.Push($entry) }
+    }
+  }
+  [IO.Directory]::Delete($extendedPath, $true)
+  return $true
+}
+
 function Assert-DreamSkinDiskSpace([string]$Destination, [long]$RequiredBytes) {
   $root = [IO.Path]::GetPathRoot((Get-DreamSkinNormalizedPath $Destination))
   $drive = [IO.DriveInfo]::new($root)
@@ -118,25 +147,31 @@ function Assert-DreamSkinDiskSpace([string]$Destination, [long]$RequiredBytes) {
 }
 
 function ConvertTo-DreamSkinProcessIdentity([object]$CimProcess, [object]$Process) {
-  if (-not $CimProcess -or -not $Process) { return $null }
-  $commandLine = [string]$CimProcess.CommandLine
-  $executablePath = [string]$CimProcess.ExecutablePath
+  if (-not $Process) { return $null }
+  $commandLine = if ($CimProcess) { [string]$CimProcess.CommandLine } else { '' }
+  $executablePath = if ($CimProcess) { [string]$CimProcess.ExecutablePath } else { '' }
   if ([string]::IsNullOrWhiteSpace($executablePath)) {
     try { $executablePath = [string]$Process.Path } catch { return $null }
   }
   try { $startTime = $Process.StartTime.ToUniversalTime().ToString('o') } catch { return $null }
+  $commandLineSha256 = if ([string]::IsNullOrWhiteSpace($commandLine)) { '' } else { Get-DreamSkinSha256Text $commandLine }
   return [ordered]@{
     processId = [int]$Process.Id
     startTimeUtc = $startTime
     executablePath = Get-DreamSkinNormalizedPath $executablePath
-    commandLineSha256 = Get-DreamSkinSha256Text $commandLine
+    commandLineSha256 = $commandLineSha256
   }
 }
 
 function Get-DreamSkinProcessIdentity([int]$ProcessId) {
   try {
     $process = Get-Process -Id $ProcessId -ErrorAction Stop
-    $cim = Get-CimInstance Win32_Process -Filter "ProcessId = $ProcessId" -ErrorAction Stop
+    $cim = $null
+    if ($ProcessId -eq $PID) {
+      $cim = [pscustomobject]@{ ExecutablePath = [string]$process.Path; CommandLine = [Environment]::CommandLine }
+    } else {
+      try { $cim = Get-CimInstance Win32_Process -Filter "ProcessId = $ProcessId" -ErrorAction Stop } catch {}
+    }
     return ConvertTo-DreamSkinProcessIdentity -CimProcess $cim -Process $process
   } catch {
     return $null
@@ -148,10 +183,16 @@ function Test-DreamSkinProcessIdentity([object]$Expected, [object]$Current) {
   foreach ($field in @('processId', 'startTimeUtc', 'executablePath', 'commandLineSha256')) {
     if ($Expected.PSObject.Properties.Name -notcontains $field -or $Current.PSObject.Properties.Name -notcontains $field) { return $false }
   }
-  return [int]$Expected.processId -eq [int]$Current.processId -and
+  $basicMatches = [int]$Expected.processId -eq [int]$Current.processId -and
     [string]$Expected.startTimeUtc -eq [string]$Current.startTimeUtc -and
-    (Test-DreamSkinPathEqual ([string]$Expected.executablePath) ([string]$Current.executablePath)) -and
-    [string]$Expected.commandLineSha256 -eq [string]$Current.commandLineSha256
+    (Test-DreamSkinPathEqual ([string]$Expected.executablePath) ([string]$Current.executablePath))
+  if (-not $basicMatches) { return $false }
+  $expectedHash = [string]$Expected.commandLineSha256
+  $currentHash = [string]$Current.commandLineSha256
+  if (-not [string]::IsNullOrWhiteSpace($expectedHash) -and -not [string]::IsNullOrWhiteSpace($currentHash)) {
+    return $expectedHash -eq $currentHash
+  }
+  return $true
 }
 
 function Stop-DreamSkinOwnedProcess([object]$Expected, [switch]$Force) {
@@ -379,7 +420,7 @@ function Remove-DreamSkinObsoleteRuntimes(
     }
     if ($inUse) { continue }
     Assert-DreamSkinNoReparsePath -Path $normalized -Boundary $runtimeRoot
-    Remove-Item -LiteralPath $normalized -Recurse -Force
+    [void](Remove-DreamSkinDirectoryTreeLongPath -Path $normalized -Boundary $runtimeRoot)
     $removed += $normalized
   }
   return @($removed)
@@ -507,7 +548,7 @@ function Install-DreamSkinEngineSnapshot([string]$SourceRoot, [string]$StateRoot
     if (-not (Test-DreamSkinEngineSnapshot -EngineRoot $versionRoot -Manifest $Manifest)) {
       throw 'Installed engine snapshot failed final verification.'
     }
-    if ($retired -and (Test-Path -LiteralPath $retired)) { Remove-Item -LiteralPath $retired -Recurse -Force }
+    if ($retired -and (Test-Path -LiteralPath $retired)) { [void](Remove-DreamSkinDirectoryTreeLongPath -Path $retired -Boundary $engineParent) }
     return [pscustomobject]@{ Root = $versionRoot; SnapshotId = $Manifest.SnapshotId; Version = $versionName }
   } catch {
     if ($retired -and (Test-Path -LiteralPath $retired) -and -not (Test-Path -LiteralPath $versionRoot)) {
@@ -516,8 +557,8 @@ function Install-DreamSkinEngineSnapshot([string]$SourceRoot, [string]$StateRoot
     }
     throw
   } finally {
-    if ($staging -and (Test-Path -LiteralPath $staging)) { Remove-Item -LiteralPath $staging -Recurse -Force -ErrorAction SilentlyContinue }
-    if ($retired -and (Test-Path -LiteralPath $retired)) { Remove-Item -LiteralPath $retired -Recurse -Force -ErrorAction SilentlyContinue }
+    if ($staging -and (Test-Path -LiteralPath $staging)) { try { [void](Remove-DreamSkinDirectoryTreeLongPath -Path $staging -Boundary $engineParent) } catch {} }
+    if ($retired -and (Test-Path -LiteralPath $retired)) { try { [void](Remove-DreamSkinDirectoryTreeLongPath -Path $retired -Boundary $engineParent) } catch {} }
   }
 }
 
@@ -622,7 +663,8 @@ function Complete-DreamSkinPendingCleanup([string]$StateRoot) {
   if (-not (Test-Path -LiteralPath $pendingPath -PathType Leaf)) { return $true }
   if (Test-DreamSkinRuntimeInUse -StateRoot $StateRoot) { return $false }
   $pending = Get-Content -LiteralPath $pendingPath -Raw | ConvertFrom-Json
-  Remove-Item -LiteralPath $StateRoot -Recurse -Force
+  $localRoot = Get-DreamSkinNormalizedPath $env:LOCALAPPDATA
+  [void](Remove-DreamSkinDirectoryTreeLongPath -Path $StateRoot -Boundary $localRoot)
   [void](Remove-DreamSkinShortcutIfOwned -Path ([string]$pending.cleanupShortcutPath) -ExpectedHash ([string]$pending.cleanupShortcutHash))
   return $true
 }

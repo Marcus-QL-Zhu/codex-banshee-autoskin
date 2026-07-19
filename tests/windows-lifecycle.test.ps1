@@ -49,6 +49,9 @@ try {
   $wrongCommand = $same.PSObject.Copy()
   $wrongCommand.commandLineSha256 = 'def'
   Assert-True (-not (Test-DreamSkinProcessIdentity -Expected $expected -Current $wrongCommand)) 'A different command line must fail ownership.'
+  $basicOnly = $same.PSObject.Copy()
+  $basicOnly.commandLineSha256 = ''
+  Assert-True (Test-DreamSkinProcessIdentity -Expected $expected -Current $basicOnly) 'PID, start time, and executable path must remain usable when WMI command-line access is denied.'
 
   $originalToml = "[other]`r`nappearanceTheme = `"leave-$&-alone`"`r`n`r`n[desktop]`r`nappearanceTheme = `"light`"`r`nappearanceDarkCodeThemeId = `"user-$&`"`r`n[after]`r`nvalue = 1`r`n"
   $settings = [ordered]@{
@@ -141,7 +144,8 @@ try {
   Assert-True ($longDirectoryBytes -gt 0) 'Directory-size accounting must support paths longer than MAX_PATH.'
   $longCritical = @(Get-DreamSkinCriticalFiles -Root $longSource)
   Assert-True (@($longCritical | Where-Object { [string]$_['path'] -like '*addon.node' }).Count -eq 1) 'Critical-file enumeration must support paths longer than MAX_PATH.'
-  [IO.Directory]::Delete(('\\?\' + $longSource), $true)
+  Assert-True (Remove-DreamSkinDirectoryTreeLongPath -Path $longSource -Boundary $sandbox) 'Long-path runtime cleanup must succeed.'
+  Assert-True (-not (Test-Path -LiteralPath $longSource)) 'Long-path runtime cleanup must remove the entire tree.'
   $integrityRoot = Join-Path $sandbox 'integrity-runtime'
   $integrityVersion = Join-Path $integrityRoot '9.9.9'
   Copy-Item -LiteralPath $trustedSource -Destination $integrityVersion -Recurse

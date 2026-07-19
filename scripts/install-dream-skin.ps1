@@ -284,26 +284,31 @@ if ($NoAutoRecover) {
     [void](Convert-DreamSkinLegacyProcessState -StatePath $watcherStatePath -IdentityProperty 'watcherIdentity' -PidProperty 'watcherPid' -ExpectedExecutableNames @('powershell.exe', 'pwsh.exe') -RequiredCommandTokens @('watch-dream-skin.ps1'))
     [void](Stop-DreamSkinProcessStateSafely -StatePath $watcherStatePath -IdentityProperty 'watcherIdentity' -Force)
   }
+  $watcherHealthToken = [guid]::NewGuid().ToString('N')
   $watcherProcess = Start-Process -FilePath $powershell -WindowStyle Hidden -PassThru -ArgumentList @(
     '-NoProfile', '-WindowStyle', 'Hidden', '-ExecutionPolicy', 'Bypass',
-    '-File', "`"$watchScript`"", '-Port', "$Port"
+    '-File', "`"$watchScript`"", '-Port', "$Port", '-HealthToken', $watcherHealthToken
   )
   $script:attemptWatcherProcess = $watcherProcess
   $watcherHealthy = $false
-  for ($attempt = 0; $attempt -lt 50; $attempt++) {
+  for ($attempt = 0; $attempt -lt 75; $attempt++) {
     Start-Sleep -Milliseconds 200
+    $watcherProcess.Refresh()
+    if ($watcherProcess.HasExited) {
+      throw "Watcher exited before acknowledging readiness (exit code $($watcherProcess.ExitCode))."
+    }
     if (-not (Test-Path -LiteralPath $watcherStatePath -PathType Leaf)) { continue }
     try {
       $watcherState = Get-Content -LiteralPath $watcherStatePath -Raw | ConvertFrom-Json
       if ([int]$watcherState.watcherPid -ne $watcherProcess.Id) { continue }
-      $currentWatcher = Get-DreamSkinProcessIdentity -ProcessId $watcherProcess.Id
-      if (Test-DreamSkinProcessIdentity -Expected $watcherState.watcherIdentity -Current $currentWatcher) {
-        $watcherHealthy = $true
-        break
-      }
+      if ([string]$watcherState.healthToken -ne $watcherHealthToken) { continue }
+      if ([string]$watcherState.phase -ne 'ready') { continue }
+      if (-not (Test-DreamSkinPathEqual ([string]$watcherState.scriptPath) $watchScript)) { continue }
+      $watcherHealthy = $true
+      break
     } catch {}
   }
-  if (-not $watcherHealthy) { throw 'Watcher did not pass its post-install ownership and state health check.' }
+  if (-not $watcherHealthy) { throw 'Watcher did not acknowledge readiness within 15 seconds.' }
 }
 
 $transaction.shortcuts = $shortcutRecords

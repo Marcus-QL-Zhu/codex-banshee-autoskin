@@ -211,7 +211,7 @@ function Ensure-DreamSkinStandaloneRuntime([string]$StateRoot) {
     $staging = $null
     $ready = Read-DreamSkinStandaloneRuntime -RuntimeRoot $runtimeRoot -Package $package
     if (-not $ready) { throw 'Standalone runtime failed final marker verification.' }
-    if ($retired -and (Test-Path -LiteralPath $retired)) { Remove-Item -LiteralPath $retired -Recurse -Force }
+    if ($retired -and (Test-Path -LiteralPath $retired)) { [void](Remove-DreamSkinDirectoryTreeLongPath -Path $retired -Boundary $runtimeRoot) }
     try { Remove-DreamSkinObsoleteRuntimes -StateRoot $StateRoot -KeepRoots @($versionRoot) | Out-Null }
     catch { Write-Warning "Skipped obsolete runtime cleanup: $($_.Exception.Message)" }
     return $ready
@@ -222,7 +222,7 @@ function Ensure-DreamSkinStandaloneRuntime([string]$StateRoot) {
     }
     throw
   } finally {
-    if ($staging -and (Test-Path -LiteralPath $staging)) { Remove-Item -LiteralPath $staging -Recurse -Force -ErrorAction SilentlyContinue }
-    if ($retired -and (Test-Path -LiteralPath $retired)) { Remove-Item -LiteralPath $retired -Recurse -Force -ErrorAction SilentlyContinue }
+    if ($staging -and (Test-Path -LiteralPath $staging)) { try { [void](Remove-DreamSkinDirectoryTreeLongPath -Path $staging -Boundary $runtimeRoot) } catch {} }
+    if ($retired -and (Test-Path -LiteralPath $retired)) { try { [void](Remove-DreamSkinDirectoryTreeLongPath -Path $retired -Boundary $runtimeRoot) } catch {} }
   }
 }

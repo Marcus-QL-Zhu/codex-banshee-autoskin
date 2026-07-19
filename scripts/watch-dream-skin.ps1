@@ -1,6 +1,8 @@
 [CmdletBinding()]
 param(
   [int]$Port = 0,
+  [ValidatePattern('^[a-f0-9]{32}$')]
+  [string]$HealthToken = '',
   [int]$PollSeconds = 2,
   [int]$LaunchGraceSeconds = 15,
   [int]$MaxConsecutiveFailures = 3,
@@ -154,8 +156,11 @@ function Test-InjectorHealthy {
 $watcherIdentity = Get-DreamSkinProcessIdentity -ProcessId $PID
 if (-not $watcherIdentity) { throw 'Watcher could not capture its process ownership identity.' }
 @{
+  schemaVersion = 2
   watcherPid = $PID
   watcherIdentity = $watcherIdentity
+  healthToken = $HealthToken
+  phase = 'ready'
   port = $Port
   startedAt = (Get-Date).ToString('o')
   scriptPath = $PSCommandPath

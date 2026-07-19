@@ -122,7 +122,8 @@ if ($Uninstall -and (Test-Path -LiteralPath $StateRoot)) {
   } elseif (Test-Path -LiteralPath (Join-Path $StateRoot 'pending-cleanup.json') -PathType Leaf) {
     [void](Complete-DreamSkinPendingCleanup -StateRoot $StateRoot)
   } else {
-    Remove-Item -LiteralPath $StateRoot -Recurse -Force
+    $localRoot = Get-DreamSkinNormalizedPath $env:LOCALAPPDATA
+    [void](Remove-DreamSkinDirectoryTreeLongPath -Path $StateRoot -Boundary $localRoot)
   }
 }
 

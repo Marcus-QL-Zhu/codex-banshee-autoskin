@@ -364,7 +364,7 @@ test("installer is dark-first, persists a port, and restores with compare-and-sw
   assert.match(install, /Write-DreamSkinJsonAtomic -Path \$script:TransactionPath/);
   assert.match(restore, /currentHash -ne \$createdHash/);
   assert.match(restore, /Preserved user-modified shortcut/);
-  assert.match(restore, /Remove-Item -LiteralPath \$StateRoot -Recurse -Force/);
+  assert.match(restore, /Remove-DreamSkinDirectoryTreeLongPath -Path \$StateRoot -Boundary \$localRoot/);
   assert.match(runtimeState, /IPAddress\]::Loopback/);
   assert.match(runtimeState, /IPAddress\]::IPv6Loopback/);
   assert.match(runtimeState, /DualMode = \$false/);
@@ -372,6 +372,7 @@ test("installer is dark-first, persists a port, and restores with compare-and-sw
   const startScript = read("scripts/start-dream-skin.ps1");
   const standalone = read("scripts/standalone-runtime.ps1");
   const watcher = read("scripts/watch-dream-skin.ps1");
+  const lifecycle = read("scripts/lifecycle.ps1");
   assert.match(standalone, /Get-AuthenticodeSignature/);
   assert.match(standalone, /SignatureKind -ne 'Store'/);
   assert.match(standalone, /PublisherId -ne \$script:DreamSkinExpectedPublisherId/);
@@ -387,6 +388,7 @@ test("installer is dark-first, persists a port, and restores with compare-and-sw
   assert.match(standalone, /Get-FileHash -LiteralPath \$ioPath -Algorithm SHA256/);
   assert.match(standalone, /\.staging-/);
   assert.match(standalone, /Refusing to replace an unowned runtime directory/);
+  assert.match(lifecycle, /function Remove-DreamSkinDirectoryTreeLongPath/);
   assert.match(startScript, /Ensure-DreamSkinStandaloneRuntime/);
   assert.ok(startScript.indexOf("Ensure-DreamSkinStandaloneRuntime") < startScript.indexOf("Stop-CodexCompletely"));
   assert.match(startScript, /Start-Process -FilePath \$StandaloneRuntime\.Executable -WorkingDirectory \$StandaloneRuntime\.Root/);
@@ -402,6 +404,9 @@ test("installer is dark-first, persists a port, and restores with compare-and-sw
   assert.match(watcher, /the running Codex process was not interrupted during the copy/);
   assert.match(watcher, /Codex will keep running without structural injection/);
   assert.match(watcher, /runtimePackageFullName/);
+  assert.match(watcher, /\[string\]\$HealthToken = ''/);
+  assert.match(watcher, /healthToken = \$HealthToken/);
+  assert.match(watcher, /phase = 'ready'/);
   assert.match(install, /Ensure-DreamSkinStandaloneRuntime/);
   assert.ok(
     install.indexOf("Ensure-DreamSkinStandaloneRuntime") <
@@ -414,6 +419,10 @@ test("installer is dark-first, persists a port, and restores with compare-and-sw
     "installer must never execute Node directly from WindowsApps",
   );
   assert.match(install, /runtimePackageFullName/);
+  assert.match(install, /\$watcherHealthToken = \[guid\]::NewGuid\(\)\.ToString\('N'\)/);
+  assert.match(install, /\[string\]\$watcherState\.healthToken -ne \$watcherHealthToken/);
+  assert.match(install, /\[string\]\$watcherState\.phase -ne 'ready'/);
+  assert.doesNotMatch(install, /Get-DreamSkinProcessIdentity -ProcessId \$watcherProcess\.Id/);
 });
 test("target selection rejects auxiliary and non-loopback renderers", () => {
   const base = { type: "page", url: "app://-/index.html", webSocketDebuggerUrl: "ws://127.0.0.1:9335/devtools/page/1" };
