@@ -104,6 +104,10 @@ Design-language semantics take precedence over seam count. The shell is translat
 - Main reading and input surfaces are the largest and quietest armor planes. Detail density concentrates around navigation selection, tool/approval/diff nodes, frame transfers, and the composer context rail.
 - Direction follows a force field: stable verticals express navigation and progression; outward diagonals express expansion or activity; inward-converging folds are reserved for a primary action or core state. A component does not mix unrelated diagonal directions.
 - State change is **topology reveal**, not color replacement. The selected sidebar row is a subtly raised plate with one embedded S3 segment, not a gold rectangle. The composer is a closed shell with a persistent low-output recessed top conduit. Its synchronized pulse begins as one center crest, expands across approximately one third of that conduit, then separates into two elongated luminous bands that retain substantial length while traveling toward opposite ends; the center returns to low-output light as they separate. The pulse may never become a full-border flash. The native home suggestion-shortcut group is intentionally suppressed and leaves no empty card rail.
+
+The sidebar crown's native mode label and search button are treated as one verified control group. At the accepted desktop scale the group moves upward by `6px` so both controls share the optical center of the crown cell; their internal flex layout, DOM order, dimensions, and hit targets remain native.
+
+Native project and thread rows receive state geometry through pointer-transparent pseudo-plates. Hover and keyboard focus reveal a restrained chamfered S2 plate plus a dim S3 segment. The active row reveals the same topology at full definition with a stronger local S3 segment. The actual native row remains rectangular and unclipped for clicking, dragging, context menus, and focus outlines.
 The approved fourth concept establishes a **minimum seam coverage**, not merely a color reference:
 
 | Zone | Required armor construction |
@@ -174,6 +178,7 @@ The state owns all theme-authored yellow, gold, amber, orange, and burnt-orange 
 - decorative active glints attached to selected armor seams where those glints use the energy palette.
 - native file-reference mentions rendered inside conversation content, including their inherited file icon, while preserving the native reference node and interaction behavior.
 - native Fast-on state emissions: the filled slider range, slider particles, the model-picker Fast marker, and the composer inline Fast marker. Their native SVGs, slider thumb, geometry, labels, and interactions remain unchanged; Fast-off controls retain the normal palette.
+- the native amber idle/completed dot on a background task row. Only the `charts-yellow` dot changes to the awakening energy core; green, red, purple, and orange status semantics remain native.
 
 It does **not** recolor native semantic warning, error, success, diff, focus, model, or microphone colors. The native Fast markers are the sole semantic-icon exception and change color only while Fast is verified on. Armor planes and cool structural seam lines also remain unchanged. Fast unavailable and Fast available-but-off both retain the normal palette; ambiguous state detection fails closed to the normal palette. The implementation must derive state from the existing native Fast control and expose one pack-scoped root state marker or token set. It may not synthesize a second Fast control, intercept clicks, replace the lightning icon, or infer activation from label text alone.
 

@@ -9,11 +9,12 @@
   const INJECTION_ID = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const LAYOUT_STORAGE_KEY = "codex-dream-skin.layout";
   const THEME_STORAGE_KEY = "codex-dream-skin.theme";
-  const STYLE_VERSION = "40";
+  const STYLE_VERSION = "41";
   const LAYOUTS = new Set(["banner", "fullscreen"]);
   // Sidebar "new task" row gets a marker class so the structure CSS can restyle
   // it as a capsule. Text matching only; the real button stays fully native.
   const NEW_TASK_LABELS = ["新建任务", "New task"];
+  const SIDEBAR_SEARCH_LABELS = new Set(["Search", "\u641c\u7d22"]);
   const MICROPHONE_LABELS = new Set(["Microphone", "Voice input", "Dictation", "麦克风", "语音输入", "听写"]);
   const FAST_MODE_LABELS = new Set(["Fast mode", "快速模式"]);
   // Canonical Banshee shell geometry is traced in the approved reference's
@@ -462,6 +463,39 @@
           NEW_TASK_LABELS.some((label) => (button.textContent || "").includes(label));
         if (isNewTask) newTaskButton = button;
         button.classList.toggle("dream-new-task", isNewTask);
+      }
+    }
+    if (sidePanel && bansheeActive) {
+      const sidebarBox = sidePanel.getBoundingClientRect();
+      const searchCandidates = [...sidePanel.querySelectorAll("button")].filter((button) => {
+        const label = (button.getAttribute("aria-label") || button.getAttribute("title") || "").trim();
+        const rect = button.getBoundingClientRect();
+        return SIDEBAR_SEARCH_LABELS.has(label) &&
+          rect.width > 0 && rect.height > 0 &&
+          rect.top >= sidebarBox.top && rect.top < sidebarBox.top + 48;
+      });
+      let crownControls = null;
+      if (searchCandidates.length === 1) {
+        for (let node = searchCandidates[0].parentElement; node && node !== sidePanel; node = node.parentElement) {
+          const rect = node.getBoundingClientRect();
+          const buttonsInNode = [...node.querySelectorAll("button")];
+          if (buttonsInNode.length !== 2 ||
+              rect.width < sidebarBox.width * 0.7 ||
+              rect.height < 24 || rect.height > 40) continue;
+          crownControls = node;
+          break;
+        }
+      }
+      const crownBox = crownControls?.getBoundingClientRect();
+      const crownButtons = crownControls ? [...crownControls.querySelectorAll("button")] : [];
+      const crownVerified = crownControls && crownBox &&
+        crownButtons.length === 2 &&
+        crownBox.width >= sidebarBox.width * 0.7 &&
+        crownBox.height >= 24 && crownBox.height <= 40 &&
+        crownBox.top >= sidebarBox.top && crownBox.top <= sidebarBox.top + 24;
+      if (crownVerified) {
+        setOwnedAttribute(crownControls, "data-dream-sidebar-crown-controls", "true");
+        setOwnedAttribute(crownControls, "data-dream-owner", INJECTION_ID);
       }
     }
     for (const candidate of document.querySelectorAll('[role="main"].dream-home')) {

@@ -126,9 +126,18 @@ test("Banshee selectors are pack-scoped and its motion/accessibility fallbacks e
   assert.match(css, /border:0 !important/);
   assert.match(css, /clip-path:polygon\(10px 0,calc\(100% - 10px\) 0,100% 10px/);
   assert.match(css, /\[data-dream-surface="composer"\]:focus-within/);
-  const selectedPlate = css.match(/\[aria-current="page"\]\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
-  assert.match(selectedPlate, /bottom\/100% 1px no-repeat/);
+  assert.match(css, /\[data-dream-sidebar-crown-controls="true"\]\s*\{[\s\S]*?transform:translateY\(-6px\)/);
+  const sidebarRowPlate = css.match(/\[data-app-action-sidebar-thread-row\]::before\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
+  assert.match(sidebarRowPlate, /pointer-events:none/);
+  assert.match(sidebarRowPlate, /clip-path:polygon\(0 0,calc\(100% - 9px\) 0,100% 9px/);
+  assert.match(sidebarRowPlate, /transition:opacity 160ms ease,filter 160ms ease/);
+  const selectedPlate = css.match(/\[data-app-action-sidebar-thread-row\]\[data-app-action-sidebar-thread-active="true"\]::before\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
+  assert.match(selectedPlate, /opacity:1/);
+  assert.match(selectedPlate, /rgba\(var\(--dream-banshee-emission-active-rgb\),\.78\)/);
   assert.doesNotMatch(selectedPlate, /border:\s*1px solid rgba\(217,162,62/);
+  const fastThreadStatus = css.match(/\[data-dream-fast="on"\] \[data-app-action-sidebar-thread-row\] \.size-2\.rounded-full\.bg-token-charts-yellow\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
+  assert.match(fastThreadStatus, /background-color:var\(--dream-banshee-energy-core\) !important/);
+  assert.match(fastThreadStatus, /box-shadow:0 0 7px rgba\(var\(--dream-banshee-emission-crest-rgb\),\.42\) !important/);
   const composerEnergy = css.match(/\[data-dream-surface="composer"\]::after\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
   assert.match(composerEnergy, /left:10px/);
   assert.match(composerEnergy, /right:10px/);
@@ -201,7 +210,7 @@ test("legacy Dream structure is isolated behind its own pack class", () => {
 
 test("renderer supports artless switching, pack cleanup, neutral chrome, and one epoch", () => {
   const source = read("assets/renderer-inject.js");
-  assert.match(source, /const STYLE_VERSION = "40"/);
+  assert.match(source, /const STYLE_VERSION = "41"/);
   assert.match(source, /THEME_ART_MODES/);
   assert.match(source, /bansheeRuntime\.artVariables/);
   assert.match(source, /cls\.startsWith\("dream-pack-"\)/);
@@ -277,6 +286,10 @@ test("renderer supports artless switching, pack cleanup, neutral chrome, and one
   assert.match(source, /data-codex-intelligence-trigger/);
   assert.match(source, /data-composer-navigation-target/);
   assert.match(source, /root\.setAttribute\("data-dream-fast", "on"\)/);
+  assert.match(source, /const SIDEBAR_SEARCH_LABELS = new Set\(\["Search", "\\u641c\\u7d22"\]\)/);
+  assert.match(source, /data-dream-sidebar-crown-controls/);
+  assert.match(source, /for \(let node = searchCandidates\[0\]\.parentElement; node && node !== sidePanel; node = node\.parentElement\)/);
+  assert.match(source, /crownButtons\.length === 2/);
   assert.match(source, /attributeFilter: \["aria-pressed"\]/);
   assert.match(source, /\[threadHeaderResult, "thread-header"\]/);
   assert.match(source, /dream-banshee-spine-shoulder-fill/);
