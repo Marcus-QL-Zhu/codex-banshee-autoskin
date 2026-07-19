@@ -42,6 +42,10 @@ function Get-TrustedCodexStorePackage {
   if ($signature.Status -notin @('Valid', 'NotSigned')) {
     throw "Codex executable signature state is not accepted: $($signature.Status)"
   }
+  $nodeSignature = Get-AuthenticodeSignature -LiteralPath $nodeExecutable
+  if ($nodeSignature.Status -ne 'Valid') {
+    throw "Bundled Node executable signature is not valid: $($nodeSignature.Status)"
+  }
 
   return [pscustomobject]@{
     Version = [string]$package.Version

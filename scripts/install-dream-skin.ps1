@@ -15,8 +15,11 @@ $TransactionPath = Join-Path $StateRoot 'install-transaction.json'
 $ConfigPath = Join-Path $HOME '.codex\config.toml'
 $BackupPath = Join-Path $StateRoot 'config.before-dream-skin.toml'
 
-# Fail every environmental preflight before creating state, copying the runtime,
-# changing Codex configuration, or registering persistence.
+# Fail every non-executable environmental preflight before creating state,
+# copying the runtime, changing Codex configuration, or registering persistence.
+# Windows may deny direct execution of binaries inside WindowsApps even when
+# the current user can read them. The bundled Node executable is therefore run
+# only after the verified Store payload has been copied to our local runtime.
 Assert-DreamSkinStateRootSafe -StateRoot $StateRoot
 Assert-DreamSkinPort -Port $Port -AllowZero
 if (-not (Test-Path -LiteralPath $ConfigPath)) { throw "Codex config not found: $ConfigPath" }
@@ -31,7 +34,6 @@ if (Test-Path -LiteralPath $TransactionPath) {
   catch { throw "Existing install transaction is unreadable; refusing to overwrite recovery data: $TransactionPath" }
 }
 $Package = Get-TrustedCodexStorePackage
-$nodePreflight = Get-DreamSkinNodePreflight -NodePath $Package.NodeExecutable
 $Port = Get-DreamSkinPersistedPort -StateRoot $StateRoot -RequestedPort $Port -Allocate
 $engineManifest = Get-DreamSkinEngineManifest -SourceRoot $SkillRoot
 $runtimeRoot = Join-Path $StateRoot 'runtime'
@@ -109,9 +111,10 @@ function Undo-DreamSkinInstallAttempt {
 
 try {
 New-Item -ItemType Directory -Force -Path $StateRoot | Out-Null
+$StandaloneRuntime = Ensure-DreamSkinStandaloneRuntime -StateRoot $StateRoot
+$nodePreflight = Get-DreamSkinNodePreflight -NodePath $StandaloneRuntime.NodeExecutable
 $InstalledEngine = Install-DreamSkinEngineSnapshot -SourceRoot $SkillRoot -StateRoot $StateRoot -Manifest $engineManifest
 $InstalledScriptRoot = Join-Path $InstalledEngine.Root 'scripts'
-$StandaloneRuntime = Ensure-DreamSkinStandaloneRuntime -StateRoot $StateRoot
 if (-not (Test-Path -LiteralPath $BackupPath)) { Copy-Item -LiteralPath $ConfigPath -Destination $BackupPath }
 
 $settings = [ordered]@{

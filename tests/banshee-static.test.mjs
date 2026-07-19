@@ -378,6 +378,7 @@ test("installer is dark-first, persists a port, and restores with compare-and-sw
   assert.match(standalone, /Status -ne 'Ok'/);
   assert.match(standalone, /StartsWith\(\$parentFull, \[StringComparison\]::OrdinalIgnoreCase\)/);
   assert.match(standalone, /Status -notin @\('Valid', 'NotSigned'\)/);
+  assert.match(standalone, /Bundled Node executable signature is not valid/);
   assert.match(standalone, /\.codex-dream-skin-runtime\.json/);
   assert.match(standalone, /robocopy\.exe/);
   assert.match(standalone, /\/COPY:DAT/);
@@ -402,6 +403,16 @@ test("installer is dark-first, persists a port, and restores with compare-and-sw
   assert.match(watcher, /Codex will keep running without structural injection/);
   assert.match(watcher, /runtimePackageFullName/);
   assert.match(install, /Ensure-DreamSkinStandaloneRuntime/);
+  assert.ok(
+    install.indexOf("Ensure-DreamSkinStandaloneRuntime") <
+      install.indexOf("Get-DreamSkinNodePreflight -NodePath $StandaloneRuntime.NodeExecutable"),
+    "installer must execute Node only from the copied and hash-verified local runtime",
+  );
+  assert.doesNotMatch(
+    install,
+    /Get-DreamSkinNodePreflight\s+-NodePath\s+\$Package\.NodeExecutable/,
+    "installer must never execute Node directly from WindowsApps",
+  );
   assert.match(install, /runtimePackageFullName/);
 });
 test("target selection rejects auxiliary and non-loopback renderers", () => {
