@@ -135,7 +135,8 @@ test("Banshee selectors are pack-scoped and its motion/accessibility fallbacks e
   assert.match(selectedPlate, /opacity:1/);
   assert.match(selectedPlate, /rgba\(var\(--dream-banshee-emission-active-rgb\),\.78\)/);
   assert.doesNotMatch(selectedPlate, /border:\s*1px solid rgba\(217,162,62/);
-  const fastThreadStatus = css.match(/\[data-dream-fast="on"\] \[data-app-action-sidebar-thread-row\] \.size-2\.rounded-full\.bg-token-charts-yellow\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
+  const fastThreadStatus = css.match(/\[data-dream-fast="on"\] \[data-app-action-sidebar-thread-row\] span\.absolute\.inset-0\.rounded-full\[style\*="--vscode-textLink-foreground"\]\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
+  assert.match(css, /\[data-dream-fast="on"\] \[data-app-action-sidebar-thread-row\] \.size-2\.rounded-full\.bg-token-charts-yellow,/);
   assert.match(fastThreadStatus, /background-color:var\(--dream-banshee-energy-core\) !important/);
   assert.match(fastThreadStatus, /box-shadow:0 0 7px rgba\(var\(--dream-banshee-emission-crest-rgb\),\.42\) !important/);
   const composerEnergy = css.match(/\[data-dream-surface="composer"\]::after\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
@@ -210,7 +211,7 @@ test("legacy Dream structure is isolated behind its own pack class", () => {
 
 test("renderer supports artless switching, pack cleanup, neutral chrome, and one epoch", () => {
   const source = read("assets/renderer-inject.js");
-  assert.match(source, /const STYLE_VERSION = "41"/);
+  assert.match(source, /const STYLE_VERSION = "42"/);
   assert.match(source, /THEME_ART_MODES/);
   assert.match(source, /bansheeRuntime\.artVariables/);
   assert.match(source, /cls\.startsWith\("dream-pack-"\)/);
