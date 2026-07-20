@@ -37,6 +37,6 @@ All notable changes to Codex AutoSkin are documented in this file. The project f
 - Rebranded the manifest-driven rewrite as Codex AutoSkin.
 - Added agent-readable theme authoring, two generated demo themes, reversible CDP injection, theme switching, verification, and restore workflows.
 
-[Unreleased]: https://github.com/Marcus-QL-Zhu/codex-autoskin/compare/v2.3.0...HEAD
-[2.3.0]: https://github.com/Marcus-QL-Zhu/codex-autoskin/compare/v2.0.0...v2.3.0
-[2.0.0]: https://github.com/Marcus-QL-Zhu/codex-autoskin/releases/tag/v2.0.0
+[Unreleased]: https://github.com/Marcus-QL-Zhu/codex-banshee-autoskin/compare/v2.3.0...HEAD
+[2.3.0]: https://github.com/Marcus-QL-Zhu/codex-banshee-autoskin/compare/v2.0.0...v2.3.0
+[2.0.0]: https://github.com/Marcus-QL-Zhu/codex-banshee-autoskin/releases/tag/v2.0.0
