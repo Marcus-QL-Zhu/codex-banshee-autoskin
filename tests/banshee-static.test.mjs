@@ -396,6 +396,10 @@ test("installer is dark-first, persists a port, and restores with compare-and-sw
   assert.match(startScript, /\$maxLaunchAttempts = 1/);
   assert.match(startScript, /automatic retry is disabled/);
   assert.match(startScript, /Get-NetTCPConnection/);
+  assert.match(startScript, /-StorePackageFullName \$Package\.PackageFullName -StoreExecutable \$Package\.Executable/);
+  assert.match(lifecycle, /IPackageDebugSettings/);
+  assert.match(lifecycle, /TerminateAllProcesses/);
+  assert.doesNotMatch(lifecycle, /Get-CimInstance Win32_Process -Filter "Name = 'ChatGPT\.exe'"/);
   assert.match(watcher, /function Sync-DreamSkinStandaloneRuntime/);
   assert.match(watcher, /function Update-DreamSkinRuntimeRecord/);
   assert.match(watcher, /Get-DreamSkinStandaloneRuntime/);

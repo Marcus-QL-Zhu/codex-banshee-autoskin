@@ -57,7 +57,7 @@ function Test-CodexDebugPort([int]$CandidatePort) {
 }
 
 function Stop-CodexCompletely {
-  Stop-DreamSkinTrustedCodexProcesses -ExecutablePaths $TrustedCodexExecutables
+  Stop-DreamSkinTrustedCodexProcesses -ExecutablePaths $TrustedCodexExecutables -StorePackageFullName $Package.PackageFullName -StoreExecutable $Package.Executable
 }
 
 $debugReady = Test-CodexDebugPort $Port

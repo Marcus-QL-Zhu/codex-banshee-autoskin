@@ -195,6 +195,61 @@ function Test-DreamSkinProcessIdentity([object]$Expected, [object]$Current) {
   return $true
 }
 
+function Initialize-DreamSkinPackageDebugInterop {
+  if ('DreamSkin.Interop.IPackageDebugSettings' -as [type]) { return }
+  $source = @'
+using System;
+using System.Runtime.InteropServices;
+
+namespace DreamSkin.Interop {
+  [ComImport]
+  [Guid("F27C3930-8029-4AD1-94E3-3DBA417810C1")]
+  [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+  public interface IPackageDebugSettings {
+    [PreserveSig] int EnableDebugging([MarshalAs(UnmanagedType.LPWStr)] string packageFullName, [MarshalAs(UnmanagedType.LPWStr)] string debuggerCommandLine, IntPtr environment);
+    [PreserveSig] int DisableDebugging([MarshalAs(UnmanagedType.LPWStr)] string packageFullName);
+    [PreserveSig] int Suspend([MarshalAs(UnmanagedType.LPWStr)] string packageFullName);
+    [PreserveSig] int Resume([MarshalAs(UnmanagedType.LPWStr)] string packageFullName);
+    [PreserveSig] int TerminateAllProcesses([MarshalAs(UnmanagedType.LPWStr)] string packageFullName);
+  }
+
+  [ComImport]
+  [Guid("B1AEC16F-2383-4852-B0E9-8F0B1DC66B4D")]
+  public class PackageDebugSettings { }
+
+  public static class PackageLifecycle {
+    public static int TerminateAllProcesses(string packageFullName) {
+      var settings = (IPackageDebugSettings)new PackageDebugSettings();
+      try {
+        return settings.TerminateAllProcesses(packageFullName);
+      } finally {
+        if (Marshal.IsComObject(settings)) Marshal.FinalReleaseComObject(settings);
+      }
+    }
+  }
+}
+'@
+  Add-Type -TypeDefinition $source -Language CSharp -ErrorAction Stop
+}
+
+function Stop-DreamSkinStorePackageProcesses([string]$PackageFullName, [scriptblock]$Terminator) {
+  if ([string]::IsNullOrWhiteSpace($PackageFullName) -or
+      $PackageFullName -notmatch '^OpenAI\.Codex_[^\\/:*?"<>|]+__2p2nqsd0c76g0$') {
+    throw "Refusing to terminate an unverified Store package identity: $PackageFullName"
+  }
+  if ($Terminator) {
+    $result = [int](& $Terminator $PackageFullName)
+  } else {
+    Initialize-DreamSkinPackageDebugInterop
+    $result = [int][DreamSkin.Interop.PackageLifecycle]::TerminateAllProcesses($PackageFullName)
+  }
+  if ($result -lt 0) {
+    $errorCode = ('0x{0:X8}' -f ([uint32]([int64]$result -band 0xffffffffL)))
+    throw "Windows package lifecycle termination failed for $PackageFullName ($errorCode)."
+  }
+  return $true
+}
+
 function Stop-DreamSkinOwnedProcess([object]$Expected, [switch]$Force) {
   if (-not $Expected) { return $false }
   $current = Get-DreamSkinProcessIdentity -ProcessId ([int]$Expected.processId)
@@ -348,27 +403,34 @@ function Get-DreamSkinTrustedCodexProcesses([string[]]$ExecutablePaths, [switch]
   }
   if ($allowed.Count -eq 0) { return @() }
   $records = @()
-  try { $candidates = @(Get-CimInstance Win32_Process -Filter "Name = 'ChatGPT.exe'" -ErrorAction Stop) }
-  catch { throw "Unable to inspect process executable paths safely: $($_.Exception.Message)" }
-  foreach ($candidate in $candidates) {
-    $path = [string]$candidate.ExecutablePath
+  foreach ($process in @(Get-Process -ErrorAction Stop)) {
+    $path = ''
+    try { $path = [string]$process.Path } catch { continue }
     if ([string]::IsNullOrWhiteSpace($path)) { continue }
     try { $key = (Get-DreamSkinNormalizedPath $path).ToLowerInvariant() } catch { continue }
     if (-not $allowed.ContainsKey($key)) { continue }
     try {
-      $process = Get-Process -Id ([int]$candidate.ProcessId) -ErrorAction Stop
       if ($VisibleOnly -and $process.MainWindowHandle -eq 0) { continue }
-      $identity = ConvertTo-DreamSkinProcessIdentity -CimProcess $candidate -Process $process
+      $identity = ConvertTo-DreamSkinProcessIdentity -CimProcess $null -Process $process
       if ($identity) { $records += [pscustomobject]@{ Process = $process; Identity = $identity; ExecutablePath = $path } }
     } catch {}
   }
   return @($records)
 }
 
-function Stop-DreamSkinTrustedCodexProcesses([string[]]$ExecutablePaths) {
+function Stop-DreamSkinTrustedCodexProcesses([string[]]$ExecutablePaths, [string]$StorePackageFullName, [string]$StoreExecutable, [scriptblock]$PackageTerminator) {
   $visible = @(Get-DreamSkinTrustedCodexProcesses -ExecutablePaths $ExecutablePaths -VisibleOnly)
   foreach ($record in $visible) { [void](Stop-DreamSkinOwnedProcess -Expected $record.Identity) }
   Start-Sleep -Seconds 2
+  if ([bool]$StorePackageFullName -xor [bool]$StoreExecutable) {
+    throw 'Store package termination requires both its verified package identity and executable path.'
+  }
+  if ($StorePackageFullName) {
+    $storeIsAllowed = @($ExecutablePaths | Where-Object { Test-DreamSkinPathEqual ([string]$_) $StoreExecutable }).Count -gt 0
+    if (-not $storeIsAllowed) { throw 'Store package executable is outside the verified Codex executable set.' }
+    $storeRunning = @(Get-DreamSkinTrustedCodexProcesses -ExecutablePaths @($StoreExecutable)).Count -gt 0
+    if ($storeRunning) { [void](Stop-DreamSkinStorePackageProcesses -PackageFullName $StorePackageFullName -Terminator $PackageTerminator) }
+  }
   $deadline = (Get-Date).AddSeconds(12)
   $observedEmpty = $false
   while ((Get-Date) -lt $deadline) {

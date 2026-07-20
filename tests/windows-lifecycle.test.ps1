@@ -53,6 +53,13 @@ try {
   $basicOnly.commandLineSha256 = ''
   Assert-True (Test-DreamSkinProcessIdentity -Expected $expected -Current $basicOnly) 'PID, start time, and executable path must remain usable when WMI command-line access is denied.'
 
+  $script:terminatedPackage = ''
+  $validPackage = 'OpenAI.Codex_26.715.4045.0_x64__2p2nqsd0c76g0'
+  Assert-True (Stop-DreamSkinStorePackageProcesses -PackageFullName $validPackage -Terminator { param($package) $script:terminatedPackage = $package; return 0 }) 'Verified Store package termination should accept a successful package lifecycle result.'
+  Assert-True ($script:terminatedPackage -eq $validPackage) 'Package lifecycle termination must receive the exact verified package full name.'
+  Assert-Throws { Stop-DreamSkinStorePackageProcesses -PackageFullName 'Other.App_1.0.0.0_x64__publisher' -Terminator { return 0 } } 'Package termination must reject an unrelated package identity.'
+  Assert-Throws { Stop-DreamSkinStorePackageProcesses -PackageFullName $validPackage -Terminator { return -2147024891 } } 'A failing package lifecycle HRESULT must fail closed.'
+
   $originalToml = "[other]`r`nappearanceTheme = `"leave-$&-alone`"`r`n`r`n[desktop]`r`nappearanceTheme = `"light`"`r`nappearanceDarkCodeThemeId = `"user-$&`"`r`n[after]`r`nvalue = 1`r`n"
   $settings = [ordered]@{
     appearanceTheme = 'appearanceTheme = "dark"'
@@ -185,6 +192,8 @@ try {
     (Get-Content -LiteralPath (Join-Path $repoRoot 'scripts\start-dream-skin.ps1') -Raw)
   Assert-True (-not [regex]::IsMatch($ownershipText, '(?im)Get-Process[^\r\n]*ChatGPT')) 'Lifecycle code must not enumerate Codex by Get-Process name.'
   Assert-True (-not [regex]::IsMatch($ownershipText, '(?im)Stop-Process[^\r\n]*ChatGPT')) 'Lifecycle code must not kill Codex by name.'
+  Assert-True ($ownershipText.Contains('IPackageDebugSettings')) 'Store lifecycle control must use the documented Windows package interface.'
+  Assert-True ($ownershipText.Contains('TerminateAllProcesses')) 'Store lifecycle control must terminate the verified package as one unit.'
   $wrapperText = @('install-dream-skin.ps1', 'start-dream-skin.ps1', 'watch-dream-skin.ps1', 'restore-dream-skin.ps1', 'verify-dream-skin.ps1', 'set-theme.ps1') |
     ForEach-Object { Get-Content -LiteralPath (Join-Path $repoRoot "scripts\$_") -Raw } |
     Out-String
