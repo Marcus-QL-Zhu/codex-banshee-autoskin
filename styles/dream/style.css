@@ -1,10 +1,10 @@
 /* Codex Dream Skin — structure layer.
    This file only consumes tokens; it must never reference a concrete theme name.
-   Per-theme token blocks (`:root.codex-dream-skin.dream-theme-<name> { ... }`) and
+   Per-theme token blocks (`:root.codex-dream-skin.dream-pack-dream.dream-theme-<name> { ... }`) and
    scoped per-theme extra.css are generated/validated by scripts/injector.mjs from
    themes/<name>/theme.json and themes-private/<name>/theme.json. */
 
-:root.codex-dream-skin {
+:root.codex-dream-skin.dream-pack-dream {
   color-scheme: light !important;
   /* Structural layout tokens (theme-independent; a theme may override them). */
   --dream-hero-copy-width: 54%;
@@ -73,7 +73,7 @@
   --dream-chat-wash: rgba(255, 255, 255, .76);
 }
 
-html.codex-dream-skin body {
+html.codex-dream-skin.dream-pack-dream body {
   background:
     radial-gradient(circle at 78% 2%, var(--dream-page-glow-a), transparent 25%),
     radial-gradient(circle at 24% 12%, var(--dream-page-glow-b), transparent 28%),
@@ -82,7 +82,7 @@ html.codex-dream-skin body {
   font-family: "Microsoft YaHei UI", "Microsoft YaHei", system-ui, sans-serif !important;
 }
 
-html.codex-dream-skin body::before {
+html.codex-dream-skin.dream-pack-dream body::before {
   content: "";
   position: fixed;
   inset: 0;
@@ -96,7 +96,7 @@ html.codex-dream-skin body::before {
   background-size: 53px 53px, 67px 67px;
 }
 
-html.codex-dream-skin aside.app-shell-left-panel {
+html.codex-dream-skin.dream-pack-dream aside.app-shell-left-panel {
   background:
     linear-gradient(180deg, rgba(255,250,253,.98), rgba(255,239,248,.96)) !important;
   border: 1px solid rgba(229, 151, 198, .45) !important;
@@ -107,22 +107,22 @@ html.codex-dream-skin aside.app-shell-left-panel {
   color: var(--dream-ink) !important;
 }
 
-html.codex-dream-skin aside.app-shell-left-panel nav {
+html.codex-dream-skin.dream-pack-dream aside.app-shell-left-panel nav {
   background: transparent !important;
 }
 
-html.codex-dream-skin aside.app-shell-left-panel button {
+html.codex-dream-skin.dream-pack-dream aside.app-shell-left-panel button {
   color: #55266e !important;
   transition: transform .16s ease, background .16s ease, box-shadow .16s ease !important;
 }
 
-html.codex-dream-skin aside.app-shell-left-panel button:hover {
+html.codex-dream-skin.dream-pack-dream aside.app-shell-left-panel button:hover {
   background: linear-gradient(90deg, rgba(255,211,235,.72), rgba(221,194,255,.62)) !important;
   box-shadow: inset 0 0 0 1px rgba(207,110,190,.22) !important;
   transform: translateX(1px);
 }
 
-html.codex-dream-skin aside.app-shell-left-panel button[aria-label^="切换模式"] {
+html.codex-dream-skin.dream-pack-dream aside.app-shell-left-panel button[aria-label^="切换模式"] {
   background: transparent !important;
   border-color: transparent !important;
   font-family: Georgia, "Times New Roman", serif !important;
@@ -132,45 +132,45 @@ html.codex-dream-skin aside.app-shell-left-panel button[aria-label^="切换模�
   text-shadow: 0 2px 10px rgba(255,89,183,.28);
 }
 
-html.codex-dream-skin aside.app-shell-left-panel button[aria-label^="切换模式"]::after {
+html.codex-dream-skin.dream-pack-dream aside.app-shell-left-panel button[aria-label^="切换模式"]::after {
   content: "✦";
   margin-left: 2px;
   color: #f16ab5;
 }
 
-html.codex-dream-skin aside.app-shell-left-panel [class~="bg-token-list-hover-background"],
-html.codex-dream-skin aside.app-shell-left-panel [aria-current="page"] {
+html.codex-dream-skin.dream-pack-dream aside.app-shell-left-panel [class~="bg-token-list-hover-background"],
+html.codex-dream-skin.dream-pack-dream aside.app-shell-left-panel [aria-current="page"] {
   background: linear-gradient(90deg, rgba(229,197,255,.78), rgba(255,202,231,.72)) !important;
   border: 1px solid rgba(193,101,191,.30) !important;
   box-shadow: 0 4px 16px rgba(146,70,162,.10) !important;
 }
 
 /* "New task" capsule — the runtime marks the real native button with
-   .dream-new-task (text match); everything here is pure restyling. */
-html.codex-dream-skin aside.app-shell-left-panel button.dream-new-task {
+   html.codex-dream-skin.dream-pack-dream .dream-new-task (text match); everything here is pure restyling. */
+html.codex-dream-skin.dream-pack-dream aside.app-shell-left-panel button.dream-new-task {
   margin: 2px 2px 7px;
   width: calc(100% - 4px) !important;
   border-radius: 999px !important;
   background: linear-gradient(135deg, var(--dream-pink), var(--dream-purple)) !important;
   box-shadow: 0 6px 16px rgba(190,84,140,.30), inset 0 1px 0 rgba(255,255,255,.45) !important;
 }
-html.codex-dream-skin aside.app-shell-left-panel button.dream-new-task:hover {
+html.codex-dream-skin.dream-pack-dream aside.app-shell-left-panel button.dream-new-task:hover {
   background: linear-gradient(135deg, var(--dream-violet), var(--dream-purple)) !important;
   box-shadow: 0 8px 20px rgba(190,84,140,.40), inset 0 1px 0 rgba(255,255,255,.45) !important;
   transform: translateY(-1px);
 }
-html.codex-dream-skin aside.app-shell-left-panel button.dream-new-task,
-html.codex-dream-skin aside.app-shell-left-panel button.dream-new-task * {
+html.codex-dream-skin.dream-pack-dream aside.app-shell-left-panel button.dream-new-task,
+html.codex-dream-skin.dream-pack-dream aside.app-shell-left-panel button.dream-new-task * {
   color: #fff !important;
 }
 
 /* Section headers ("项目" / "任务"): small-caps style + dashed divider above. */
-html.codex-dream-skin aside.app-shell-left-panel [class~="group/nav-section-title"] {
+html.codex-dream-skin.dream-pack-dream aside.app-shell-left-panel [class~="group/nav-section-title"] {
   margin-top: 9px;
   padding-top: 8px;
   border-top: 1px dashed rgba(216,132,180,.42);
 }
-html.codex-dream-skin aside.app-shell-left-panel [class~="group/nav-section-title"] [class~="group/section-toggle"] {
+html.codex-dream-skin.dream-pack-dream aside.app-shell-left-panel [class~="group/nav-section-title"] [class~="group/section-toggle"] {
   color: var(--dream-purple) !important;
   font-size: 12px !important;
   font-weight: 700 !important;
@@ -181,8 +181,8 @@ html.codex-dream-skin aside.app-shell-left-panel [class~="group/nav-section-titl
    v1.2 "avatar card" look: gradient card base + avatar halo + tiny ornament.
    Decorations are the button's own background/pseudo-elements, so hit-testing
    (elementsFromPoint) always lands on the native button itself. */
-html.codex-dream-skin aside.app-shell-left-panel button[aria-label="打开个人资料菜单"],
-html.codex-dream-skin aside.app-shell-left-panel button[aria-label="Open profile menu"] {
+html.codex-dream-skin.dream-pack-dream aside.app-shell-left-panel button[aria-label="打开个人资料菜单"],
+html.codex-dream-skin.dream-pack-dream aside.app-shell-left-panel button[aria-label="Open profile menu"] {
   position: relative !important;
   border: 1px solid color-mix(in srgb, var(--dream-pink) 66%, #ffffff) !important;
   border-radius: 16px !important;
@@ -194,8 +194,8 @@ html.codex-dream-skin aside.app-shell-left-panel button[aria-label="Open profile
     inset 0 1px 0 rgba(255,255,255,.92),
     inset 0 0 0 2px rgba(255,255,255,.42) !important;
 }
-html.codex-dream-skin aside.app-shell-left-panel button[aria-label="打开个人资料菜单"]:hover,
-html.codex-dream-skin aside.app-shell-left-panel button[aria-label="Open profile menu"]:hover {
+html.codex-dream-skin.dream-pack-dream aside.app-shell-left-panel button[aria-label="打开个人资料菜单"]:hover,
+html.codex-dream-skin.dream-pack-dream aside.app-shell-left-panel button[aria-label="Open profile menu"]:hover {
   background:
     radial-gradient(circle at 86% 14%, rgba(255,255,255,.9), transparent 42%),
     linear-gradient(135deg, color-mix(in srgb, var(--dream-pink) 20%, #ffffff) 0%, color-mix(in srgb, var(--dream-pink) 44%, #ffffff) 100%) !important;
@@ -205,8 +205,8 @@ html.codex-dream-skin aside.app-shell-left-panel button[aria-label="Open profile
     inset 0 0 0 2px rgba(255,255,255,.42) !important;
 }
 /* Decorative heart in the card corner — a pseudo-element can never take clicks. */
-html.codex-dream-skin aside.app-shell-left-panel button[aria-label="打开个人资料菜单"]::after,
-html.codex-dream-skin aside.app-shell-left-panel button[aria-label="Open profile menu"]::after {
+html.codex-dream-skin.dream-pack-dream aside.app-shell-left-panel button[aria-label="打开个人资料菜单"]::after,
+html.codex-dream-skin.dream-pack-dream aside.app-shell-left-panel button[aria-label="Open profile menu"]::after {
   content: "♡";
   position: absolute;
   right: 8px;
@@ -218,8 +218,8 @@ html.codex-dream-skin aside.app-shell-left-panel button[aria-label="Open profile
   opacity: .72;
 }
 /* Avatar halo: white ring + theme-pink ring + soft glow. */
-html.codex-dream-skin aside.app-shell-left-panel button[aria-label="打开个人资料菜单"] img,
-html.codex-dream-skin aside.app-shell-left-panel button[aria-label="Open profile menu"] img {
+html.codex-dream-skin.dream-pack-dream aside.app-shell-left-panel button[aria-label="打开个人资料菜单"] img,
+html.codex-dream-skin.dream-pack-dream aside.app-shell-left-panel button[aria-label="Open profile menu"] img {
   border-radius: 50% !important;
   box-shadow:
     0 0 0 2px #fff,
@@ -227,7 +227,7 @@ html.codex-dream-skin aside.app-shell-left-panel button[aria-label="Open profile
     0 0 9px 3px color-mix(in srgb, var(--dream-pink) 52%, transparent) !important;
 }
 
-html.codex-dream-skin main.main-surface {
+html.codex-dream-skin.dream-pack-dream main.main-surface {
   position: relative !important;
   background:
     radial-gradient(circle at 84% 10%, var(--dream-page-glow-a), transparent 30%),
@@ -241,7 +241,7 @@ html.codex-dream-skin main.main-surface {
   overflow: hidden !important;
 }
 
-html.codex-dream-skin main.main-surface:not(.dream-home-shell)::before {
+html.codex-dream-skin.dream-pack-dream main.main-surface:not(.dream-home-shell)::before {
   content: "";
   position: absolute;
   z-index: 0;
@@ -255,7 +255,7 @@ html.codex-dream-skin main.main-surface:not(.dream-home-shell)::before {
   filter: saturate(.72) contrast(.92);
 }
 
-html.codex-dream-skin main.main-surface:not(.dream-home-shell)::after {
+html.codex-dream-skin.dream-pack-dream main.main-surface:not(.dream-home-shell)::after {
   content: "";
   position: absolute;
   z-index: 0;
@@ -264,18 +264,18 @@ html.codex-dream-skin main.main-surface:not(.dream-home-shell)::after {
   background: linear-gradient(90deg, var(--dream-chat-wash) 0%, rgba(255, 253, 251, .62) 48%, rgba(255, 253, 251, .38) 100%);
 }
 
-html.codex-dream-skin main.main-surface > * {
+html.codex-dream-skin.dream-pack-dream main.main-surface > * {
   z-index: 1;
 }
 
-html.codex-dream-skin main.main-surface > header.app-header-tint {
+html.codex-dream-skin.dream-pack-dream main.main-surface > header.app-header-tint {
   background:
     linear-gradient(90deg, rgba(255,249,252,.95), rgba(255,227,243,.84), rgba(229,207,255,.78)) !important;
   border-bottom: 1px solid rgba(229,151,198,.34) !important;
   backdrop-filter: none !important;
 }
 
-#codex-dream-skin-chrome {
+html.codex-dream-skin.dream-pack-dream #codex-dream-skin-chrome {
   position: fixed;
   z-index: 31;
   pointer-events: none;
@@ -283,7 +283,7 @@ html.codex-dream-skin main.main-surface > header.app-header-tint {
   border-radius: 20px 0 0 0;
 }
 
-.dream-brand {
+html.codex-dream-skin.dream-pack-dream .dream-brand {
   position: absolute;
   left: 25px;
   top: 3px;
@@ -295,12 +295,12 @@ html.codex-dream-skin main.main-surface > header.app-header-tint {
   text-shadow: 0 1px 0 white;
 }
 
-#codex-dream-skin-chrome.dream-home-shell .dream-brand { display: flex; }
-.dream-brand .dream-note { font-size: 29px; color: #ba4dde; filter: drop-shadow(0 2px 4px rgba(255,102,190,.34)); }
-.dream-brand b { display: block; font-size: 15px; letter-spacing: .04em; }
-.dream-brand small { display: block; margin-top: 1px; color: #9e58bd; font-size: 10px; letter-spacing: .03em; }
+html.codex-dream-skin.dream-pack-dream #codex-dream-skin-chrome.dream-home-shell .dream-brand { display: flex; }
+html.codex-dream-skin.dream-pack-dream .dream-brand .dream-note { font-size: 29px; color: #ba4dde; filter: drop-shadow(0 2px 4px rgba(255,102,190,.34)); }
+html.codex-dream-skin.dream-pack-dream .dream-brand b { display: block; font-size: 15px; letter-spacing: .04em; }
+html.codex-dream-skin.dream-pack-dream .dream-brand small { display: block; margin-top: 1px; color: #9e58bd; font-size: 10px; letter-spacing: .03em; }
 
-.dream-signature {
+html.codex-dream-skin.dream-pack-dream .dream-signature {
   position: absolute;
   right: 92px;
   top: 6px;
@@ -310,20 +310,20 @@ html.codex-dream-skin main.main-surface > header.app-header-tint {
   text-shadow: 0 0 8px white, 0 2px 8px rgba(181,61,143,.24);
   transform: rotate(-3deg);
 }
-#codex-dream-skin-chrome.dream-home-shell .dream-signature { display: block; }
+html.codex-dream-skin.dream-pack-dream #codex-dream-skin-chrome.dream-home-shell .dream-signature { display: block; }
 
-.dream-sparkles { position: absolute; inset: 48px 0 0; opacity: .72; }
-.dream-sparkles i { position: absolute; width: 5px; height: 5px; border-radius: 50%; background: white; box-shadow: 0 0 10px 3px rgba(255,112,196,.66); }
-.dream-sparkles i::before, .dream-sparkles i::after { content: ""; position: absolute; left: 2px; top: -6px; width: 1px; height: 17px; background: linear-gradient(transparent, rgba(255,255,255,.95), transparent); }
-.dream-sparkles i::after { transform: rotate(90deg); }
-.dream-sparkles i:nth-child(1) { left: 7%; top: 11%; }
-.dream-sparkles i:nth-child(2) { left: 31%; top: 5%; opacity: .55; }
-.dream-sparkles i:nth-child(3) { left: 55%; top: 17%; opacity: .82; }
-.dream-sparkles i:nth-child(4) { left: 78%; top: 8%; opacity: .64; }
-.dream-sparkles i:nth-child(5) { left: 92%; top: 27%; opacity: .9; }
-.dream-sparkles i:nth-child(6) { left: 66%; top: 66%; opacity: .48; }
+html.codex-dream-skin.dream-pack-dream .dream-sparkles { position: absolute; inset: 48px 0 0; opacity: .72; }
+html.codex-dream-skin.dream-pack-dream .dream-sparkles i { position: absolute; width: 5px; height: 5px; border-radius: 50%; background: white; box-shadow: 0 0 10px 3px rgba(255,112,196,.66); }
+html.codex-dream-skin.dream-pack-dream .dream-sparkles i::before, html.codex-dream-skin.dream-pack-dream .dream-sparkles i::after { content: ""; position: absolute; left: 2px; top: -6px; width: 1px; height: 17px; background: linear-gradient(transparent, rgba(255,255,255,.95), transparent); }
+html.codex-dream-skin.dream-pack-dream .dream-sparkles i::after { transform: rotate(90deg); }
+html.codex-dream-skin.dream-pack-dream .dream-sparkles i:nth-child(1) { left: 7%; top: 11%; }
+html.codex-dream-skin.dream-pack-dream .dream-sparkles i:nth-child(2) { left: 31%; top: 5%; opacity: .55; }
+html.codex-dream-skin.dream-pack-dream .dream-sparkles i:nth-child(3) { left: 55%; top: 17%; opacity: .82; }
+html.codex-dream-skin.dream-pack-dream .dream-sparkles i:nth-child(4) { left: 78%; top: 8%; opacity: .64; }
+html.codex-dream-skin.dream-pack-dream .dream-sparkles i:nth-child(5) { left: 92%; top: 27%; opacity: .9; }
+html.codex-dream-skin.dream-pack-dream .dream-sparkles i:nth-child(6) { left: 66%; top: 66%; opacity: .48; }
 
-.dream-polaroid {
+html.codex-dream-skin.dream-pack-dream .dream-polaroid {
   position: absolute;
   right: 11px;
   top: calc(var(--dream-composer-top, 590px) - 38px);
@@ -340,10 +340,10 @@ html.codex-dream-skin main.main-surface > header.app-header-tint {
   transform: rotate(-7deg);
   border-radius: 2px;
 }
-#codex-dream-skin-chrome.dream-home-shell .dream-polaroid { display: block; }
-.dream-polaroid::before { content: "🎀"; position: absolute; left: -21px; top: -24px; font-size: 32px; filter: drop-shadow(0 3px 4px rgba(151,66,119,.25)); }
+html.codex-dream-skin.dream-pack-dream #codex-dream-skin-chrome.dream-home-shell .dream-polaroid { display: block; }
+html.codex-dream-skin.dream-pack-dream .dream-polaroid::before { content: "🎀"; position: absolute; left: -21px; top: -24px; font-size: 32px; filter: drop-shadow(0 3px 4px rgba(151,66,119,.25)); }
 
-.dream-ribbon {
+html.codex-dream-skin.dream-pack-dream .dream-ribbon {
   position: absolute;
   left: 50%;
   bottom: 68px;
@@ -355,20 +355,20 @@ html.codex-dream-skin main.main-surface > header.app-header-tint {
   transform: translateX(-50%);
   filter: drop-shadow(0 4px 5px rgba(166,66,137,.26));
 }
-#codex-dream-skin-chrome.dream-home-shell .dream-ribbon { display: none; }
-.dream-ribbon span { font-size: 15px; color: #c36dff; }
+html.codex-dream-skin.dream-pack-dream #codex-dream-skin-chrome.dream-home-shell .dream-ribbon { display: none; }
+html.codex-dream-skin.dream-pack-dream .dream-ribbon span { font-size: 15px; color: #c36dff; }
 
 /* --- v1.1 stickers ------------------------------------------------------
    Opt-in via theme.json "stickers"; rendered inside the pointer-events:none
    chrome layer, fullscreen home only, and hidden by default for every theme
    that does not ask for them. They never cover a native control. */
-#codex-dream-skin-chrome .dream-sticker {
+html.codex-dream-skin.dream-pack-dream #codex-dream-skin-chrome .dream-sticker {
   display: none;
   position: absolute;
   pointer-events: none;
 }
 
-.dream-sticker-bubble {
+html.codex-dream-skin.dream-pack-dream .dream-sticker-bubble {
   top: var(--dream-sticker-bubble-top);
   right: var(--dream-sticker-bubble-right);
   max-width: 250px;
@@ -384,7 +384,7 @@ html.codex-dream-skin main.main-surface > header.app-header-tint {
   letter-spacing: .03em;
   white-space: nowrap;
 }
-.dream-sticker-bubble::after {
+html.codex-dream-skin.dream-pack-dream .dream-sticker-bubble::after {
   content: "";
   position: absolute;
   left: 22px;
@@ -398,7 +398,7 @@ html.codex-dream-skin main.main-surface > header.app-header-tint {
   transform: rotate(45deg);
 }
 
-.dream-sticker-board {
+html.codex-dream-skin.dream-pack-dream .dream-sticker-board {
   top: var(--dream-sticker-board-top);
   right: var(--dream-sticker-board-right);
   width: var(--dream-sticker-board-width);
@@ -415,7 +415,7 @@ html.codex-dream-skin main.main-surface > header.app-header-tint {
   color: var(--dream-sticker-ink);
 }
 /* Double-line frame: element border = outer line, ::before = inner line. */
-.dream-sticker-board::before {
+html.codex-dream-skin.dream-pack-dream .dream-sticker-board::before {
   content: "";
   position: absolute;
   inset: 4px;
@@ -424,7 +424,7 @@ html.codex-dream-skin main.main-surface > header.app-header-tint {
   border-radius: 9px;
 }
 /* Floret finials at the top/bottom center, straddling the double frame. */
-.dream-sticker-board::after {
+html.codex-dream-skin.dream-pack-dream .dream-sticker-board::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -442,7 +442,7 @@ html.codex-dream-skin main.main-surface > header.app-header-tint {
 }
 /* Ornate corner flourishes (inline SVG, stroke = currentColor via sticker ink);
    one drawing mirrored per corner. Purely decorative, pointer-events: none. */
-.dream-sticker-board .dream-board-corner {
+html.codex-dream-skin.dream-pack-dream .dream-sticker-board .dream-board-corner {
   position: absolute;
   width: 31px;
   height: 31px;
@@ -450,17 +450,17 @@ html.codex-dream-skin main.main-surface > header.app-header-tint {
   color: var(--dream-sticker-ink);
   opacity: .95;
 }
-.dream-sticker-board .dream-board-corner svg { display: block; width: 100%; height: 100%; }
-.dream-sticker-board .dream-board-corner-tl { left: -8px; top: -8px; }
-.dream-sticker-board .dream-board-corner-tr { right: -8px; top: -8px; transform: scaleX(-1); }
-.dream-sticker-board .dream-board-corner-bl { left: -8px; bottom: -8px; transform: scaleY(-1); }
-.dream-sticker-board .dream-board-corner-br { right: -8px; bottom: -8px; transform: scale(-1, -1); }
-.dream-sticker-board .dream-board-l1 {
+html.codex-dream-skin.dream-pack-dream .dream-sticker-board .dream-board-corner svg { display: block; width: 100%; height: 100%; }
+html.codex-dream-skin.dream-pack-dream .dream-sticker-board .dream-board-corner-tl { left: -8px; top: -8px; }
+html.codex-dream-skin.dream-pack-dream .dream-sticker-board .dream-board-corner-tr { right: -8px; top: -8px; transform: scaleX(-1); }
+html.codex-dream-skin.dream-pack-dream .dream-sticker-board .dream-board-corner-bl { left: -8px; bottom: -8px; transform: scaleY(-1); }
+html.codex-dream-skin.dream-pack-dream .dream-sticker-board .dream-board-corner-br { right: -8px; bottom: -8px; transform: scale(-1, -1); }
+html.codex-dream-skin.dream-pack-dream .dream-sticker-board .dream-board-l1 {
   font-size: 15px;
   font-weight: 700;
   letter-spacing: .08em;
 }
-.dream-sticker-board .dream-board-l2 {
+html.codex-dream-skin.dream-pack-dream .dream-sticker-board .dream-board-l2 {
   width: 84%;
   padding-top: 7px;
   border-top: 1px dashed rgba(216, 132, 180, .5);
@@ -469,14 +469,14 @@ html.codex-dream-skin main.main-surface > header.app-header-tint {
   letter-spacing: .04em;
   opacity: .88;
 }
-.dream-sticker-board .dream-board-l3 {
+html.codex-dream-skin.dream-pack-dream .dream-sticker-board .dream-board-l3 {
   font-size: 12px;
   font-weight: 600;
   letter-spacing: .03em;
   color: var(--dream-pink);
 }
 
-.dream-sticker-corner {
+html.codex-dream-skin.dream-pack-dream .dream-sticker-corner {
   right: 8px;
   bottom: 4px;
   width: 200px;
@@ -484,42 +484,42 @@ html.codex-dream-skin main.main-surface > header.app-header-tint {
   color: var(--dream-sticker-ink);
   opacity: .85;
 }
-.dream-sticker-corner svg {
+html.codex-dream-skin.dream-pack-dream .dream-sticker-corner svg {
   display: block;
   width: 100%;
   height: 100%;
 }
 
 /* Reveal rules: fullscreen home shell only, one class per sticker. */
-html.dream-layout-fullscreen #codex-dream-skin-chrome.dream-home-shell.dream-has-bubble .dream-sticker-bubble { display: flex; }
-html.dream-layout-fullscreen #codex-dream-skin-chrome.dream-home-shell.dream-has-board .dream-sticker-board { display: flex; }
-html.dream-layout-fullscreen #codex-dream-skin-chrome.dream-home-shell.dream-has-corner .dream-sticker-corner { display: block; }
+html.codex-dream-skin.dream-pack-dream.dream-layout-fullscreen #codex-dream-skin-chrome.dream-home-shell.dream-has-bubble .dream-sticker-bubble { display: flex; }
+html.codex-dream-skin.dream-pack-dream.dream-layout-fullscreen #codex-dream-skin-chrome.dream-home-shell.dream-has-board .dream-sticker-board { display: flex; }
+html.codex-dream-skin.dream-pack-dream.dream-layout-fullscreen #codex-dream-skin-chrome.dream-home-shell.dream-has-corner .dream-sticker-corner { display: block; }
 
-html.codex-dream-skin [role="main"] {
+html.codex-dream-skin.dream-pack-dream [role="main"] {
   background: transparent !important;
   scrollbar-color: rgba(190,91,192,.52) transparent;
 }
 
-html.codex-dream-skin .dream-home {
+html.codex-dream-skin.dream-pack-dream .dream-home {
   --thread-content-max-width: min(950px, calc(100cqw - 44px)) !important;
   overflow-x: hidden !important;
 }
 
-.dream-home > div:first-child {
+html.codex-dream-skin.dream-pack-dream .dream-home > div:first-child {
   padding-top: 15px !important;
   min-height: 0 !important;
   padding-bottom: 30px !important;
   justify-content: flex-start !important;
 }
 
-.dream-home > div:first-child > div:first-child {
+html.codex-dream-skin.dream-pack-dream .dream-home > div:first-child > div:first-child {
   flex: 0 0 calc(var(--dream-hero-height) + var(--dream-suggestion-gap) + var(--dream-card-height) + 8px) !important;
   min-height: calc(var(--dream-hero-height) + var(--dream-suggestion-gap) + var(--dream-card-height) + 8px) !important;
   align-items: flex-start !important;
   padding-bottom: 0 !important;
 }
 
-.dream-home > div:first-child > div:nth-child(2) {
+html.codex-dream-skin.dream-pack-dream .dream-home > div:first-child > div:nth-child(2) {
   flex: 0 0 auto !important;
   min-height: 0 !important;
   justify-content: flex-start !important;
@@ -528,12 +528,12 @@ html.codex-dream-skin .dream-home {
   padding-bottom: 0 !important;
 }
 
-.dream-home > div:first-child > div:nth-child(2) > div:last-child {
+html.codex-dream-skin.dream-pack-dream .dream-home > div:first-child > div:nth-child(2) > div:last-child {
   padding-top: 0 !important;
   padding-bottom: 18px !important;
 }
 
-.dream-home > div:first-child > div:first-child > div:first-child {
+html.codex-dream-skin.dream-pack-dream .dream-home > div:first-child > div:first-child > div:first-child {
   position: relative !important;
   isolation: isolate;
   width: calc(100% - 44px) !important;
@@ -554,7 +554,7 @@ html.codex-dream-skin .dream-home {
   box-shadow: 0 14px 34px rgba(150,60,151,.20), inset 0 0 0 4px rgba(255,255,255,.20) !important;
 }
 
-.dream-home > div:first-child > div:first-child > div:first-child::before {
+html.codex-dream-skin.dream-pack-dream .dream-home > div:first-child > div:first-child > div:first-child::before {
   content: "";
   position: absolute;
   z-index: 0;
@@ -565,7 +565,7 @@ html.codex-dream-skin .dream-home {
   background: var(--dream-hero-overlay);
 }
 
-.dream-home > div:first-child > div:first-child > div:first-child > div:first-child {
+html.codex-dream-skin.dream-pack-dream .dream-home > div:first-child > div:first-child > div:first-child > div:first-child {
   position: relative;
   z-index: 1;
   height: 100%;
@@ -574,17 +574,17 @@ html.codex-dream-skin .dream-home {
   padding-left: 38px;
 }
 
-.dream-home > div:first-child > div:first-child > div:first-child > div:first-child > div:first-child {
+html.codex-dream-skin.dream-pack-dream .dream-home > div:first-child > div:first-child > div:first-child > div:first-child > div:first-child {
   width: var(--dream-hero-copy-width) !important;
   align-items: flex-start !important;
   gap: 0 !important;
 }
 
-.dream-home [data-testid="home-icon"] {
+html.codex-dream-skin.dream-pack-dream .dream-home [data-testid="home-icon"] {
   display: none !important;
 }
 
-.dream-home [data-feature="game-source"] {
+html.codex-dream-skin.dream-pack-dream .dream-home [data-feature="game-source"] {
   display: flex !important;
   flex-direction: column !important;
   align-items: flex-start !important;
@@ -600,7 +600,7 @@ html.codex-dream-skin .dream-home {
   pointer-events: auto !important;
 }
 
-.dream-home [data-feature="game-source"]::after {
+html.codex-dream-skin.dream-pack-dream .dream-home [data-feature="game-source"]::after {
   content: var(--dream-hero-subtitle);
   display: block;
   margin-top: 13px;
@@ -611,7 +611,7 @@ html.codex-dream-skin .dream-home {
   letter-spacing: .02em;
 }
 
-.dream-home [data-feature="game-source"] button {
+html.codex-dream-skin.dream-pack-dream .dream-home [data-feature="game-source"] button {
   margin: 0 5px;
   padding: 2px 9px 3px;
   border: 1px solid var(--dream-hero-chip-line);
@@ -623,22 +623,22 @@ html.codex-dream-skin .dream-home {
   box-shadow: inset 0 0 12px rgba(255,255,255,.10);
 }
 
-.dream-home [data-feature="game-source"] button::before {
+html.codex-dream-skin.dream-pack-dream .dream-home [data-feature="game-source"] button::before {
   content: none;
 }
 
-.dream-home > div:first-child > div:first-child > div:first-child > div:nth-child(2) {
+html.codex-dream-skin.dream-pack-dream .dream-home > div:first-child > div:first-child > div:first-child > div:nth-child(2) {
   left: 14px !important;
   right: 14px !important;
   top: 100% !important;
   margin-top: var(--dream-suggestion-gap) !important;
 }
 
-.dream-home .group\/home-suggestions {
+html.codex-dream-skin.dream-pack-dream .dream-home .group\/home-suggestions {
   overflow: visible !important;
 }
 
-.dream-home .group\/home-suggestions button {
+html.codex-dream-skin.dream-pack-dream .dream-home .group\/home-suggestions button {
   position: relative !important;
   min-height: var(--dream-card-height) !important;
   padding: 16px 15px 24px !important;
@@ -659,13 +659,13 @@ html.codex-dream-skin .dream-home {
   transition: transform .18s ease, box-shadow .18s ease !important;
 }
 
-.dream-home .group\/home-suggestions button:hover {
+html.codex-dream-skin.dream-pack-dream .dream-home .group\/home-suggestions button:hover {
   transform: translateY(-4px) !important;
   box-shadow: 0 13px 26px rgba(144,55,137,.18), 0 0 0 2px rgba(205,112,230,.16) !important;
 }
 
 /* Ornamental inner frame (thin line) — decorative, never intercepts clicks. */
-.dream-home .group\/home-suggestions button::before {
+html.codex-dream-skin.dream-pack-dream .dream-home .group\/home-suggestions button::before {
   content: "";
   position: absolute;
   inset: 7px;
@@ -676,7 +676,7 @@ html.codex-dream-skin .dream-home {
 }
 
 /* Corner florets: one masked layer, colored by --dream-card-ornament. */
-.dream-home .group\/home-suggestions button::after {
+html.codex-dream-skin.dream-pack-dream .dream-home .group\/home-suggestions button::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -694,7 +694,7 @@ html.codex-dream-skin .dream-home {
   mask-size: 14px 14px;
 }
 
-.dream-home .group\/home-suggestions button > span:first-child > span:first-child {
+html.codex-dream-skin.dream-pack-dream .dream-home .group\/home-suggestions button > span:first-child > span:first-child {
   position: relative;
   width: clamp(42px, 5.4cqh, 58px);
   height: clamp(42px, 5.4cqh, 58px);
@@ -708,7 +708,7 @@ html.codex-dream-skin .dream-home {
     linear-gradient(145deg, var(--dream-pink), var(--dream-purple));
   box-shadow: 0 0 0 6px rgba(255,255,255,.55), 0 0 0 12px rgba(255,218,233,.30), 0 6px 14px rgba(142,61,152,.26);
 }
-.dream-home .group\/home-suggestions button svg {
+html.codex-dream-skin.dream-pack-dream .dream-home .group\/home-suggestions button svg {
   width: clamp(20px, 2.5cqh, 26px) !important;
   height: clamp(20px, 2.5cqh, 26px) !important;
   color: white !important;
@@ -717,10 +717,10 @@ html.codex-dream-skin .dream-home {
    colored by --dream-card-icon-color; the native glyph is only visually hidden
    (visibility) so the real button, its layout and behavior stay untouched.
    Themes without icons resolve to the transparent blank mask -> nothing shows. */
-.dream-home .group\/home-suggestions button > span:first-child > span:first-child svg {
+html.codex-dream-skin.dream-pack-dream .dream-home .group\/home-suggestions button > span:first-child > span:first-child svg {
   visibility: var(--dream-card-native-icon, visible);
 }
-.dream-home .group\/home-suggestions button > span:first-child > span:first-child::after {
+html.codex-dream-skin.dream-pack-dream .dream-home .group\/home-suggestions button > span:first-child > span:first-child::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -730,11 +730,11 @@ html.codex-dream-skin .dream-home {
   -webkit-mask: var(--dream-card-icon, var(--dream-icon-blank)) center / 54% 54% no-repeat;
   mask: var(--dream-card-icon, var(--dream-icon-blank)) center / 54% 54% no-repeat;
 }
-.dream-home .group\/home-suggestions button > span:first-child {
+html.codex-dream-skin.dream-pack-dream .dream-home .group\/home-suggestions button > span:first-child {
   justify-content: center !important;
 }
 /* Bottom diamond ornament (absolute inside the button box). */
-.dream-home .group\/home-suggestions button > span:first-child::before {
+html.codex-dream-skin.dream-pack-dream .dream-home .group\/home-suggestions button > span:first-child::before {
   content: "✦";
   position: absolute;
   left: 50%;
@@ -747,7 +747,7 @@ html.codex-dream-skin .dream-home {
   line-height: 1;
   opacity: .85;
 }
-.dream-home .group\/home-suggestions button > span:last-child {
+html.codex-dream-skin.dream-pack-dream .dream-home .group\/home-suggestions button > span:last-child {
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
@@ -759,7 +759,7 @@ html.codex-dream-skin .dream-home {
 }
 /* Optional per-card subtitle (from theme.json cards.subtitles). If a theme
    defines none, content resolves to `none` and nothing renders. */
-.dream-home .group\/home-suggestions button > span:last-child::after {
+html.codex-dream-skin.dream-pack-dream .dream-home .group\/home-suggestions button > span:last-child::after {
   content: var(--dream-card-sub, none);
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -775,40 +775,40 @@ html.codex-dream-skin .dream-home {
 }
 /* Positional mapping: the native grid hides trailing cards responsively
    (4 -> 3 -> 2), so subtitle N and icon N simply disappear together with card N. */
-.dream-home .group\/home-suggestions [class~="grid"] > :nth-child(1) button {
+html.codex-dream-skin.dream-pack-dream .dream-home .group\/home-suggestions [class~="grid"] > :nth-child(1) button {
   --dream-card-sub: var(--dream-card-sub-1, none);
   --dream-card-icon: var(--dream-card-icon-1, var(--dream-icon-blank));
   --dream-card-native-icon: var(--dream-card-native-icon-1, visible);
 }
-.dream-home .group\/home-suggestions [class~="grid"] > :nth-child(2) button {
+html.codex-dream-skin.dream-pack-dream .dream-home .group\/home-suggestions [class~="grid"] > :nth-child(2) button {
   --dream-card-sub: var(--dream-card-sub-2, none);
   --dream-card-icon: var(--dream-card-icon-2, var(--dream-icon-blank));
   --dream-card-native-icon: var(--dream-card-native-icon-2, visible);
 }
-.dream-home .group\/home-suggestions [class~="grid"] > :nth-child(3) button {
+html.codex-dream-skin.dream-pack-dream .dream-home .group\/home-suggestions [class~="grid"] > :nth-child(3) button {
   --dream-card-sub: var(--dream-card-sub-3, none);
   --dream-card-icon: var(--dream-card-icon-3, var(--dream-icon-blank));
   --dream-card-native-icon: var(--dream-card-native-icon-3, visible);
 }
-.dream-home .group\/home-suggestions [class~="grid"] > :nth-child(4) button {
+html.codex-dream-skin.dream-pack-dream .dream-home .group\/home-suggestions [class~="grid"] > :nth-child(4) button {
   --dream-card-sub: var(--dream-card-sub-4, none);
   --dream-card-icon: var(--dream-card-icon-4, var(--dream-icon-blank));
   --dream-card-native-icon: var(--dream-card-native-icon-4, visible);
 }
 
 /* Banner mode: hero on top, key actions in the middle, native composer at the bottom. */
-html.dream-layout-banner .dream-home > div:first-child {
+html.codex-dream-skin.dream-pack-dream.dream-layout-banner .dream-home > div:first-child {
   min-height: 100% !important;
   padding-bottom: 0 !important;
   justify-content: space-between !important;
 }
 
-html.dream-layout-banner .dream-home > div:first-child > div:first-child {
+html.codex-dream-skin.dream-pack-dream.dream-layout-banner .dream-home > div:first-child > div:first-child {
   flex: 0 0 var(--dream-hero-height) !important;
   min-height: var(--dream-hero-height) !important;
 }
 
-html.dream-layout-banner .dream-home > div:first-child > div:nth-child(2) {
+html.codex-dream-skin.dream-pack-dream.dream-layout-banner .dream-home > div:first-child > div:nth-child(2) {
   position: relative !important;
   z-index: 5;
   flex: 1 0 0 !important;
@@ -817,35 +817,35 @@ html.dream-layout-banner .dream-home > div:first-child > div:nth-child(2) {
   margin-top: 0 !important;
 }
 
-html.dream-layout-banner .dream-home > div:first-child > div:nth-child(2) > div:last-child {
+html.codex-dream-skin.dream-pack-dream.dream-layout-banner .dream-home > div:first-child > div:nth-child(2) > div:last-child {
   padding-top: 3px !important;
   padding-bottom: 4px !important;
 }
 
-html.dream-layout-banner .dream-home > div:first-child > div:first-child > div:first-child > div:nth-child(2) {
+html.codex-dream-skin.dream-pack-dream.dream-layout-banner .dream-home > div:first-child > div:first-child > div:first-child > div:nth-child(2) {
   top: calc(100% + clamp(74px, 16cqh, 164px)) !important;
   margin-top: 0 !important;
   z-index: 4;
 }
 
 /* Fullscreen mode: the cropped theme art becomes the home canvas. */
-html.dream-layout-fullscreen main.main-surface.dream-home-shell {
+html.codex-dream-skin.dream-pack-dream.dream-layout-fullscreen main.main-surface.dream-home-shell {
   background: linear-gradient(145deg, var(--dream-page-bg-1), var(--dream-page-glow-a)) !important;
 }
 
-html.dream-layout-fullscreen .dream-home {
+html.codex-dream-skin.dream-pack-dream.dream-layout-fullscreen .dream-home {
   position: relative !important;
   --thread-content-max-width: min(1040px, calc(100cqw - 64px)) !important;
 }
 
-html.dream-layout-fullscreen .dream-home > div:first-child {
+html.codex-dream-skin.dream-pack-dream.dream-layout-fullscreen .dream-home > div:first-child {
   position: relative !important;
   display: block !important;
   min-height: 100% !important;
   padding: 0 !important;
 }
 
-html.dream-layout-fullscreen .dream-home > div:first-child > div:first-child {
+html.codex-dream-skin.dream-pack-dream.dream-layout-fullscreen .dream-home > div:first-child > div:first-child {
   position: absolute !important;
   inset: 0 !important;
   z-index: 0;
@@ -856,7 +856,7 @@ html.dream-layout-fullscreen .dream-home > div:first-child > div:first-child {
   padding: 0 !important;
 }
 
-html.dream-layout-fullscreen .dream-home > div:first-child > div:first-child > div:first-child {
+html.codex-dream-skin.dream-pack-dream.dream-layout-fullscreen .dream-home > div:first-child > div:first-child > div:first-child {
   position: absolute !important;
   inset: 14px 16px 16px !important;
   width: auto !important;
@@ -870,7 +870,7 @@ html.dream-layout-fullscreen .dream-home > div:first-child > div:first-child > d
   box-shadow: 0 18px 42px rgba(72, 20, 91, .34), inset 0 0 0 4px rgba(255, 255, 255, .18) !important;
 }
 
-html.dream-layout-fullscreen .dream-home > div:first-child > div:first-child > div:first-child::before {
+html.codex-dream-skin.dream-pack-dream.dream-layout-fullscreen .dream-home > div:first-child > div:first-child > div:first-child::before {
   /* Width 100% + a radial/vertical gradient in --dream-fullscreen-overlay turns
      this into the "scene" preset for full-canvas art (see THEME-SPEC.md §5.1). */
   width: var(--dream-fullscreen-overlay-width);
@@ -878,7 +878,7 @@ html.dream-layout-fullscreen .dream-home > div:first-child > div:first-child > d
   background: var(--dream-fullscreen-overlay);
 }
 
-html.dream-layout-fullscreen .dream-home > div:first-child > div:first-child > div:first-child::after {
+html.codex-dream-skin.dream-pack-dream.dream-layout-fullscreen .dream-home > div:first-child > div:first-child > div:first-child::after {
   content: "";
   position: absolute;
   z-index: 0;
@@ -888,27 +888,27 @@ html.dream-layout-fullscreen .dream-home > div:first-child > div:first-child > d
   background: var(--dream-fullscreen-wash);
 }
 
-html.dream-layout-fullscreen .dream-home > div:first-child > div:first-child > div:first-child > div:first-child {
+html.codex-dream-skin.dream-pack-dream.dream-layout-fullscreen .dream-home > div:first-child > div:first-child > div:first-child > div:first-child {
   height: auto !important;
   inset: 0 !important;
   align-items: flex-start !important;
   padding: clamp(72px, 13cqh, 122px) 0 0 clamp(32px, 4.6cqw, 72px) !important;
 }
 
-html.dream-layout-fullscreen .dream-home > div:first-child > div:first-child > div:first-child > div:first-child > div:first-child {
+html.codex-dream-skin.dream-pack-dream.dream-layout-fullscreen .dream-home > div:first-child > div:first-child > div:first-child > div:first-child > div:first-child {
   width: min(48%, 640px) !important;
 }
 
-html.dream-layout-fullscreen .dream-home [data-feature="game-source"] {
+html.codex-dream-skin.dream-pack-dream.dream-layout-fullscreen .dream-home [data-feature="game-source"] {
   font-size: clamp(25px, 2.45vw, 38px) !important;
 }
 
-html.dream-layout-fullscreen .dream-home [data-feature="game-source"]::after {
+html.codex-dream-skin.dream-pack-dream.dream-layout-fullscreen .dream-home [data-feature="game-source"]::after {
   margin-top: 17px;
   font-size: clamp(14px, 1.2vw, 18px);
 }
 
-html.dream-layout-fullscreen .dream-home > div:first-child > div:first-child > div:first-child > div:nth-child(2) {
+html.codex-dream-skin.dream-pack-dream.dream-layout-fullscreen .dream-home > div:first-child > div:first-child > div:first-child > div:nth-child(2) {
   left: clamp(18px, 2.2cqw, 34px) !important;
   right: clamp(18px, 2.2cqw, 34px) !important;
   top: 49% !important;
@@ -916,7 +916,7 @@ html.dream-layout-fullscreen .dream-home > div:first-child > div:first-child > d
   margin-top: 0 !important;
 }
 
-html.dream-layout-fullscreen .dream-home .group\/home-suggestions button {
+html.codex-dream-skin.dream-pack-dream.dream-layout-fullscreen .dream-home .group\/home-suggestions button {
   border-color: rgba(255, 212, 234, .74) !important;
   background:
     radial-gradient(circle at 50% 16%, rgba(255, 255, 255, .42), transparent 44%),
@@ -925,7 +925,7 @@ html.dream-layout-fullscreen .dream-home .group\/home-suggestions button {
   backdrop-filter: blur(15px);
 }
 
-html.dream-layout-fullscreen .dream-home > div:first-child > div:nth-child(2) {
+html.codex-dream-skin.dream-pack-dream.dream-layout-fullscreen .dream-home > div:first-child > div:nth-child(2) {
   position: absolute !important;
   left: 0 !important;
   right: 0 !important;
@@ -938,18 +938,18 @@ html.dream-layout-fullscreen .dream-home > div:first-child > div:nth-child(2) {
   padding: 0 !important;
 }
 
-html.dream-layout-fullscreen .dream-home > div:first-child > div:nth-child(2) > div:last-child {
+html.codex-dream-skin.dream-pack-dream.dream-layout-fullscreen .dream-home > div:first-child > div:nth-child(2) > div:last-child {
   padding-top: 0 !important;
   padding-bottom: 16px !important;
 }
 
-html.dream-layout-fullscreen .dream-home div:has(> .horizontal-scroll-fade-mask .group\/project-selector) {
+html.codex-dream-skin.dream-pack-dream.dream-layout-fullscreen .dream-home div:has(> .horizontal-scroll-fade-mask .group\/project-selector) {
   border-color: rgba(255, 211, 235, .58);
   background: linear-gradient(180deg, rgba(255, 247, 252, .84), rgba(255, 228, 244, .80)) !important;
   backdrop-filter: blur(16px);
 }
 
-html.dream-layout-fullscreen .composer-surface-chrome {
+html.codex-dream-skin.dream-pack-dream.dream-layout-fullscreen .composer-surface-chrome {
   background:
     radial-gradient(circle at 88% 22%, rgba(255, 255, 255, .94), transparent 24%),
     linear-gradient(145deg, rgba(255, 252, 253, .91), rgba(255, 228, 244, .88)) !important;
@@ -957,11 +957,11 @@ html.dream-layout-fullscreen .composer-surface-chrome {
   backdrop-filter: blur(18px) !important;
 }
 
-html.dream-layout-fullscreen #codex-dream-skin-chrome .dream-polaroid {
+html.codex-dream-skin.dream-pack-dream.dream-layout-fullscreen #codex-dream-skin-chrome .dream-polaroid {
   display: none !important;
 }
 
-html.codex-dream-skin .composer-surface-chrome {
+html.codex-dream-skin.dream-pack-dream .composer-surface-chrome {
   border: 2px solid rgba(228,132,188,.58) !important;
   border-radius: 25px !important;
   background:
@@ -972,7 +972,7 @@ html.codex-dream-skin .composer-surface-chrome {
   overflow: visible !important;
 }
 
-html.codex-dream-skin .composer-surface-chrome::before {
+html.codex-dream-skin.dream-pack-dream .composer-surface-chrome::before {
   content: "♡";
   position: absolute;
   left: -13px;
@@ -988,7 +988,7 @@ html.codex-dream-skin .composer-surface-chrome::before {
   box-shadow: 0 4px 12px rgba(136,53,133,.22);
 }
 
-.dream-home div:has(> .horizontal-scroll-fade-mask .group\/project-selector) {
+html.codex-dream-skin.dream-pack-dream .dream-home div:has(> .horizontal-scroll-fade-mask .group\/project-selector) {
   position: relative;
   padding-top: 28px !important;
   border: 1px solid rgba(227,148,195,.44);
@@ -996,7 +996,7 @@ html.codex-dream-skin .composer-surface-chrome::before {
   background: linear-gradient(180deg, rgba(255,248,252,.94), rgba(255,233,246,.88)) !important;
 }
 
-.dream-home div:has(> .horizontal-scroll-fade-mask .group\/project-selector)::before {
+html.codex-dream-skin.dream-pack-dream .dream-home div:has(> .horizontal-scroll-fade-mask .group\/project-selector)::before {
   content: "♡  选择项目";
   position: absolute;
   left: 13px;
@@ -1010,14 +1010,14 @@ html.codex-dream-skin .composer-surface-chrome::before {
   white-space: nowrap;
 }
 
-.dream-home .group\/project-selector > button {
+html.codex-dream-skin.dream-pack-dream .dream-home .group\/project-selector > button {
   border-color: rgba(199,111,189,.38) !important;
   background: linear-gradient(135deg, rgba(255,255,255,.92), rgba(244,224,255,.86)) !important;
   color: #6f3296 !important;
   box-shadow: 0 3px 10px rgba(125,57,133,.10) !important;
 }
 
-html.codex-dream-skin .ProseMirror {
+html.codex-dream-skin.dream-pack-dream .ProseMirror {
   color: #55266c !important;
   caret-color: #b33fd2 !important;
 }
@@ -1025,12 +1025,12 @@ html.codex-dream-skin .ProseMirror {
 /* Theme-configurable home composer placeholder (theme.json composer.placeholder
    -> --dream-composer-placeholder). The var fallback keeps the native text, so
    removing the injected stylesheet restores the original automatically. */
-html.codex-dream-skin .dream-home .ProseMirror p[data-placeholder]::after {
+html.codex-dream-skin.dream-pack-dream .dream-home .ProseMirror p[data-placeholder]::after {
   content: var(--dream-composer-placeholder, attr(data-placeholder)) !important;
   color: color-mix(in srgb, var(--dream-ink) 52%, #ffffff) !important;
 }
 
-html.codex-dream-skin button[class~="bg-token-foreground"] {
+html.codex-dream-skin.dream-pack-dream button[class~="bg-token-foreground"] {
   background:
     radial-gradient(circle at 30% 26%, rgba(255,255,255,.35), transparent 55%),
     linear-gradient(145deg, var(--dream-violet), var(--dream-purple)) !important;
@@ -1039,73 +1039,73 @@ html.codex-dream-skin button[class~="bg-token-foreground"] {
 }
 
 /* Send button: slightly larger pink round button with a soft halo. */
-html.codex-dream-skin .composer-surface-chrome button[class~="size-token-button-composer"] {
+html.codex-dream-skin.dream-pack-dream .composer-surface-chrome button[class~="size-token-button-composer"] {
   width: 34px !important;
   height: 34px !important;
 }
 
 /* "+" attachment button: rosy accent on the native control. */
-html.codex-dream-skin .composer-surface-chrome button[aria-label="添加文件等内容"],
-html.codex-dream-skin .composer-surface-chrome button[aria-label="Add files and more"] {
+html.codex-dream-skin.dream-pack-dream .composer-surface-chrome button[aria-label="添加文件等内容"],
+html.codex-dream-skin.dream-pack-dream .composer-surface-chrome button[aria-label="Add files and more"] {
   border-color: rgba(226,150,196,.55) !important;
   color: var(--dream-purple) !important;
   background: rgba(255,255,255,.62) !important;
 }
 
-html.codex-dream-skin article,
-html.codex-dream-skin [data-message-author-role] {
+html.codex-dream-skin.dream-pack-dream article,
+html.codex-dream-skin.dream-pack-dream [data-message-author-role] {
   border-radius: 20px;
 }
 
 @media (max-width: 1400px) {
-  .dream-polaroid { display: none !important; }
-  #codex-dream-skin-chrome .dream-sticker { display: none !important; }
-  #codex-dream-skin-chrome.dream-home-shell .dream-brand,
-  #codex-dream-skin-chrome.dream-home-shell .dream-signature { display: none !important; }
+  html.codex-dream-skin.dream-pack-dream .dream-polaroid { display: none !important; }
+  html.codex-dream-skin.dream-pack-dream #codex-dream-skin-chrome .dream-sticker { display: none !important; }
+  html.codex-dream-skin.dream-pack-dream #codex-dream-skin-chrome.dream-home-shell .dream-brand,
+  html.codex-dream-skin.dream-pack-dream #codex-dream-skin-chrome.dream-home-shell .dream-signature { display: none !important; }
 }
 
 @media (max-width: 1120px) {
-  .dream-ribbon { bottom: 70px; font-size: 25px; }
-  #codex-dream-skin-chrome.dream-home-shell .dream-brand { display: none; }
-  .dream-home { --thread-content-max-width: min(860px, calc(100cqw - 30px)) !important; }
-  .dream-home > div:first-child > div:first-child > div:first-child { width: calc(100% - 28px) !important; }
+  html.codex-dream-skin.dream-pack-dream .dream-ribbon { bottom: 70px; font-size: 25px; }
+  html.codex-dream-skin.dream-pack-dream #codex-dream-skin-chrome.dream-home-shell .dream-brand { display: none; }
+  html.codex-dream-skin.dream-pack-dream .dream-home { --thread-content-max-width: min(860px, calc(100cqw - 30px)) !important; }
+  html.codex-dream-skin.dream-pack-dream .dream-home > div:first-child > div:first-child > div:first-child { width: calc(100% - 28px) !important; }
 }
 
 @media (max-width: 900px) {
-  .dream-signature { display: none !important; }
-  .dream-brand { left: 15px; }
-  .dream-brand b { font-size: 13px; }
-  .dream-home {
+  html.codex-dream-skin.dream-pack-dream .dream-signature { display: none !important; }
+  html.codex-dream-skin.dream-pack-dream .dream-brand { left: 15px; }
+  html.codex-dream-skin.dream-pack-dream .dream-brand b { font-size: 13px; }
+  html.codex-dream-skin.dream-pack-dream .dream-home {
     --dream-hero-height: 212px;
     --dream-card-height: 112px;
     --dream-suggestion-gap: 11px;
     --dream-hero-copy-width: 66%;
   }
-  .dream-home > div:first-child > div:first-child > div:first-child > div:first-child { padding-left: 26px; }
-  .dream-home [data-feature="game-source"] { font-size: 18px !important; }
-  .dream-home [data-feature="game-source"]::after { font-size: 12px; margin-top: 10px; }
-  .dream-home .group\/home-suggestions button { font-size: 12px !important; padding-bottom: 16px !important; }
+  html.codex-dream-skin.dream-pack-dream .dream-home > div:first-child > div:first-child > div:first-child > div:first-child { padding-left: 26px; }
+  html.codex-dream-skin.dream-pack-dream .dream-home [data-feature="game-source"] { font-size: 18px !important; }
+  html.codex-dream-skin.dream-pack-dream .dream-home [data-feature="game-source"]::after { font-size: 12px; margin-top: 10px; }
+  html.codex-dream-skin.dream-pack-dream .dream-home .group\/home-suggestions button { font-size: 12px !important; padding-bottom: 16px !important; }
   /* Narrow windows: drop the subtitles and the diamond, keep the compact card. */
-  .dream-home .group\/home-suggestions button > span:last-child::after { content: none; }
-  .dream-home .group\/home-suggestions button > span:first-child::before { content: none; }
-  .dream-home .group\/home-suggestions button > span:first-child > span:first-child { width: 38px; height: 38px; }
-  html.dream-layout-banner .dream-home > div:first-child > div:first-child > div:first-child > div:nth-child(2) {
+  html.codex-dream-skin.dream-pack-dream .dream-home .group\/home-suggestions button > span:last-child::after { content: none; }
+  html.codex-dream-skin.dream-pack-dream .dream-home .group\/home-suggestions button > span:first-child::before { content: none; }
+  html.codex-dream-skin.dream-pack-dream .dream-home .group\/home-suggestions button > span:first-child > span:first-child { width: 38px; height: 38px; }
+  html.codex-dream-skin.dream-pack-dream.dream-layout-banner .dream-home > div:first-child > div:first-child > div:first-child > div:nth-child(2) {
     top: calc(100% + clamp(58px, 12cqh, 94px)) !important;
   }
-  html.dream-layout-fullscreen .dream-home > div:first-child > div:first-child > div:first-child {
+  html.codex-dream-skin.dream-pack-dream.dream-layout-fullscreen .dream-home > div:first-child > div:first-child > div:first-child {
     inset: 10px 10px 12px !important;
   }
-  html.dream-layout-fullscreen .dream-home > div:first-child > div:first-child > div:first-child > div:first-child {
+  html.codex-dream-skin.dream-pack-dream.dream-layout-fullscreen .dream-home > div:first-child > div:first-child > div:first-child > div:first-child {
     padding: 64px 0 0 26px !important;
   }
-  html.dream-layout-fullscreen .dream-home > div:first-child > div:first-child > div:first-child > div:first-child > div:first-child {
+  html.codex-dream-skin.dream-pack-dream.dream-layout-fullscreen .dream-home > div:first-child > div:first-child > div:first-child > div:first-child > div:first-child {
     width: 66% !important;
   }
-  html.dream-layout-fullscreen .dream-home > div:first-child > div:first-child > div:first-child > div:nth-child(2) {
+  html.codex-dream-skin.dream-pack-dream.dream-layout-fullscreen .dream-home > div:first-child > div:first-child > div:first-child > div:nth-child(2) {
     top: 43% !important;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .dream-sparkles i { animation: none !important; }
+  html.codex-dream-skin.dream-pack-dream .dream-sparkles i { animation: none !important; }
 }

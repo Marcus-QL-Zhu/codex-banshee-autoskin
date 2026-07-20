@@ -13,3 +13,20 @@ Desktop.ini
 node_modules/
 __pycache__/
 *.pyc
+
+# Local visual-review output. Curate and force-add only a final, privacy-reviewed image.
+docs/analysis/
+docs/banshee-approved-vs-*.png
+docs/banshee-cavity-*.jpg
+docs/banshee-composer-mask-*.png
+docs/banshee-corner-composer-fix.png
+docs/banshee-design-language-pass-*.png
+docs/banshee-final-review-*.png
+docs/banshee-reference-space-*.png
+docs/banshee-top-reference-space-*.png
+docs/banshee-topology-*.png
+docs/comparison-approved-vs-*.png
+docs/frame-zones-pass2.png
+docs/full-*.png
+docs/screenshot-banshee-rebuild-final-v3.png
+docs/sidebar-top-*.png

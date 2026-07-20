@@ -1,0 +1,4 @@
+# Optional development dependencies for tools/generate-demo-art.py.
+# These match the environment used for the v2.3.0 generated assets.
+numpy==2.4.4
+Pillow==12.2.0

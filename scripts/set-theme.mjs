@@ -1,3 +1,7 @@
+import fs from "node:fs";
+import path from "node:path";
+import { fetchTargetsFromLoopback, requireSingleMainRendererTarget } from './lib/target-selection.mjs';
+
 // Programmatic theme/layout switcher for the running Codex Dream Skin.
 // The skin intentionally has no on-screen switch UI; agents (or users through
 // their agent) change themes with:
@@ -12,7 +16,7 @@
 const LAYOUTS = new Set(["banner", "fullscreen"]);
 
 function parseArgs(argv) {
-  const options = { port: 9335, theme: null, layout: null, list: false };
+  const options = { port: null, theme: null, layout: null, list: false };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === "--port") options.port = Number(argv[++i]);
@@ -21,7 +25,7 @@ function parseArgs(argv) {
     else if (!arg.startsWith("-") && !options.theme) options.theme = arg;
     else throw new Error(`Unknown argument: ${arg}`);
   }
-  if (!Number.isInteger(options.port) || options.port < 1024 || options.port > 65535) {
+  if (options.port !== null && (!Number.isInteger(options.port) || options.port < 1024 || options.port > 65535)) {
     throw new Error(`Invalid port: ${options.port}`);
   }
   if (!options.list && !options.theme && !options.layout) {
@@ -30,38 +34,26 @@ function parseArgs(argv) {
   return options;
 }
 
-// Chromium may bind DevTools to either loopback stack; probe both (see runtime-notes.md).
-async function fetchTargets(port) {
-  let lastError;
-  for (const host of ["127.0.0.1", "[::1]"]) {
-    try {
-      const response = await fetch(`http://${host}:${port}/json/list`);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      return await response.json();
-    } catch (error) {
-      lastError = error;
-    }
-  }
-  throw new Error(`CDP unreachable on 127.0.0.1/[::1]:${port}: ${lastError?.message ?? "no response"}`);
-}
-
-function isMainRendererTarget(target) {
+function persistedPort() {
   try {
-    const url = new URL(target.url);
-    return target.type === "page" && url.protocol === "app:" && url.hostname === "-" &&
-      url.pathname === "/index.html" && !url.searchParams.has("initialRoute");
-  } catch {
-    return false;
-  }
+    const file = path.join(process.env.LOCALAPPDATA ?? "", "CodexDreamSkin", "install-transaction.json");
+    const port = Number(JSON.parse(fs.readFileSync(file, "utf8")).port);
+    if (Number.isInteger(port) && port >= 1024 && port <= 65535) return port;
+  } catch {}
+  return 9335;
 }
-
 async function evaluateOnce(target, expression) {
   const ws = new WebSocket(target.webSocketDebuggerUrl);
-  await new Promise((resolve, reject) => {
-    ws.addEventListener("open", resolve, { once: true });
-    ws.addEventListener("error", () => reject(new Error("CDP socket error")), { once: true });
-  });
   try {
+    await new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error('CDP socket open timed out')), 5000);
+      const finish = (callback, value) => {
+        clearTimeout(timeout);
+        callback(value);
+      };
+      ws.addEventListener('open', () => finish(resolve), { once: true });
+      ws.addEventListener('error', () => finish(reject, new Error('CDP socket error')), { once: true });
+    });
     const result = await new Promise((resolve, reject) => {
       const timeout = setTimeout(() => reject(new Error("CDP evaluate timed out")), 10000);
       ws.addEventListener("message", (event) => {
@@ -82,15 +74,18 @@ async function evaluateOnce(target, expression) {
     }
     return result.result?.value;
   } finally {
-    ws.close();
+    try { ws.close(); } catch {}
   }
 }
 
 const options = parseArgs(process.argv.slice(2));
-const targets = await fetchTargets(options.port);
-const main = targets.find(isMainRendererTarget);
-if (!main) {
-  console.error(JSON.stringify({ ok: false, error: `no main Codex renderer on port ${options.port}` }));
+options.port ??= persistedPort();
+const { targets } = await fetchTargetsFromLoopback(options.port, { timeoutMs: 1500 });
+let main;
+try {
+  main = requireSingleMainRendererTarget(targets);
+} catch (error) {
+  console.error(JSON.stringify({ ok: false, error: `${error.message} on port ${options.port}` }));
   process.exit(1);
 }
 

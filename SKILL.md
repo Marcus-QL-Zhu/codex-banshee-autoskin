@@ -1,6 +1,6 @@
 ---
 name: codex-autoskin
-version: 2.0.0
+version: 2.3.0
 description: Apply, launch, verify, theme-switch, repair, update, or restore a full decorative skin for the Windows Codex desktop app. Use when the user asks for a Codex theme beyond official color settings, wants a custom image turned into a skin theme, needs the skin reapplied after a Codex update, or needs a safe rollback without modifying WindowsApps or app.asar.
 ---
 
@@ -12,12 +12,13 @@ Themes are data, not code: the injector scans `themes/` and `themes-private/` fo
 
 ## Workflow
 
-1. Run `scripts/install-dream-skin.ps1` once to set the matching official base colors, create launch/restore shortcuts, and install the hidden auto-recovery watcher. Use `-NoAutoRecover` only when the user explicitly does not want normal Codex restarts intercepted.
-2. Run `scripts/start-dream-skin.ps1`. Add `-RestartExisting` only when the user authorized restarting an already-open Codex app.
-3. Run `scripts/verify-dream-skin.ps1 -ScreenshotPath <absolute-path>` after launch. Treat a missing hero, native composer, sidebar skin, or injection marker as failure. The native suggestion count is responsive and may be two to four.
-4. Switch themes/layouts programmatically: `node scripts/set-theme.mjs <theme> [banner|fullscreen]` (or `--list`). There is intentionally no on-screen switch UI; the choice persists via localStorage and survives reloads and watcher-recovered restarts.
-5. Inspect the screenshot against `references/qa-inventory.md`. Verify every scanned theme in both home layouts before signing off; `node scripts/injector.mjs --themes` lists what was scanned.
-6. Run `scripts/restore-dream-skin.ps1` for live removal. Add `-Uninstall` to delete shortcuts; add `-RestoreBaseTheme` when the user also wants the pre-install config backup restored.
+1. Confirm the host is Windows 10/11 with the Microsoft Store `OpenAI.Codex` package, Windows PowerShell 5.1, and enough free space for the verified per-user runtime. No administrator shell or separate Node.js installation is required: lifecycle scripts use the bundled Node copied from the trusted Store Codex payload and verify its hash. Contributors who execute JavaScript source tools directly need Node.js 22.4 or newer.
+2. Run the repository-root `Install.cmd` once. It delegates to `scripts/install-dream-skin.ps1`, sets the matching official dark base colors, creates launch/restore shortcuts, and installs the hidden auto-recovery watcher. Use the PowerShell installer directly with `-NoAutoRecover` only when the user explicitly does not want normal Codex restarts intercepted.
+3. Open Codex normally and allow the watcher to recover the skin, or run `scripts/start-dream-skin.ps1` for an explicit launch. Add `-RestartExisting` only when the user authorized restarting an already-open Codex app.
+4. Run `scripts/verify-dream-skin.ps1 -ScreenshotPath <absolute-path>` after launch. Treat a missing hero, native composer, sidebar skin, or injection marker as failure. The native suggestion count is responsive and may be two to four.
+5. Switch themes/layouts programmatically with `scripts/set-theme.ps1 <theme> [banner|fullscreen]` (or `--list`); the wrapper locates the verified bundled Node. A contributor may run `node scripts/set-theme.mjs ...` with a system Node.js 22.4+ installation. There is intentionally no on-screen switch UI; the choice persists via localStorage and survives reloads and watcher-recovered restarts.
+6. Inspect the screenshot against `references/qa-inventory.md`. Verify every scanned theme in both home layouts before signing off; `node scripts/injector.mjs --themes` lists what was scanned.
+7. Run `scripts/restore-dream-skin.ps1` for live removal. Add `-Uninstall` to delete shortcuts; add `-RestoreBaseTheme` when the user also wants the pre-install config backup restored.
 
 ## Guardrails
 
@@ -31,16 +32,18 @@ Themes are data, not code: the injector scans `themes/` and `themes-private/` fo
 - Keep decorative layers `pointer-events: none`. The decorative chrome container stays at a low z-index so real Codex modals cover it.
 - Stickers (speech bubble, promo board, corner rose) are strictly opt-in per theme, render fullscreen-home-only inside the chrome layer, and must never overlap a native control. The sidebar "new task" capsule is a marker class on the real native button; the account/profile button is only restyled, never covered or replaced by a fake identity card. The theme composer placeholder rides a CSS var fallback, so restore automatically brings the native text back.
 - Inject only the main `app://-/index.html` renderer. Never inject into compact/auxiliary renderers such as `initialRoute=/avatar-overlay`; those windows must retain a fully transparent body for desktop pets.
-- On app updates, rerun install and launch; the scripts discover the current Appx package dynamically.
-- If port `9335` is occupied, choose another port consistently for start, verify, set-theme, and restore.
+- On app updates, let the watcher verify and refresh the per-user runtime. If recovery fails, inspect `%LOCALAPPDATA%\CodexDreamSkin\watcher.log` before manually rerunning install and launch.
+- Never assume port `9335`. Installation allocates and persists an available loopback port; use the persisted port or pass the same explicit port consistently to start, verify, set-theme, and restore.
 - Keep the injection daemon running for navigation/reload resilience. Its state and logs live under `%LOCALAPPDATA%\CodexDreamSkin`.
 - Keep the single-instance auto-recovery watcher enabled when restart persistence is expected. It waits for a normally launched Codex window, allows startup grace, then safely relaunches Codex with loopback CDP and the injector. It must remain idle while Codex is closed.
 
 ## Resources
 
+- `Install.cmd`: human-friendly Windows entry point; delegates to the PowerShell installer without duplicating lifecycle logic.
 - `THEME-SPEC.md`: agent-facing spec for authoring themes (schema, 28 tokens, crop workflow, clean-art vs UI-screenshot decision tree, acceptance checklist).
 - `scripts/injector.mjs`: theme scanning/validation, payload generation, CDP injection, auxiliary-window transparency protection, verification (`--verify`), theme report (`--themes`), screenshot, and removal.
-- `scripts/set-theme.mjs`: programmatic theme/layout switching against the running instance.
+- `scripts/set-theme.ps1`: user-facing theme/layout switcher that locates the verified bundled Node.
+- `scripts/set-theme.mjs`: developer-facing JavaScript implementation of programmatic theme/layout switching against the running instance.
 - `scripts/watch-dream-skin.ps1`: hidden single-instance watcher that restores the skin after an ordinary Codex restart and repairs a missing injector.
 - `styles/dream/style.css`: structure layer; consumes tokens only, contains no theme names.
 - `assets/renderer-inject.js`: idempotent DOM integration and cleanup; fully manifest-driven.

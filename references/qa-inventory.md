@@ -22,7 +22,7 @@
 - Layout switch: switch between `banner` and `fullscreen`; confirm the native suggestion buttons remain centered and the native composer remains bottom-aligned; confirm the final choice survives reload.
 - Chat route: open a real task in every theme and confirm the full chat-art layer appears only behind the task, not on the home screen.
 - Reload: use CDP `Page.reload`, wait, and confirm the injection marker returns.
-- Normal restart persistence: close all Codex processes, launch the Store `ChatGPT.exe` without debug arguments, and confirm the watcher relaunches it on port 9335 with the saved theme/layout restored.
+- Normal restart persistence: close all Codex processes, launch the Store `ChatGPT.exe` without debug arguments, read the persisted port from the install transaction, and confirm the watcher relaunches Codex on that port with the saved theme/layout restored.
 - Closed-app behavior: leave Codex closed for at least two watcher polls and confirm the watcher remains idle instead of launching the app.
 - Desktop pet: confirm the `initialRoute=/avatar-overlay` renderer has no Dream Skin class, style, chrome, or state and its computed body background is transparent; reload that renderer and confirm it stays clean.
 - Restore/reapply cycle: remove live skin, verify marker absent (no `codex-dream-skin`/`dream-theme-*`/`dream-layout-*` classes, no injected nodes, no state object, no inline `--dream-*` vars, no `.dream-new-task` marker, composer placeholder back to the native text), apply again, verify marker present.

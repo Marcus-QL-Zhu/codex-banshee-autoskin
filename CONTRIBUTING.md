@@ -2,6 +2,20 @@
 
 感谢你愿意给 Codex AutoSkin 出力。我们最欢迎三类贡献：
 
+## 开发环境与提交前检查
+
+- Windows 10 / 11、Windows PowerShell 5.1、Node.js 22.4 或更高（推荐当前 LTS）。运行时集成测试还需要 Microsoft Store 版 `OpenAI.Codex`；离线检查不需要启动 Codex。
+- 生成 demo art 是可选开发任务，需要 Python 3.11，并用 `python -m pip install -r tools/requirements.txt` 安装固定版本的 NumPy 和 Pillow。
+- 不要提交真实任务、项目、账号或本机路径截图。`docs/analysis/` 和本地 review 图片默认忽略；如果确需发布最终截图，请先做视觉检查和 OCR 脱敏，再显式 force-add。
+
+提交前先运行不会启动或重启 Codex 的统一离线检查：
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools\release-check.ps1 -SkipWorktreeClean
+```
+
+准备发布时去掉 `-SkipWorktreeClean`，确保没有未提交、未跟踪或意外生成的文件。CI 会在 Node 22.4 和当前 Node 24 上执行同一检查。修改运行时行为后，仍需按 `references/qa-inventory.md` 完成单独的真实渲染器验收。
+
 ## 1. 新主题（最容易上手）
 
 主题是纯数据：往 `themes/` 里放一个文件夹就是一个主题，**不需要也不允许改任何引擎代码**。
@@ -50,6 +64,14 @@
 ---
 
 ## English (short)
+
+Development requires Windows PowerShell 5.1 and Node.js 22.4+ (current LTS recommended). Run the offline, non-launching checks before every PR:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools\release-check.ps1 -SkipWorktreeClean
+```
+
+Remove `-SkipWorktreeClean` for a release candidate. Never commit live screenshots containing real tasks, project names, accounts, or local paths. Demo-art regeneration is optional and uses the pinned dependencies in `tools/requirements.txt` with Python 3.11.
 
 Three kinds of contributions are most welcome:
 

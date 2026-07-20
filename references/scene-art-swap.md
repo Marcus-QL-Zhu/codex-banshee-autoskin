@@ -19,10 +19,10 @@
 4. **换图**：新图拷成 `themes*/<theme>/art.png`（保持 theme.json 的 art 文件名不变最省事）。
 5. **改 theme.json tokens**：抄 §5.1 场景预设作为起点，再按图微调（见下"最终参数"）。
    干净场景图的遮罩要比"压鬼影"时代**轻得多**：径向 overlay 首档 ≈.68（旧值 .92+），wash 每档 ≤.25，否则饱和度全没。
-6. **向运行实例重注入**（不重启 Codex）：`node scripts/injector.mjs --once --port 9335 --screenshot <png>`。
+6. **向运行实例重注入**（不重启 Codex）：从 install transaction 读取持久化端口，再运行 `node scripts/injector.mjs --once --port <persisted-port> --screenshot <png>`。
    - 引擎 ≥2.2.0 会按 art 指纹自动发现图变了并重建 blob（旧版会复用旧 blob，换图必须 reload——已修，见 renderer-inject.js artSigs）。
 7. **实时调参**（别改文件重注入！）：scratchpad 的 `tune.mjs` 往 documentElement 设 inline 变量 + 截图：
-   `node tune.mjs --port 9335 --shot out.png --var "--dream-fullscreen-overlay=..." --var "--dream-card-alpha=.72"`
+   `node tune.mjs --port <persisted-port> --shot out.png --var "--dream-fullscreen-overlay=..." --var "--dream-card-alpha=.72"`
    每轮检查：标题/副标题对比度、主体（脸）无遮挡、卡片区可读、四角无异物。收敛后把终值写回 theme.json，`node tune.mjs --clear` 清 inline，再 `--once` 复核。
 8. **四个 crop 角色都要重调**：fullscreen（主画布）、hero（banner 横带）、polaroid（小竖卡）、chat（聊天淡背景，红线：消息文字绝对主导）。
 9. **回归**：全部主题 × 两版式截图；elementsFromPoint 命中账号按钮/四卡/输入框/发送键；restore 后 check-clean；重启 start 脚本恢复守护；**重启 watcher 并看日志无误杀**。

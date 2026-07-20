@@ -1,6 +1,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { createHash } from 'node:crypto';
 import { fileURLToPath } from "node:url";
+import { fetchTargetsFromLoopback, isLoopbackEndpoint, isMainRendererTarget, paletteOnlyForMainTargets } from "./lib/target-selection.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "..");
@@ -13,8 +15,11 @@ function parseArgs(argv) {
     else if (arg === "--once") options.mode = "once";
     else if (arg === "--watch") options.mode = "watch";
     else if (arg === "--verify") options.mode = "verify";
+    else if (arg === "--open-new-task") options.mode = "open-new-task";
+    else if (arg === "--probe-top-control") options.mode = "probe-top-control";
     else if (arg === "--remove") options.mode = "remove";
     else if (arg === "--themes") options.mode = "themes";
+    else if (arg === "--check") options.mode = "check";
     else if (arg === "--timeout-ms") options.timeoutMs = Number(argv[++i]);
     else if (arg === "--screenshot") options.screenshot = path.resolve(argv[++i]);
     else if (arg === "--reload") options.reload = true;
@@ -27,37 +32,61 @@ function parseArgs(argv) {
 }
 
 class CdpSession {
-  constructor(target) {
+  constructor(target, { openTimeoutMs = 5000, requestTimeoutMs = 10000 } = {}) {
     this.target = target;
     this.ws = new WebSocket(target.webSocketDebuggerUrl);
     this.nextId = 1;
     this.pending = new Map();
     this.listeners = new Map();
     this.closed = false;
+    this.openTimeoutMs = openTimeoutMs;
+    this.requestTimeoutMs = requestTimeoutMs;
   }
 
   async open() {
     await new Promise((resolve, reject) => {
-      this.ws.addEventListener("open", resolve, { once: true });
-      this.ws.addEventListener("error", reject, { once: true });
+      const finish = (callback, value) => {
+        clearTimeout(timer);
+        this.ws.removeEventListener('open', onOpen);
+        this.ws.removeEventListener('error', onError);
+        callback(value);
+      };
+      const onOpen = () => finish(resolve);
+      const onError = () => finish(reject, new Error('CDP socket error'));
+      const timer = setTimeout(() => {
+        finish(reject, new Error(`CDP socket open timed out after ${this.openTimeoutMs}ms`));
+        this.close();
+      }, this.openTimeoutMs);
+      this.ws.addEventListener('open', onOpen, { once: true });
+      this.ws.addEventListener('error', onError, { once: true });
     });
     this.ws.addEventListener("message", (event) => this.onMessage(event));
     this.ws.addEventListener("close", () => {
       this.closed = true;
-      for (const waiter of this.pending.values()) waiter.reject(new Error("CDP socket closed"));
+      for (const waiter of this.pending.values()) {
+        clearTimeout(waiter.timer);
+        waiter.reject(new Error("CDP socket closed"));
+      }
       this.pending.clear();
     });
-    await this.send("Runtime.enable");
-    await this.send("Page.enable");
-    return this;
+    try {
+      await this.send("Runtime.enable");
+      await this.send("Page.enable");
+      return this;
+    } catch (error) {
+      this.close();
+      throw error;
+    }
   }
 
   onMessage(event) {
-    const message = JSON.parse(String(event.data));
+    let message;
+    try { message = JSON.parse(String(event.data)); } catch { return; }
     if (message.id) {
       const waiter = this.pending.get(message.id);
       if (!waiter) return;
       this.pending.delete(message.id);
+      clearTimeout(waiter.timer);
       if (message.error) waiter.reject(new Error(`${message.error.message} (${message.error.code})`));
       else waiter.resolve(message.result);
       return;
@@ -75,8 +104,18 @@ class CdpSession {
     if (this.closed) return Promise.reject(new Error("CDP session is closed"));
     return new Promise((resolve, reject) => {
       const id = this.nextId++;
-      this.pending.set(id, { resolve, reject });
-      this.ws.send(JSON.stringify({ id, method, params }));
+      const timer = setTimeout(() => {
+        this.pending.delete(id);
+        reject(new Error(`CDP ${method} timed out after ${this.requestTimeoutMs}ms`));
+      }, this.requestTimeoutMs);
+      this.pending.set(id, { resolve, reject, timer });
+      try {
+        this.ws.send(JSON.stringify({ id, method, params }));
+      } catch (error) {
+        clearTimeout(timer);
+        this.pending.delete(id);
+        reject(error);
+      }
     });
   }
 
@@ -95,45 +134,33 @@ class CdpSession {
   }
 
   close() {
-    if (!this.closed) this.ws.close();
+    for (const waiter of this.pending.values()) {
+      clearTimeout(waiter.timer);
+      waiter.reject(new Error('CDP session closed'));
+    }
+    this.pending.clear();
+    if (!this.closed) {
+      try { this.ws.close(); } catch {}
+    }
     this.closed = true;
   }
 }
 
-function isMainRendererTarget(target) {
-  try {
-    const url = new URL(target.url);
-    return target.type === "page" && url.protocol === "app:" && url.hostname === "-" &&
-      url.pathname === "/index.html" && !url.searchParams.has("initialRoute");
-  } catch {
-    return false;
-  }
-}
 
 // Chromium binds the DevTools server to a single loopback address, and which
 // stack it picks can change between boots (observed: 127.0.0.1 before a reboot,
 // [::1] after). Probe both and stick with whichever answers.
-const HOST_CANDIDATES = ["127.0.0.1", "[::1]"];
 let preferredHost = null;
 
 async function fetchTargets(port) {
-  const hosts = preferredHost
-    ? [preferredHost, ...HOST_CANDIDATES.filter((host) => host !== preferredHost)]
-    : [...HOST_CANDIDATES];
-  let lastError;
-  for (const host of hosts) {
-    try {
-      const response = await fetch(`http://${host}:${port}/json/list`);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const targets = await response.json();
-      preferredHost = host;
-      return targets;
-    } catch (error) {
-      lastError = error;
-    }
+  try {
+    const result = await fetchTargetsFromLoopback(port, { preferredHost, timeoutMs: 1500 });
+    preferredHost = result.host;
+    return result.targets;
+  } catch (error) {
+    preferredHost = null;
+    throw error;
   }
-  preferredHost = null;
-  throw lastError ?? new Error("no loopback endpoint responded");
 }
 
 async function waitForTargets(port, timeoutMs, { includeAuxiliary = false } = {}) {
@@ -167,6 +194,13 @@ async function waitForTargets(port, timeoutMs, { includeAuxiliary = false } = {}
 // ---------------------------------------------------------------------------
 
 const THEME_DIRS = ["themes", "themes-private"];
+const PACK_REGISTRY = Object.freeze({
+  dream: { file: path.join("styles", "dream", "style.css"), scope: "dream-pack-dream" },
+  banshee: { file: path.join("styles", "banshee", "style.css"), scope: "dream-pack-banshee" },
+});
+const SCHEMA_VERSIONS = new Set([1, 2]);
+const ART_MODES = new Set(["image", "none"]);
+const MAX_PACK_CSS_BYTES = 512 * 1024;
 const DEFAULT_LAYOUT = "fullscreen";
 const THEME_NAME_PATTERN = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
 const TOKEN_KEY_PATTERN = /^--dream-[a-z0-9-]+$/;
@@ -429,26 +463,55 @@ async function loadThemeDir(baseName, dirName) {
     warn(`theme "${name}" skipped because of invalid tokens`);
     return null;
   }
+  const schemaVersion = config.schemaVersion ?? 1;
+  if (!SCHEMA_VERSIONS.has(schemaVersion)) {
+    warn(`theme "${name}" skipped: unsupported schemaVersion "${schemaVersion}"`);
+    return null;
+  }
+  const stylePack = config.stylePack ?? "dream";
+  const artMode = config.artMode ?? "image";
+  if (schemaVersion === 1 && (config.stylePack !== undefined || config.artMode !== undefined)) {
+    warn(`theme "${name}" skipped: stylePack/artMode require schemaVersion 2`);
+    return null;
+  }
+  if (!Object.hasOwn(PACK_REGISTRY, stylePack)) {
+    warn(`theme "${name}" skipped: unknown stylePack "${stylePack}"`);
+    return null;
+  }
+  if (!ART_MODES.has(artMode)) {
+    warn(`theme "${name}" skipped: unknown artMode "${artMode}"`);
+    return null;
+  }
   const art = config.art ?? {};
-  const homeFile = art.home ?? "art.png";
-  const chatFile = art.chat ?? homeFile;
-  const artUrls = {};
-  for (const [role, file] of Object.entries({ home: homeFile, chat: chatFile })) {
-    if (typeof file !== "string" || !ART_FILE_PATTERN.test(file)) {
-      warn(`theme "${name}" skipped: art.${role} ("${file}") must be a plain png/jpg/webp filename inside the theme folder`);
-      return null;
-    }
-    if (role === "chat" && file === homeFile && artUrls.home) {
-      artUrls.chat = artUrls.home;
-      continue;
-    }
-    try {
-      const buffer = await fs.readFile(path.join(dir, file));
-      const mime = MIME_BY_EXT[path.extname(file).toLowerCase()] ?? "image/png";
-      artUrls[role] = `data:${mime};base64,${buffer.toString("base64")}`;
-    } catch {
-      warn(`theme "${name}" skipped: art file not found: ${path.join(baseName, dirName, file)}`);
-      return null;
+  let artUrls = null;
+  let artHashes = null;
+  if (artMode === "image") {
+    const homeFile = art.home ?? "art.png";
+    const chatFile = art.chat ?? homeFile;
+    artUrls = {};
+    artHashes = {};
+    for (const [role, file] of Object.entries({ home: homeFile, chat: chatFile })) {
+      if (typeof file !== "string" || !ART_FILE_PATTERN.test(file) || path.basename(file) !== file) {
+        warn(`theme "${name}" skipped: art.${role} ("${file}") must be a plain png/jpg/webp filename inside the theme folder`);
+        return null;
+      }
+      if (role === "chat" && file === homeFile && artUrls.home) {
+        artUrls.chat = artUrls.home;
+        artHashes.chat = artHashes.home;
+        continue;
+      }
+      try {
+        const assetPath = path.join(dir, file);
+        const stat = await fs.lstat(assetPath);
+        if (!stat.isFile() || stat.isSymbolicLink()) throw new Error("not a regular file");
+        const buffer = await fs.readFile(assetPath);
+        const mime = MIME_BY_EXT[path.extname(file).toLowerCase()] ?? "image/png";
+        artUrls[role] = `data:${mime};base64,${buffer.toString("base64")}`;
+        artHashes[role] = createHash('sha256').update(buffer).digest('hex');
+      } catch {
+        warn(`theme "${name}" skipped: art file not found or unsafe: ${path.join(baseName, dirName, file)}`);
+        return null;
+      }
     }
   }
   let extraCss = null;
@@ -466,6 +529,9 @@ async function loadThemeDir(baseName, dirName) {
   return {
     name,
     source: baseName,
+    schemaVersion,
+    stylePack,
+    artMode,
     order: Number.isFinite(config.order) ? config.order : 100,
     isDefault: config.default === true,
     meta: {
@@ -479,6 +545,7 @@ async function loadThemeDir(baseName, dirName) {
     stickers: normalizeStickers(name, config.stickers),
     extraCss,
     artUrls,
+    artHashes,
   };
 }
 
@@ -509,6 +576,45 @@ async function loadThemes() {
   return { themes, defaultTheme };
 }
 
+function validatePackCss(name, css) {
+  const errors = [];
+  const scope = `html.codex-dream-skin.${PACK_REGISTRY[name].scope}`;
+  if (Buffer.byteLength(css, "utf8") > MAX_PACK_CSS_BYTES) errors.push("CSS exceeds size limit");
+  if (/@import\b/i.test(css)) errors.push("@import is forbidden");
+  if (/url\(\s*['"]?https?:/i.test(css)) errors.push("network URLs are forbidden");
+  if (name === "banshee") {
+    const stripped = css.replace(/\/\*[\s\S]*?\*\//g, "");
+    const check = (block) => {
+      for (const rule of extractTopLevelRules(block)) {
+        if (/^@(media|supports)\b/.test(rule.prelude)) { check(rule.body); continue; }
+        if (/^@keyframes\s+dream-banshee-[a-z0-9-]+$/i.test(rule.prelude)) continue;
+        if (rule.prelude.startsWith("@")) { errors.push(`unsupported at-rule: ${rule.prelude}`); continue; }
+        for (const selector of rule.prelude.split(",").map((part) => part.trim()).filter(Boolean)) {
+          if (!selector.startsWith(scope)) errors.push(`unscoped selector: ${selector.slice(0, 100)}`);
+        }
+      }
+    };
+    try { check(stripped); } catch (error) { errors.push(error.message); }
+  }
+  return errors;
+}
+
+async function loadPackCss(themes) {
+  const names = [...new Set(themes.map((theme) => theme.stylePack))];
+  const blocks = [];
+  for (const name of names) {
+    const entry = PACK_REGISTRY[name];
+    const file = path.join(root, entry.file);
+    const stat = await fs.lstat(file);
+    if (!stat.isFile() || stat.isSymbolicLink()) throw new Error(`Unsafe style pack entry: ${entry.file}`);
+    const css = await fs.readFile(file, "utf8");
+    const errors = validatePackCss(name, css);
+    if (errors.length) throw new Error(`Invalid style pack "${name}": ${errors.join("; ")}`);
+    blocks.push(`/* style pack: ${name} */\n${css.trim()}`);
+  }
+  return blocks.join("\n\n");
+}
+
 function buildThemeCss(themes) {
   const blocks = [];
   for (const theme of themes) {
@@ -524,31 +630,42 @@ function buildThemeCss(themes) {
 }
 
 async function loadPayload() {
-  const [structureCss, template, { themes, defaultTheme }] = await Promise.all([
-    fs.readFile(path.join(root, "styles", "dream", "style.css"), "utf8"),
-    fs.readFile(path.join(root, "assets", "renderer-inject.js"), "utf8"),
+  const [{ themes, defaultTheme }, template, bansheeRuntime] = await Promise.all([
     loadThemes(),
+    fs.readFile(path.join(root, "assets", "renderer-inject.js"), "utf8"),
+    fs.readFile(path.join(root, "assets", "banshee-runtime.js"), "utf8"),
   ]);
+  const structureCss = await loadPackCss(themes);
   const css = `${structureCss}\n\n/* --- generated theme token blocks --- */\n\n${buildThemeCss(themes)}\n`;
-  const artAssets = Object.fromEntries(themes.map((theme) => [theme.name, theme.artUrls]));
+  const artAssets = Object.fromEntries(
+    themes.filter((theme) => theme.artMode === "image").map((theme) => [theme.name, theme.artUrls])
+  );
   const manifest = {
     order: themes.map((theme) => theme.name),
     meta: Object.fromEntries(themes.map((theme) => [theme.name, theme.meta])),
     stickers: Object.fromEntries(themes.map((theme) => [theme.name, theme.stickers])),
+    packs: Object.fromEntries(themes.map((theme) => [theme.name, theme.stylePack])),
+    artModes: Object.fromEntries(themes.map((theme) => [theme.name, theme.artMode])),
+    artHashes: Object.fromEntries(themes.filter((theme) => theme.artHashes).map((theme) => [theme.name, theme.artHashes])),
     defaultTheme,
     defaultLayout: DEFAULT_LAYOUT,
   };
   return template
     .replace("__DREAM_CSS_JSON__", () => JSON.stringify(css))
     .replace("__DREAM_ART_ASSETS_JSON__", () => JSON.stringify(artAssets))
-    .replace("__DREAM_MANIFEST_JSON__", () => JSON.stringify(manifest));
+    .replace("__DREAM_MANIFEST_JSON__", () => JSON.stringify(manifest))
+    .replace("__BANSHEE_RUNTIME_FACTORY__", () => bansheeRuntime.trim());
 }
 
 async function connectTarget(target) {
+  if (!isLoopbackEndpoint(target.webSocketDebuggerUrl, ["ws:"])) {
+    throw new Error(`Rejected non-loopback CDP WebSocket: ${target.webSocketDebuggerUrl}`);
+  }
   return new CdpSession(target).open();
 }
 
-async function applyToSession(session, payload) {
+async function applyToSession(session, payload, { paletteOnly = false } = {}) {
+  await session.evaluate("window.__CODEX_DREAM_SKIN_PALETTE_ONLY__ = " + JSON.stringify(paletteOnly));
   return session.evaluate(payload);
 }
 
@@ -562,8 +679,10 @@ async function removeFromSession(session) {
       rootElement.style.removeProperty('--dream-art');
       rootElement.style.removeProperty('--dream-home-art');
       rootElement.style.removeProperty('--dream-chat-art');
+      rootElement.style.removeProperty('--dream-banshee-wave-epoch-offset');
+      rootElement.removeAttribute('data-dream-pack-ready');
       for (const cls of [...rootElement.classList]) {
-        if (cls === 'codex-dream-skin' || cls.startsWith('dream-theme-') || cls.startsWith('dream-layout-')) {
+        if (cls === 'codex-dream-skin' || cls.startsWith('dream-theme-') || cls.startsWith('dream-layout-') || cls.startsWith('dream-pack-')) {
           rootElement.classList.remove(cls);
         }
       }
@@ -571,6 +690,15 @@ async function removeFromSession(session) {
     document.querySelectorAll('.dream-home').forEach((node) => node.classList.remove('dream-home'));
     document.querySelectorAll('.dream-home-shell').forEach((node) => node.classList.remove('dream-home-shell'));
     document.querySelectorAll('.dream-new-task').forEach((node) => node.classList.remove('dream-new-task'));
+    document.querySelectorAll('[data-dream-owner], [data-dream-surface], [data-dream-capability], [data-dream-status-dot], [data-dream-sidebar-crown-controls], [data-dream-composer-host], [data-dream-composer-context]').forEach((node) => {
+      node.removeAttribute('data-dream-owner');
+      node.removeAttribute('data-dream-surface');
+      node.removeAttribute('data-dream-capability');
+      node.removeAttribute('data-dream-status-dot');
+      node.removeAttribute('data-dream-sidebar-crown-controls');
+      node.removeAttribute('data-dream-composer-host');
+      node.removeAttribute('data-dream-composer-context');
+    });
     document.getElementById('codex-dream-skin-style')?.remove();
     document.getElementById('codex-dream-skin-chrome')?.remove();
     document.getElementById('codex-dream-skin-controls')?.remove();
@@ -583,6 +711,7 @@ async function verifyAuxiliarySession(session) {
     const result = {
       installed: document.documentElement.classList.contains('codex-dream-skin'),
       stylePresent: Boolean(document.getElementById('codex-dream-skin-style')),
+      styleVersion: document.getElementById('codex-dream-skin-style')?.dataset?.dreamVersion ?? null,
       chromePresent: Boolean(document.getElementById('codex-dream-skin-chrome')),
       statePresent: Boolean(window.__CODEX_DREAM_SKIN_STATE__),
       bodyBackgroundImage: getComputedStyle(document.body).backgroundImage,
@@ -612,8 +741,264 @@ async function verifySession(session) {
     };
     const home = document.querySelector('.dream-home');
     const suggestions = home?.querySelector('.group\\\\/home-suggestions') ?? null;
-    const cards = suggestions ? [...suggestions.querySelectorAll('button')].map(box) : [];
+    const cardNodes = suggestions ? [...suggestions.querySelectorAll('button')] : [];
+    // Recent Codex builds may keep the other suggestion buttons mounted as
+    // zero-rectangle nodes while exposing only one native suggestion. Report
+    // rendered cards separately from diagnostics so hidden React state cannot
+    // fail visual parity or be mistaken for a visible native control.
+    const cards = cardNodes.map(box).filter((card) => card.width > 0 && card.height > 0);
+    const cardDiagnostics = cardNodes.map((node) => {
+      const style = getComputedStyle(node);
+      return {
+        label: (node.innerText || node.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 48) || null,
+        className: typeof node.className === 'string' ? node.className : null,
+        parentClassName: typeof node.parentElement?.className === 'string' ? node.parentElement.className : null,
+        display: style.display,
+        visibility: style.visibility,
+        opacity: style.opacity,
+        ariaHidden: node.getAttribute('aria-hidden'),
+        clientRects: node.getClientRects().length,
+        box: box(node),
+      };
+    });
+    const composerNode = document.querySelector('.composer-surface-chrome');
+    const composerStyle = composerNode ? getComputedStyle(composerNode) : null;
+    const composerAncestry = [];
+    for (let node = composerNode, depth = 0; node && depth < 7; node = node.parentElement, depth += 1) {
+      const style = getComputedStyle(node);
+      composerAncestry.push({
+        depth,
+        tagName: node.tagName,
+        className: typeof node.className === 'string' ? node.className : null,
+        box: box(node),
+        display: style.display,
+        position: style.position,
+        width: style.width,
+        maxWidth: style.maxWidth,
+      });
+    }
+    const composerStack = composerNode?.parentElement?.parentElement ?? null;
+    const composerStackChildren = composerStack ? [...composerStack.children].map((node, index) => ({
+      index,
+      tagName: node.tagName,
+      className: typeof node.className === 'string' ? node.className : null,
+      text: (node.innerText || '').trim().replace(/\s+/g, ' ').slice(0, 80) || null,
+      box: box(node),
+    })) : [];
+    const composerContextNode = composerStack?.firstElementChild ?? null;
+    const composerContextTree = composerContextNode
+      ? [composerContextNode, ...composerContextNode.querySelectorAll(':scope > *, :scope > * > *')].slice(0, 10).map((node, index) => {
+          const style = getComputedStyle(node);
+          return {
+            index,
+            tagName: node.tagName,
+            className: typeof node.className === 'string' ? node.className : null,
+            box: box(node),
+            background: style.background,
+            borderRadius: style.borderRadius,
+            overflow: style.overflow,
+          };
+        })
+      : [];
     const state = window.__CODEX_DREAM_SKIN_STATE__;
+    const nativeControl = (key) => {
+      const node = document.querySelector('[data-dream-capability="' + key + '"]');
+      if (!node) return { enhanced: false };
+      const rect = node.getBoundingClientRect();
+      const stack = document.elementsFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2);
+      const topHit = stack.find((candidate) => getComputedStyle(candidate).pointerEvents !== 'none') ?? null;
+      const hitPass = Boolean(topHit && (topHit === node || node.contains(topHit)));
+      const nativeFastIndicator = key === 'fast-mode' && [...node.querySelectorAll('svg')].some((icon) =>
+        String(icon.getAttribute('class') || '').includes('ModelPickerTriggerInlineFastIcon') &&
+        icon.getAttribute('viewBox') === '0 0 24 24' && Boolean(icon.querySelector('path[fill="currentColor"]'))
+      );
+      return {
+        enhanced: true,
+        tagName: node.tagName,
+        ariaLabel: node.getAttribute('aria-label') || node.getAttribute('title') || null,
+        ariaPressed: node.getAttribute('aria-pressed'),
+        nativeFastIndicator,
+        svgPresent: Boolean(node.querySelector('svg')),
+        hitPass,
+        box: box(node),
+      };
+    };
+    const composerControlHints = [...document.querySelectorAll('.composer-surface-chrome button')].map((node) => ({
+      ariaLabel: node.getAttribute('aria-label') || null,
+      title: node.getAttribute('title') || null,
+      controlText: (node.innerText || '').trim().replace(/\s+/g, ' ').slice(0, 40) || null,
+      testId: node.getAttribute('data-testid') || null,
+      ariaPressed: node.getAttribute('aria-pressed'),
+      svgPresent: Boolean(node.querySelector('svg')),
+      svgClass: node.querySelector('svg')?.getAttribute('class') || null,
+      svgViewBox: node.querySelector('svg')?.getAttribute('viewBox') || null,
+      box: box(node),
+    }));
+    const mainNode = document.querySelector('main.main-surface');
+    const mainRect = mainNode?.getBoundingClientRect() ?? null;
+    const topBandLimit = mainRect ? Math.min(innerHeight, mainRect.top + 180) : 180;
+    const describeTopNode = (node) => {
+      const style = getComputedStyle(node);
+      const rect = node.getBoundingClientRect();
+      const centerX = rect.x + rect.width / 2;
+      const centerY = rect.y + rect.height / 2;
+      const stack = rect.width > 0 && rect.height > 0
+        ? document.elementsFromPoint(centerX, centerY)
+        : [];
+      const topHit = stack.find((candidate) => getComputedStyle(candidate).pointerEvents !== 'none') ?? null;
+      const topInteractiveNode = topHit?.closest?.('button, a, [role="button"]') ?? null;
+      const clippingAncestors = [];
+      for (let current = node.parentElement; current && current !== document.body; current = current.parentElement) {
+        const currentStyle = getComputedStyle(current);
+        if (!/(hidden|clip|scroll|auto)/.test(currentStyle.overflow + ' ' + currentStyle.overflowX + ' ' + currentStyle.overflowY)) continue;
+        const currentRect = current.getBoundingClientRect();
+        clippingAncestors.push({
+          tagName: current.tagName,
+          className: typeof current.className === 'string' ? current.className : null,
+          box: box(current),
+          overflow: [currentStyle.overflowX, currentStyle.overflowY],
+          centerInside: centerX >= currentRect.left && centerX <= currentRect.right &&
+            centerY >= currentRect.top && centerY <= currentRect.bottom,
+        });
+      }
+      return {
+        tagName: node.tagName,
+        className: typeof node.className === 'string' ? node.className : null,
+        role: node.getAttribute('role'),
+        ariaLabel: node.getAttribute('aria-label') || node.getAttribute('title') || null,
+        testId: node.getAttribute('data-testid'),
+        directTextLength: [...node.childNodes].reduce((total, child) =>
+          total + (child.nodeType === Node.TEXT_NODE ? (child.textContent || '').trim().length : 0), 0),
+        box: box(node),
+        position: style.position,
+        zIndex: style.zIndex,
+        overflow: style.overflow,
+        pointerEvents: style.pointerEvents,
+        hitPass: stack.some((candidate) => candidate === node || node.contains(candidate)),
+        topHitTag: topHit?.tagName ?? null,
+        topHitClassName: typeof topHit?.className === 'string' ? topHit.className : null,
+        topInteractivePass: topInteractiveNode === node,
+        clippingAncestors,
+      };
+    };
+    const inTopBand = (node) => {
+      const rect = node.getBoundingClientRect();
+      return rect.width > 0 && rect.height > 0 && rect.bottom > (mainRect?.top ?? 0) &&
+        rect.top < topBandLimit && rect.right > (mainRect?.left ?? 0);
+    };
+    const topInteractiveNodes = [...document.querySelectorAll('button, a, [role="button"]')]
+      .filter(inTopBand);
+    const topInteractive = topInteractiveNodes.map(describeTopNode);
+    const describeAncestry = (node) => {
+      const result = [];
+      for (let current = node, depth = 0; current && depth < 9; current = current.parentElement, depth += 1) {
+        const style = getComputedStyle(current);
+        result.push({
+          depth,
+          tagName: current.tagName,
+          className: typeof current.className === 'string' ? current.className : null,
+          box: box(current),
+          display: style.display,
+          position: style.position,
+          inset: [style.top, style.right, style.bottom, style.left],
+          transform: style.transform,
+          width: style.width,
+          maxWidth: style.maxWidth,
+          overflow: style.overflow,
+          justifyContent: style.justifyContent,
+        });
+        if (current === mainNode) break;
+      }
+      return result;
+    };
+    const titleAnchor = topInteractiveNodes.find((node) => {
+      const rect = node.getBoundingClientRect();
+      return mainRect && rect.left >= mainRect.left && rect.left < mainRect.left + mainRect.width / 2 &&
+        rect.top >= mainRect.top && rect.top < mainRect.top + 100 &&
+        Boolean(node.getAttribute('aria-label') || node.getAttribute('title'));
+    }) ?? null;
+    const offscreenToolbarAnchor = topInteractiveNodes.find((node) => {
+      const rect = node.getBoundingClientRect();
+      return mainRect && rect.left >= mainRect.right;
+    }) ?? null;
+    const topTextNodes = mainNode
+      ? [...mainNode.querySelectorAll('span, p, h1, h2, h3, div')]
+          .filter((node) => inTopBand(node) && [...node.childNodes].some((child) =>
+            child.nodeType === Node.TEXT_NODE && (child.textContent || '').trim().length > 0
+          ))
+          .slice(0, 40)
+          .map(describeTopNode)
+      : [];
+    const threadHeaderNode = document.querySelector('[data-dream-surface="thread-header"]');
+    const threadHeaderRect = threadHeaderNode?.getBoundingClientRect() ?? null;
+    const threadHeaderControlNodes = threadHeaderNode
+      ? [...threadHeaderNode.querySelectorAll('button, a, [role="button"]')].filter((node) => {
+          const rect = node.getBoundingClientRect();
+          const style = getComputedStyle(node);
+          return rect.width > 0 && rect.height > 0 && threadHeaderRect &&
+            rect.right > threadHeaderRect.left && rect.left < threadHeaderRect.right &&
+            rect.bottom > threadHeaderRect.top && rect.top < threadHeaderRect.bottom &&
+            style.display !== 'none' && style.visibility !== 'hidden' && Number(style.opacity) !== 0;
+        })
+      : [];
+    const threadHeaderControls = threadHeaderControlNodes.map(describeTopNode);
+    const threadHeaderTitle = threadHeaderNode
+      ? [...threadHeaderNode.querySelectorAll('span')]
+          .filter((node) => {
+            const rect = node.getBoundingClientRect();
+            return rect.width > 0 && rect.height > 0 && [...node.childNodes].some((child) =>
+              child.nodeType === Node.TEXT_NODE && (child.textContent || '').trim().length > 0
+            );
+          })
+          .sort((left, right) => left.getBoundingClientRect().left - right.getBoundingClientRect().left)[0] ?? null
+      : null;
+    const threadHeaderTitleRect = threadHeaderTitle?.getBoundingClientRect() ?? null;
+    const threadHeaderPass = !threadHeaderNode || Boolean(
+      mainRect && threadHeaderRect && threadHeaderTitleRect && threadHeaderControls.length > 0 &&
+      threadHeaderRect.left >= mainRect.left && threadHeaderRect.right <= mainRect.right &&
+      threadHeaderRect.top >= mainRect.top + 44 && threadHeaderRect.bottom < mainRect.top + 140 &&
+      threadHeaderTitleRect.top >= threadHeaderRect.top && threadHeaderTitleRect.bottom <= threadHeaderRect.bottom &&
+      threadHeaderControls.every((control) => control.hitPass && control.topInteractivePass &&
+        control.clippingAncestors.every((ancestor) => ancestor.centerInside) && control.box.x >= mainRect.left &&
+        control.box.x + control.box.width <= Math.min(innerWidth, mainRect.right))
+    );
+    const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const waveAnimations = document.getAnimations().filter((animation) =>
+      /^dream-banshee-(wave|center-cavity-wave|conduit-breathe|cavity-pulse)$/.test(animation.animationName || '')
+    );
+    const waveStartTimes = waveAnimations.map((animation) => animation.startTime).filter(Number.isFinite);
+    const waveStartSkewMs = waveStartTimes.length
+      ? Math.max(...waveStartTimes) - Math.min(...waveStartTimes)
+      : null;
+    const waveDelaysMs = [...new Set(waveAnimations.map((animation) =>
+      Math.round(Number(animation.effect?.getTiming?.().delay) || 0)
+    ))].sort((a, b) => a - b);
+    const wave = {
+      reducedMotion,
+      animationCount: waveAnimations.length,
+      startTimeCount: waveStartTimes.length,
+      startTimeSkewMs: waveStartSkewMs,
+      delaysMs: waveDelaysMs,
+      pass: reducedMotion
+        ? waveAnimations.length === 0 || waveStartSkewMs === 0
+        : waveAnimations.length >= 5 && waveStartTimes.length === waveAnimations.length && waveStartSkewMs <= 1,
+    };
+    const capabilities = {
+      microphone: nativeControl('microphone'),
+      fastMode: nativeControl('fast-mode'),
+    };
+    const fastAwakeningExpected = capabilities.fastMode.enhanced &&
+      (capabilities.fastMode.ariaPressed === 'true' ||
+        (capabilities.fastMode.ariaPressed === null && capabilities.fastMode.nativeFastIndicator));
+    const fastAwakeningActive = document.documentElement.getAttribute('data-dream-fast') === 'on';
+    const fastAwakening = {
+      expected: fastAwakeningExpected,
+      active: fastAwakeningActive,
+      pass: fastAwakeningActive === fastAwakeningExpected,
+    };
+    const markedCapabilitiesPass = Object.values(capabilities).every((control) =>
+      !control.enhanced || (control.tagName === 'BUTTON' && control.svgPresent && control.hitPass && Boolean(control.box))
+    );
     const result = {
       installed: document.documentElement.classList.contains('codex-dream-skin'),
       version: state?.version ?? null,
@@ -621,28 +1006,70 @@ async function verifySession(session) {
       layout: state?.layout ?? null,
       themes: state?.themes ?? null,
       stylePresent: Boolean(document.getElementById('codex-dream-skin-style')),
+      styleVersion: document.getElementById('codex-dream-skin-style')?.dataset?.dreamVersion ?? null,
       chromePresent: Boolean(document.getElementById('codex-dream-skin-chrome')),
       legacyControlsPresent: Boolean(document.getElementById('codex-dream-skin-controls')),
       chromePointerEvents: getComputedStyle(document.getElementById('codex-dream-skin-chrome') || document.body).pointerEvents,
       homePresent: Boolean(home),
       suggestionsPresent: Boolean(suggestions),
+      suggestionSurface: suggestions ? {
+        box: box(suggestions),
+        className: typeof suggestions.className === 'string' ? suggestions.className : null,
+        display: getComputedStyle(suggestions).display,
+        columns: getComputedStyle(suggestions).gridTemplateColumns,
+      } : null,
       hero: box(home?.firstElementChild?.firstElementChild?.firstElementChild),
       cards,
-      composer: box(document.querySelector('.composer-surface-chrome')),
+      cardDiagnostics,
+      composer: box(composerNode),
+      composerStyle: composerStyle ? {
+        borderTopColor: composerStyle.borderTopColor,
+        borderTopWidth: composerStyle.borderTopWidth,
+        clipPath: composerStyle.clipPath,
+        boxShadow: composerStyle.boxShadow,
+        focusWithin: composerNode.matches(':focus-within'),
+      } : null,
+      composerAncestry,
+      composerStackChildren,
+      composerContextTree,
       sidebar: box(document.querySelector('aside.app-shell-left-panel')),
       viewport: { width: innerWidth, height: innerHeight },
       documentOverflow: {
         x: document.documentElement.scrollWidth > document.documentElement.clientWidth,
         y: document.documentElement.scrollHeight > document.documentElement.clientHeight,
       },
+      wave,
+      capabilities,
+      fastAwakening,
+      composerControlHints,
+      topRegion: {
+        main: box(mainNode),
+        bandBottom: Math.round(topBandLimit),
+        threadHeader: box(threadHeaderNode),
+        threadHeaderTitle: box(threadHeaderTitle),
+        threadHeaderControls,
+        pass: threadHeaderPass,
+        interactive: topInteractive,
+        textNodes: topTextNodes,
+        titleAnchorAncestry: describeAncestry(titleAnchor),
+        offscreenToolbarAncestry: describeAncestry(offscreenToolbarAnchor),
+      },
     };
+    const bansheeActive = document.documentElement.classList.contains('dream-pack-banshee') &&
+      document.documentElement.getAttribute('data-dream-pack-ready') === 'banshee-v1';
+    const suggestionsSuppressed = bansheeActive && result.suggestionsPresent &&
+      result.suggestionSurface?.display === 'none' && result.cards.length === 0;
+    result.suggestionsSuppressed = suggestionsSuppressed;
     result.pass = result.installed && result.stylePresent && result.chromePresent &&
       Array.isArray(result.themes) && result.themes.length > 0 && result.themes.includes(result.theme) &&
       ['banner', 'fullscreen'].includes(result.layout) &&
       !result.legacyControlsPresent &&
       result.chromePointerEvents === 'none' && Boolean(result.composer) && Boolean(result.sidebar) &&
+      (!bansheeActive || (result.wave.pass && markedCapabilitiesPass && result.fastAwakening.pass)) &&
+      result.topRegion.pass &&
       (!result.homePresent || (Boolean(result.hero) &&
-        (!result.suggestionsPresent || (result.cards.length >= 2 && result.cards.length <= 4))));
+        (!result.suggestionsPresent || result.suggestionsSuppressed || (result.cards.length >= 1 && result.cards.length <= 4 &&
+          result.cards.every((card) => card.width > 0 && card.height > 0)))));
     return result;
   })()`);
 }
@@ -678,6 +1105,94 @@ async function capture(session, outputPath) {
   await fs.writeFile(outputPath, Buffer.from(result.data, "base64"));
 }
 
+async function openNewTask(session, timeoutMs) {
+  const action = await session.evaluate(`(() => {
+    const sidebar = document.querySelector('aside.app-shell-left-panel');
+    const labels = ['新建任务', 'New task'];
+    const candidates = sidebar ? [...sidebar.querySelectorAll('button')].filter((button) =>
+      labels.some((label) => (button.innerText || button.textContent || '').trim().includes(label))
+    ) : [];
+    if (candidates.length !== 1) return { clicked: false, candidateCount: candidates.length };
+    candidates[0].click();
+    return { clicked: true, candidateCount: 1 };
+  })()`);
+  if (!action.clicked) throw new Error(`Expected one native new-task button, found ${action.candidateCount}`);
+  const deadline = Date.now() + timeoutMs;
+  let verified;
+  let stableSignature = null;
+  let stablePasses = 0;
+  while (Date.now() < deadline) {
+    verified = await verifySession(session);
+    const suppressedCards = verified.suggestionsSuppressed === true;
+    const visibleCards = verified.cards.length >= 1 && verified.cards.length <= 4 &&
+      verified.cards.every((card) => card.width > 0 && card.height > 0);
+    const signature = suppressedCards ? 'suppressed' : visibleCards ? JSON.stringify(verified.cards) : null;
+    stablePasses = signature && signature === stableSignature ? stablePasses + 1 : 0;
+    stableSignature = signature;
+    if (verified.homePresent && verified.suggestionsPresent && (suppressedCards || visibleCards) && stablePasses >= 1) return verified;
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  }
+  throw new Error(`New-task view did not stabilize its suggestion presentation: ${JSON.stringify(verified)}`);
+}
+
+async function probeTopControl(session) {
+  const target = await session.evaluate(`(() => {
+    const header = document.querySelector('[data-dream-surface="thread-header"]');
+    const labels = new Set(['次要操作', 'Secondary actions']);
+    const matches = header ? [...header.querySelectorAll('button')].filter((button) => {
+      const rect = button.getBoundingClientRect();
+      const label = (button.getAttribute('aria-label') || button.getAttribute('title') || '').trim();
+      return labels.has(label) && rect.width > 0 && rect.height > 0;
+    }) : [];
+    if (matches.length !== 1) return { ready: false, candidateCount: matches.length };
+    const button = matches[0];
+    const rect = button.getBoundingClientRect();
+    const state = { expected: button, pointerdown: false, click: false, pointerTarget: null, clickTarget: null };
+    const observe = (key, event) => {
+      const interactive = event.target?.closest?.('button, a, [role="button"]') ?? null;
+      state[key] = interactive === state.expected;
+      state[key + 'Target'] = interactive?.getAttribute?.('aria-label') || interactive?.getAttribute?.('title') || null;
+    };
+    document.addEventListener('pointerdown', (event) => observe('pointerdown', event), { capture: true, once: true });
+    document.addEventListener('click', (event) => observe('click', event), { capture: true, once: true });
+    window.__DREAM_SKIN_TOP_CONTROL_PROBE__ = state;
+    return {
+      ready: true,
+      ariaLabel: button.getAttribute('aria-label') || button.getAttribute('title') || null,
+      point: { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 },
+    };
+  })()`);
+  if (!target.ready) return { pass: false, reason: 'target-not-unique', candidateCount: target.candidateCount };
+  await session.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: target.point.x, y: target.point.y });
+  await session.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: target.point.x, y: target.point.y, button: 'left', clickCount: 1 });
+  await session.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: target.point.x, y: target.point.y, button: 'left', clickCount: 1 });
+  await new Promise((resolve) => setTimeout(resolve, 250));
+  const observed = await session.evaluate(`(() => {
+    const state = window.__DREAM_SKIN_TOP_CONTROL_PROBE__;
+    const menuVisible = [...document.querySelectorAll('[role="menu"]')].some((node) => {
+      const rect = node.getBoundingClientRect();
+      const style = getComputedStyle(node);
+      return rect.width > 0 && rect.height > 0 && style.display !== 'none' && style.visibility !== 'hidden';
+    });
+    const result = state ? {
+      pointerdown: state.pointerdown,
+      click: state.click,
+      pointerTarget: state.pointerdownTarget,
+      clickTarget: state.clickTarget,
+      menuVisible,
+    } : null;
+    delete window.__DREAM_SKIN_TOP_CONTROL_PROBE__;
+    return result;
+  })()`);
+  await session.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
+  await session.send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
+  return {
+    target: target.ariaLabel,
+    ...observed,
+    pass: Boolean(observed?.pointerdown && observed?.click),
+  };
+}
+
 async function runOneShot(options) {
   const allTargets = await waitForTargets(options.port, options.timeoutMs, { includeAuxiliary: true });
   let mainTargets = allTargets.filter(isMainRendererTarget);
@@ -701,16 +1216,20 @@ async function runOneShot(options) {
     const session = await connectTarget(target);
     try {
       if (options.mode === "remove") await removeFromSession(session);
-      else if (options.mode === "once") await applyToSession(session, payload);
+      else if (options.mode === "once") await applyToSession(session, payload, { paletteOnly: mainTargets.length !== 1 });
       if (options.mode === "once") {
         await new Promise((resolve) => setTimeout(resolve, 850));
       }
       if (options.reload) {
         await session.send("Page.reload", { ignoreCache: true });
         await new Promise((resolve) => setTimeout(resolve, 1600));
-        if (options.mode !== "remove") await applyToSession(session, payload);
+        if (options.mode !== "remove") await applyToSession(session, payload, { paletteOnly: mainTargets.length !== 1 });
       }
-      const verified = options.mode === "remove"
+      const verified = options.mode === "probe-top-control"
+        ? await probeTopControl(session)
+        : options.mode === "open-new-task"
+        ? await openNewTask(session, options.timeoutMs)
+        : options.mode === "remove"
         ? await session.evaluate("!document.documentElement.classList.contains('codex-dream-skin')")
         : (options.reload || options.mode === "once")
           ? await waitForVerifiedSession(session, options.timeoutMs)
@@ -730,8 +1249,24 @@ async function runOneShot(options) {
   if (options.mode === "verify" && (
     results.some((item) => !item.result.pass) || auxiliaryResults.some((item) => !item.result.pass)
   )) process.exitCode = 2;
+  if (options.mode === "probe-top-control" && results.some((item) => !item.result.pass)) process.exitCode = 2;
 }
 
+async function runPayloadCheck() {
+  const payload = await loadPayload();
+  const { themes, defaultTheme } = await loadThemes();
+  console.log(JSON.stringify({
+    valid: true,
+    payloadBytes: Buffer.byteLength(payload, "utf8"),
+    defaultTheme,
+    themes: themes.map((theme) => ({
+      name: theme.name,
+      schemaVersion: theme.schemaVersion,
+      stylePack: theme.stylePack,
+      artMode: theme.artMode,
+    })),
+  }, null, 2));
+}
 async function runThemesReport() {
   const { themes, defaultTheme } = await loadThemes();
   console.log(JSON.stringify({
@@ -743,6 +1278,9 @@ async function runThemesReport() {
       order: theme.order,
       default: theme.isDefault,
       button: theme.meta.button,
+      schemaVersion: theme.schemaVersion,
+      stylePack: theme.stylePack,
+      artMode: theme.artMode,
       extraCss: theme.extraCss !== null,
       stickers: theme.stickers ? Object.keys(theme.stickers) : [],
     })),
@@ -754,6 +1292,7 @@ async function runWatch(options) {
   const sessions = new Map();
   const cleanedAuxiliary = new Set();
   let stopping = false;
+  let desiredPaletteOnly = true;
   const stop = () => { stopping = true; };
   process.on("SIGINT", stop);
   process.on("SIGTERM", stop);
@@ -769,6 +1308,7 @@ async function runWatch(options) {
     }
 
     const targets = allTargets.filter(isMainRendererTarget);
+    desiredPaletteOnly = paletteOnlyForMainTargets(allTargets);
     const activeAllIds = new Set(allTargets.map((target) => target.id));
     for (const id of cleanedAuxiliary) {
       if (!activeAllIds.has(id)) cleanedAuxiliary.delete(id);
@@ -797,16 +1337,32 @@ async function runWatch(options) {
       if (sessions.has(target.id)) continue;
       try {
         const session = await connectTarget(target);
+        session.appliedPaletteOnly = null;
         session.on("Page.loadEventFired", () => {
-          setTimeout(() => applyToSession(session, payload).catch((error) => {
-            console.error(`[dream-skin] reinject failed: ${error.message}`);
-          }), 250);
+          setTimeout(async () => {
+            const mode = desiredPaletteOnly;
+            try {
+              await applyToSession(session, payload, { paletteOnly: mode });
+              if (!session.closed) session.appliedPaletteOnly = mode;
+            } catch (error) {
+              console.error(`[dream-skin] reinject failed: ${error.message}`);
+            }
+          }, 250);
         });
-        await applyToSession(session, payload);
         sessions.set(target.id, session);
-        console.log(`[dream-skin] injected target ${target.id} (${target.title || target.url})`);
+        console.log(`[dream-skin] connected target ${target.id} (${target.title || target.url})`);
       } catch (error) {
         console.error(`[dream-skin] inject failed for ${target.id}: ${error.message}`);
+      }
+    }
+    for (const [id, session] of sessions) {
+      if (session.closed || session.appliedPaletteOnly === desiredPaletteOnly) continue;
+      try {
+        await applyToSession(session, payload, { paletteOnly: desiredPaletteOnly });
+        session.appliedPaletteOnly = desiredPaletteOnly;
+        console.log(`[dream-skin] applied target ${id} paletteOnly=${desiredPaletteOnly}`);
+      } catch (error) {
+        console.error(`[dream-skin] policy apply failed for ${id}: ${error.message}`);
       }
     }
     await new Promise((resolve) => setTimeout(resolve, 900));
@@ -818,4 +1374,5 @@ async function runWatch(options) {
 const options = parseArgs(process.argv.slice(2));
 if (options.mode === "watch") await runWatch(options);
 else if (options.mode === "themes") await runThemesReport();
+else if (options.mode === "check") await runPayloadCheck();
 else await runOneShot(options);
