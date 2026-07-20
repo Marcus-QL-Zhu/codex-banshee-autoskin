@@ -259,14 +259,29 @@ function Stop-DreamSkinOwnedProcess([object]$Expected, [switch]$Force) {
     if ($process.StartTime.ToUniversalTime().ToString('o') -ne [string]$Expected.startTimeUtc) { return $false }
     if ($Force) {
       $process.Kill()
-      if (-not $process.WaitForExit(5000)) { return $false }
+      if ($process.WaitForExit(5000)) { return $true }
     } else {
       [void]$process.CloseMainWindow()
+      return $true
     }
-    return $true
   } catch {
-    return $false
+    if (-not $Force) { return $false }
   }
+
+  # Windows can deny or incompletely apply Process.Kill across a process tree.
+  # Revalidate the immutable PID/start/path identity immediately before using
+  # taskkill's tree mode; never fall back to a process name.
+  $beforeTreeStop = Get-DreamSkinProcessIdentity -ProcessId ([int]$Expected.processId)
+  if (-not (Test-DreamSkinProcessIdentity -Expected $Expected -Current $beforeTreeStop)) { return $true }
+  $taskkill = Join-Path $env:WINDIR 'System32\taskkill.exe'
+  if (-not (Test-Path -LiteralPath $taskkill -PathType Leaf)) { return $false }
+  try { & $taskkill /PID ([int]$Expected.processId) /T /F *> $null } catch {}
+  for ($attempt = 0; $attempt -lt 25; $attempt++) {
+    Start-Sleep -Milliseconds 200
+    $remaining = Get-DreamSkinProcessIdentity -ProcessId ([int]$Expected.processId)
+    if (-not (Test-DreamSkinProcessIdentity -Expected $Expected -Current $remaining)) { return $true }
+  }
+  return $false
 }
 
 function Get-DreamSkinProcessStateStatus([string]$StatePath, [string]$IdentityProperty) {

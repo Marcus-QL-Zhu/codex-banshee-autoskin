@@ -427,6 +427,9 @@ test("installer is dark-first, persists a port, and restores with compare-and-sw
   assert.match(install, /\[string\]\$watcherState\.healthToken -ne \$watcherHealthToken/);
   assert.match(install, /\[string\]\$watcherState\.phase -ne 'ready'/);
   assert.doesNotMatch(install, /Get-DreamSkinProcessIdentity -ProcessId \$watcherProcess\.Id/);
+  assert.match(install, /another watcher still owns the singleton mutex/);
+  assert.match(lifecycle, /taskkill\.exe/);
+  assert.doesNotMatch(lifecycle, /taskkill(?:\.exe)?[^\r\n]*\/IM/);
 });
 test("target selection rejects auxiliary and non-loopback renderers", () => {
   const base = { type: "page", url: "app://-/index.html", webSocketDebuggerUrl: "ws://127.0.0.1:9335/devtools/page/1" };

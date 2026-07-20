@@ -281,8 +281,23 @@ if ($NoAutoRecover) {
 
   $watcherStatePath = Join-Path $StateRoot 'watcher-state.json'
   if (Test-Path -LiteralPath $watcherStatePath) {
+    $recordedWatcherIdentity = $null
+    try {
+      $recordedWatcherState = Get-Content -LiteralPath $watcherStatePath -Raw | ConvertFrom-Json
+      if ($recordedWatcherState.PSObject.Properties.Name -contains 'watcherIdentity') {
+        $recordedWatcherIdentity = $recordedWatcherState.watcherIdentity
+      }
+    } catch {}
     [void](Convert-DreamSkinLegacyProcessState -StatePath $watcherStatePath -IdentityProperty 'watcherIdentity' -PidProperty 'watcherPid' -ExpectedExecutableNames @('powershell.exe', 'pwsh.exe') -RequiredCommandTokens @('watch-dream-skin.ps1'))
     [void](Stop-DreamSkinProcessStateSafely -StatePath $watcherStatePath -IdentityProperty 'watcherIdentity' -Force)
+    if ($recordedWatcherIdentity) {
+      $remainingWatcher = Get-DreamSkinProcessIdentity -ProcessId ([int]$recordedWatcherIdentity.processId)
+      if (Test-DreamSkinProcessIdentity -Expected $recordedWatcherIdentity -Current $remainingWatcher) {
+        if (-not (Stop-DreamSkinOwnedProcess -Expected $recordedWatcherIdentity -Force)) {
+          throw 'The previously installed watcher remained alive after verified process-tree termination.'
+        }
+      }
+    }
   }
   $watcherHealthToken = [guid]::NewGuid().ToString('N')
   $watcherProcess = Start-Process -FilePath $powershell -WindowStyle Hidden -PassThru -ArgumentList @(
@@ -294,9 +309,7 @@ if ($NoAutoRecover) {
   for ($attempt = 0; $attempt -lt 75; $attempt++) {
     Start-Sleep -Milliseconds 200
     $watcherProcess.Refresh()
-    if ($watcherProcess.HasExited) {
-      throw "Watcher exited before acknowledging readiness (exit code $($watcherProcess.ExitCode))."
-    }
+    if ($watcherProcess.HasExited) { break }
     if (-not (Test-Path -LiteralPath $watcherStatePath -PathType Leaf)) { continue }
     try {
       $watcherState = Get-Content -LiteralPath $watcherStatePath -Raw | ConvertFrom-Json
@@ -308,6 +321,10 @@ if ($NoAutoRecover) {
       break
     } catch {}
   }
+  if (-not $watcherHealthy -and $watcherProcess.HasExited -and $watcherProcess.ExitCode -eq 0) {
+    throw 'Watcher exited normally because another watcher still owns the singleton mutex; the previous installation must be stopped before upgrade.'
+  }
+  if (-not $watcherHealthy -and $watcherProcess.HasExited) { throw "Watcher exited before acknowledging readiness (exit code $($watcherProcess.ExitCode))." }
   if (-not $watcherHealthy) { throw 'Watcher did not acknowledge readiness within 15 seconds.' }
 }
 

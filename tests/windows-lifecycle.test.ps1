@@ -194,6 +194,8 @@ try {
   Assert-True (-not [regex]::IsMatch($ownershipText, '(?im)Stop-Process[^\r\n]*ChatGPT')) 'Lifecycle code must not kill Codex by name.'
   Assert-True ($ownershipText.Contains('IPackageDebugSettings')) 'Store lifecycle control must use the documented Windows package interface.'
   Assert-True ($ownershipText.Contains('TerminateAllProcesses')) 'Store lifecycle control must terminate the verified package as one unit.'
+  Assert-True ($ownershipText.Contains('taskkill.exe')) 'Verified process shutdown must provide a native process-tree fallback.'
+  Assert-True (-not [regex]::IsMatch($ownershipText, '(?im)taskkill(?:\.exe)?[^\r\n]*/IM')) 'Native process-tree fallback must never target an image name.'
   $wrapperText = @('install-dream-skin.ps1', 'start-dream-skin.ps1', 'watch-dream-skin.ps1', 'restore-dream-skin.ps1', 'verify-dream-skin.ps1', 'set-theme.ps1') |
     ForEach-Object { Get-Content -LiteralPath (Join-Path $repoRoot "scripts\$_") -Raw } |
     Out-String
