@@ -23,10 +23,12 @@ html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"][dat
   --dream-banshee-emission-band-bloom-rgb:64,200,176;
 }
 
-/* File references are native interactive mentions. Fast mode changes only the
-   brand-aware color variables, so icon, text, hover underline, role, and click
-   behavior stay owned by Codex. */
-html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"][data-dream-fast="on"] [data-file-reference="true"] .inline-mention-brand-aware {
+/* File references and conversation web links are native interactive mentions.
+   Fast mode changes only their brand-aware color variables, so icon, text,
+   hover underline, role, destination, and click behavior stay owned by Codex. */
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"][data-dream-fast="on"] [data-file-reference="true"] .inline-mention-brand-aware,
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"][data-dream-fast="on"] [data-dream-surface="main"] a[class~="group/inline-mention"][href^="https://"] .inline-mention-brand-aware,
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"][data-dream-fast="on"] [data-dream-surface="main"] a[class~="group/inline-mention"][href^="http://"] .inline-mention-brand-aware {
   --inline-mention-base-color:color-mix(in srgb,rgb(var(--dream-banshee-emission-body-rgb)) 82%,var(--dream-banshee-text-primary) 18%) !important;
   --inline-mention-resolved-base-color:var(--inline-mention-base-color) !important;
   --inline-mention-color:var(--inline-mention-resolved-base-color) !important;
@@ -385,11 +387,6 @@ html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [da
   position:relative;
   z-index:1;
 }
-html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] :focus-visible {
-  outline:2px solid var(--dream-banshee-focus) !important;
-  outline-offset:2px !important;
-}
-
 /* Full-shell chrome: layered plate ribbon, recessed cavity, structural seams, and energy. */
 html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] #codex-dream-skin-chrome {
   display:block;
@@ -554,37 +551,37 @@ html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] #co
     background-size:2% 100%,2% 100%;
     filter:brightness(.72);
   }
-  4.8% {
+  2.4% {
     opacity:.3;
     background-position:50% 0,50% 0;
     background-size:16% 100%,16% 100%;
     filter:brightness(.96);
   }
-  11.52% {
+  5.76% {
     opacity:.78;
     background-position:50% 0,50% 0;
     background-size:33% 100%,33% 100%;
     filter:brightness(1.28) drop-shadow(0 0 4px var(--dream-banshee-energy-low));
   }
-  14.4% {
+  7.2% {
     opacity:.82;
     background-position:34% 0,66% 0;
     background-size:24% 100%,24% 100%;
     filter:brightness(1.3) drop-shadow(0 0 5px var(--dream-banshee-energy-low));
   }
-  24% {
+  12% {
     opacity:.62;
     background-position:4% 0,96% 0;
     background-size:24% 100%,24% 100%;
     filter:brightness(1.08) drop-shadow(0 0 4px var(--dream-banshee-energy-low));
   }
-  29.76% {
+  14.88% {
     opacity:0;
     background-position:0 0,100% 0;
     background-size:24% 100%,24% 100%;
     filter:brightness(.82);
   }
-  30%,100% {
+  15%,100% {
     opacity:0;
     background-position:50% 0,50% 0;
     background-size:2% 100%,2% 100%;
@@ -599,37 +596,37 @@ html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] #co
     background-size:300% 100%;
     filter:brightness(.68);
   }
-  2.65% {
+  1.325% {
     opacity:.06;
     background-position:50% 0;
     background-size:300% 100%;
     filter:brightness(.76);
   }
-  7.06% {
+  3.53% {
     opacity:.26;
     background-position:50% 0;
     background-size:300% 100%;
     filter:brightness(.96);
   }
-  13.24% {
+  6.62% {
     opacity:.72;
     background-position:50% 0;
     background-size:300% 100%;
     filter:brightness(1.2) drop-shadow(0 0 4px var(--dream-banshee-energy-low));
   }
-  15.88% {
+  7.94% {
     opacity:.78;
     background-position:50% 0;
     background-size:300% 100%;
     filter:brightness(1.22) drop-shadow(0 0 5px var(--dream-banshee-energy-low));
   }
-  24.71% {
+  12.355% {
     opacity:.42;
     background-position:50% 0;
     background-size:300% 100%;
     filter:brightness(1.04) drop-shadow(0 0 4px var(--dream-banshee-energy-low));
   }
-  30%,100% {
+  15%,100% {
     opacity:0;
     background-position:50% 0;
     background-size:300% 100%;
@@ -638,16 +635,16 @@ html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] #co
 }
 
 @keyframes dream-banshee-conduit-breathe {
-  0%,30%,100% { opacity:.26; filter:brightness(.7) drop-shadow(0 0 2px rgba(var(--dream-banshee-emission-bloom-rgb),.24)); }
-  11.52% { opacity:.46; filter:brightness(.96) drop-shadow(0 0 4px rgba(var(--dream-banshee-emission-bloom-rgb),.4)); }
-  17.28% { opacity:.86; filter:brightness(1.36) drop-shadow(0 0 8px rgba(var(--dream-banshee-emission-bloom-rgb),.68)); }
-  25.92% { opacity:.34; filter:brightness(.84) drop-shadow(0 0 3px rgba(var(--dream-banshee-emission-bloom-rgb),.3)); }
+  0%,15%,100% { opacity:.26; filter:brightness(.7) drop-shadow(0 0 2px rgba(var(--dream-banshee-emission-bloom-rgb),.24)); }
+  5.76% { opacity:.46; filter:brightness(.96) drop-shadow(0 0 4px rgba(var(--dream-banshee-emission-bloom-rgb),.4)); }
+  8.64% { opacity:.86; filter:brightness(1.36) drop-shadow(0 0 8px rgba(var(--dream-banshee-emission-bloom-rgb),.68)); }
+  12.96% { opacity:.34; filter:brightness(.84) drop-shadow(0 0 3px rgba(var(--dream-banshee-emission-bloom-rgb),.3)); }
 }
 
 @keyframes dream-banshee-cavity-pulse {
   0% { opacity:1; transform:translateY(-256.876%); }
-  31.99% { opacity:1; transform:translateY(93.289%); }
-  32%,100% { opacity:0; transform:translateY(-256.876%); }
+  15.995% { opacity:1; transform:translateY(93.289%); }
+  16%,100% { opacity:0; transform:translateY(-256.876%); }
 }
 
 @media (prefers-reduced-motion: reduce) {

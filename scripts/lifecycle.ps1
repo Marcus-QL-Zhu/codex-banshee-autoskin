@@ -155,7 +155,7 @@ function ConvertTo-DreamSkinProcessIdentity([object]$CimProcess, [object]$Proces
   }
   try { $startTime = $Process.StartTime.ToUniversalTime().ToString('o') } catch { return $null }
   $commandLineSha256 = if ([string]::IsNullOrWhiteSpace($commandLine)) { '' } else { Get-DreamSkinSha256Text $commandLine }
-  return [ordered]@{
+  return [pscustomobject][ordered]@{
     processId = [int]$Process.Id
     startTimeUtc = $startTime
     executablePath = Get-DreamSkinNormalizedPath $executablePath
@@ -257,10 +257,7 @@ function Stop-DreamSkinOwnedProcess([object]$Expected, [switch]$Force) {
   try {
     $process = Get-Process -Id ([int]$Expected.processId) -ErrorAction Stop
     if ($process.StartTime.ToUniversalTime().ToString('o') -ne [string]$Expected.startTimeUtc) { return $false }
-    if ($Force) {
-      $process.Kill()
-      if ($process.WaitForExit(5000)) { return $true }
-    } else {
+    if (-not $Force) {
       [void]$process.CloseMainWindow()
       return $true
     }
@@ -268,9 +265,10 @@ function Stop-DreamSkinOwnedProcess([object]$Expected, [switch]$Force) {
     if (-not $Force) { return $false }
   }
 
-  # Windows can deny or incompletely apply Process.Kill across a process tree.
-  # Revalidate the immutable PID/start/path identity immediately before using
-  # taskkill's tree mode; never fall back to a process name.
+  # Force shutdown always targets the verified process tree. Killing only the
+  # parent watcher would orphan its injector descendants and let stale payloads
+  # continue running. Revalidate immutable PID/start/path identity immediately
+  # before taskkill tree mode; never fall back to a process name.
   $beforeTreeStop = Get-DreamSkinProcessIdentity -ProcessId ([int]$Expected.processId)
   if (-not (Test-DreamSkinProcessIdentity -Expected $Expected -Current $beforeTreeStop)) { return $true }
   $taskkill = Join-Path $env:WINDIR 'System32\taskkill.exe'

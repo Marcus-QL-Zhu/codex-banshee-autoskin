@@ -46,11 +46,11 @@ try {
   }
 
   Require-Match 'README.md' 'v2\.3\.0' 'README version'
-  Require-Match 'README.md' '10-second gold energy wave' 'Banshee cycle documentation'
+  Require-Match 'README.md' 'synchronized 20-second gold energy cycle' 'Banshee cycle documentation'
   Require-Match 'SKILL.md' '(?m)^version:\s*2\.3\.0\s*$' 'Skill version'
   Require-Match 'agents/openai.yaml' '\$codex-autoskin\b' 'Skill invocation name'
   Require-Match 'assets/renderer-inject.js' 'version:\s*"2\.3\.0"' 'Renderer version'
-  Require-Match 'themes/banshee-armor/theme.json' '"--dream-banshee-wave-cycle"\s*:\s*"10s"' 'Banshee theme cycle'
+  Require-Match 'themes/banshee-armor/theme.json' '"--dream-banshee-wave-cycle"\s*:\s*"20s"' 'Banshee theme cycle'
 
   $releaseFiles = @(& git -c core.quotepath=false ls-files --cached --others --exclude-standard | Sort-Object -Unique)
   if ($LASTEXITCODE -ne 0) { throw 'Unable to enumerate tracked and untracked release files.' }

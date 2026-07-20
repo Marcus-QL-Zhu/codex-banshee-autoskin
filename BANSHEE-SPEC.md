@@ -153,7 +153,7 @@ The current baseline retains the approved composer split pulse and low-output br
 
 Energy behavior is deliberately constrained:
 
-- Every dynamic light uses one shared `10s` global cycle and a zero production delay. At `t=0` the composer pulse, top-center cavity pulse, side-cavity field, and every remaining narrow conduit begin their active pass together. Each effect preserves its own motion envelope and completes once; after completion it holds its resting or invisible state until the next common start at `t=10s`.
+- Every dynamic light uses one shared `20s` global cycle and a zero production delay. At `t=0` the composer pulse, top-center cavity pulse, side-cavity field, and every remaining narrow conduit begin their active pass together. Each effect preserves its approved motion envelope and duration, completes once, and then holds its resting or invisible state until the next common start at `t=20s`. Extending the cycle changes only the quiet interval: keyframe percentages are retimed so the `2.976s`, `3s`, and `3.2s` active passes do not slow down.
 - The composer keeps its approved split pulse as a `2.976s` active envelope inside that global cycle: one center crest expands to approximately one third of its top conduit, separates into two elongated luminous bands, moves toward opposite ends, fades completely, and then remains inactive.
 - The side cavities use one `2400`-unit continuous gradient band with a shallow head/tail falloff. It completes one top-to-bottom pass in `3.2s`, then becomes invisible and waits for the next global start. The restrained peak opacity is `.62`, with the surrounding stops reduced proportionally so the moving field remains quieter than the narrow static conduits. It descends in screen space from top to bottom and is revealed only where the accepted cavity clip is present. At the first frame the band is wholly above the cavity and its lower edge touches the cavity top at `y=65`; at the end of its active pass the band is wholly below the cavity and its upper edge touches the cavity bottom at `y=848`. With the `909`-unit SVG view box this is encoded as `translateY(-256.876%)` to `translateY(93.289%)`. The reset occurs only after the band is outside the clip and invisible.
 - The side pulse contains no discrete horizontal lamp/tube elements. Its apparent long-band body and feathered head/tail are produced by continuous vertical opacity stops.
@@ -176,7 +176,7 @@ The state owns all theme-authored yellow, gold, amber, orange, and burnt-orange 
 - every remaining narrow frame conduit and localized seam-energy reveal;
 - the composer/input top resting line, its center-to-split pulse, and the left/right traveling bands;
 - decorative active glints attached to selected armor seams where those glints use the energy palette.
-- native file-reference mentions rendered inside conversation content, including their inherited file icon, while preserving the native reference node and interaction behavior.
+- native file-reference mentions and HTTP(S) web-link mentions rendered inside conversation content, including inherited icons where present, while preserving each native reference node, destination, underline, and interaction behavior.
 - native Fast-on state emissions: the filled slider range, slider particles, the model-picker Fast marker, and the composer inline Fast marker. Their native SVGs, slider thumb, geometry, labels, and interactions remain unchanged; Fast-off controls retain the normal palette.
 - the native amber idle/completed dot on a background task row. Only the `charts-yellow` dot changes to the awakening energy core; green, red, purple, and orange status semantics remain native.
 
@@ -206,10 +206,10 @@ Zone mapping is fixed as follows:
 | Narrow top-shoulder conduits and energy seam glints | `#40c8b0` at the accepted resting opacity; breathing brightness may approach `#b8ffe4`, with bloom derived only from `rgba(64,200,176,*)` |
 | Composer/input persistent top line | `rgba(0,112,128,.46)` at rest and `rgba(184,255,228,.64)` on native focus-within |
 | Composer center-to-split traveling bands | shoulder/falloff `rgba(64,200,176,.22)`, body `rgba(64,200,176,.76)`, and outer bloom `rgba(64,200,176,.30)` / `.50` for idle/focus-within |
-| Conversation file references | brand-aware mention color mixes `#40c8b0` at `82%` with primary text at `18%`; the native icon inherits the same color |
+| Conversation file and HTTP(S) web-link references | brand-aware mention color mixes `#40c8b0` at `82%` with primary text at `18%`; native icons inherit the same color, while destinations and interactions remain unchanged |
 | Native Fast-on controls | filled slider range and both lightning markers use `#40c8b0`; moving slider particles use `rgba(184,255,228,.78)`; the white thumb, unfilled track, labels, and Fast-off state are unchanged |
 
-The official awakened design still retains physical gold armor and horn details, so solid armor-accent gold, unrelated text/icon semantics, and the accessibility focus outline are not automatically recolored. Only elements classified above as emitted energy switch palette. The native Fast-on markers switch as explicit state-emission surfaces; their SVG geometry is untouched. The sidebar crown slash and selected-row embedded S3 glint also switch because they are authored as energy-reveal seams rather than physical gold plates.
+The official awakened design still retains physical gold armor and horn details, so solid armor-accent gold and unrelated text/icon semantics are not automatically recolored. Only elements classified above as emitted energy switch palette. Native focus treatment remains owned by Codex; the Banshee pack adds no global gold `:focus-visible` outline. The native Fast-on markers switch as explicit state-emission surfaces; their SVG geometry is untouched. The sidebar crown slash and selected-row embedded S3 glint also switch because they are authored as energy-reveal seams rather than physical gold plates.
 
 #### Runtime contract and feasibility
 
@@ -303,7 +303,7 @@ Required before restart:
 - no rule hides native microphone or Fast mode controls;
 - no theme rule globally replaces native SVG content;
 - reduced-motion behavior is present;
-- focus-visible styling remains present;
+- native focus-visible behavior remains available and is not globally recolored or outlined by the pack;
 - semantic diff/error/warning/success tokens remain distinct;
 - restore cleanup includes pack classes, capability markers, observers, style nodes, and chrome nodes;
 - selector-fixture tests cover composer, microphone, Fast mode on/off, sidebar, cards, dialogs, diffs, and an unknown-build fallback;
@@ -313,7 +313,7 @@ Required before restart:
 - a 1,000-mutation burst causes at most one global fallback scan; normal reconciliation remains bounded to the whitelisted capability selectors, keeps one observer/timer, and cleanup yields zero subsequent callbacks;
 - CSS validation parses comma groups and nested `@media`/`@supports`; every Banshee selector is rooted at `html.codex-dream-skin.dream-pack-banshee`, keyframes are namespaced, and no global native-SVG replacement exists;
 - all Banshee animations/transitions become static under reduced motion; forced colors disables decorative gradients/glow;
-- contrast contract is WCAG 2.2 AA: normal text 4.5:1, large text 3:1, focus indicator 3:1. There is no global `outline:none` and no user-font override in the Banshee pack;
+- contrast contract is WCAG 2.2 AA: normal text 4.5:1 and large text 3:1. Native focus indicators remain Codex-owned; there is no global `outline:none`, no pack-wide focus-outline override, and no user-font override in the Banshee pack;
 - static checks are contract checks only. They do not claim to prove real-renderer native parity, hit testing, SVG identity, or state transitions; those remain Gate C;
 - original `THEME-SPEC.md` matches upstream unchanged.
 

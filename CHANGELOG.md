@@ -10,8 +10,8 @@ All notable changes to Codex AutoSkin are documented in this file. The project f
 
 ### Added
 
-- Banshee Armored Shell, a schema-v2 artless structural style pack with a synchronized 10-second energy cycle.
-- Fast-mode awakening palette, including native Fast markers, file references, slider effects, and task-status indicators.
+- Banshee Armored Shell, a schema-v2 artless structural style pack with a synchronized 20-second energy cycle with unchanged active-pass speeds.
+- Fast-mode awakening palette, including native Fast markers, file and web-link references, slider effects, and task-status indicators.
 - Verified, versioned per-user Codex runtime copied from the trusted Microsoft Store package.
 - Persisted random loopback-port allocation, dual-stack CDP probing, target filtering, and auxiliary-renderer protection.
 - Auto-recovery watcher safeguards, runtime verification, offline Banshee tests, and shortcut ownership tests.
@@ -29,6 +29,7 @@ All notable changes to Codex AutoSkin are documented in this file. The project f
 - Native Fast task dots now use the awakening cyan-green palette while verified Fast mode is on.
 - Sidebar hover, keyboard-focus, selected-row, top-brand, search-icon, and composer alignment details.
 - Theme cleanup, pack isolation, reduced-motion behavior, forced-colors behavior, and native hit-target parity.
+- Watcher upgrade ownership, verified process-tree shutdown, and durable one-click recovery after reinstall.
 
 ## [2.0.0] - 2026-07-16
 

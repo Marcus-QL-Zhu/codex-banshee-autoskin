@@ -30,6 +30,10 @@ try {
   Assert-DreamSkinPort -Port 9335
   $script:passed++
 
+  $liveIdentity = Get-DreamSkinProcessIdentity -ProcessId $PID
+  Assert-True ($liveIdentity -is [pscustomobject]) 'Captured process identity must expose its fields as PSCustomObject properties.'
+  Assert-True (Test-DreamSkinProcessIdentity -Expected $liveIdentity -Current $liveIdentity) 'A freshly captured live process identity must match itself.'
+
   $expected = [pscustomobject]@{
     processId = 41
     startTimeUtc = '2026-07-19T01:02:03.0000000Z'
@@ -195,6 +199,8 @@ try {
   Assert-True ($ownershipText.Contains('IPackageDebugSettings')) 'Store lifecycle control must use the documented Windows package interface.'
   Assert-True ($ownershipText.Contains('TerminateAllProcesses')) 'Store lifecycle control must terminate the verified package as one unit.'
   Assert-True ($ownershipText.Contains('taskkill.exe')) 'Verified process shutdown must provide a native process-tree fallback.'
+  Assert-True ($ownershipText.Contains('/T /F')) 'Forced owned-process shutdown must terminate the verified process tree.'
+  Assert-True ((Get-Content -LiteralPath (Join-Path $repoRoot 'scripts\install-dream-skin.ps1') -Raw).Contains('Stop-DreamSkinOwnedProcess -Expected $script:attemptWatcherIdentity -Force')) 'Install rollback must stop the verified watcher process tree.'
   Assert-True (-not [regex]::IsMatch($ownershipText, '(?im)taskkill(?:\.exe)?[^\r\n]*/IM')) 'Native process-tree fallback must never target an image name.'
   $wrapperText = @('install-dream-skin.ps1', 'start-dream-skin.ps1', 'watch-dream-skin.ps1', 'restore-dream-skin.ps1', 'verify-dream-skin.ps1', 'set-theme.ps1') |
     ForEach-Object { Get-Content -LiteralPath (Join-Path $repoRoot "scripts\$_") -Raw } |

@@ -52,6 +52,7 @@ $script:attemptPreviousTransactionRaw = $previousTransactionRaw
 $script:attemptAutoRecoverDisabled = Test-DreamSkinAutoRecoverDisabled -StateRoot $StateRoot
 $script:attemptShortcutSnapshots = @()
 $script:attemptWatcherProcess = $null
+$script:attemptWatcherIdentity = $null
 $attemptRollbackRoot = Join-Path $StateRoot ('install-rollback-' + [guid]::NewGuid().ToString('N'))
 
 function Save-DreamSkinAttemptShortcut([string]$ShortcutPath) {
@@ -73,7 +74,11 @@ function Undo-DreamSkinInstallAttempt {
   if (-not $script:installMutationStarted) { return }
   if ($script:attemptWatcherProcess) {
     try {
-      if (-not $script:attemptWatcherProcess.HasExited) {
+      if (-not $script:attemptWatcherProcess.HasExited -and $script:attemptWatcherIdentity) {
+        if (-not (Stop-DreamSkinOwnedProcess -Expected $script:attemptWatcherIdentity -Force)) {
+          Write-Warning 'Could not verify that the failed install watcher process tree stopped.'
+        }
+      } elseif (-not $script:attemptWatcherProcess.HasExited) {
         $script:attemptWatcherProcess.Kill()
         [void]$script:attemptWatcherProcess.WaitForExit(5000)
       }
@@ -317,6 +322,10 @@ if ($NoAutoRecover) {
       if ([string]$watcherState.healthToken -ne $watcherHealthToken) { continue }
       if ([string]$watcherState.phase -ne 'ready') { continue }
       if (-not (Test-DreamSkinPathEqual ([string]$watcherState.scriptPath) $watchScript)) { continue }
+      $candidateWatcherIdentity = $watcherState.watcherIdentity
+      $currentWatcherIdentity = Get-DreamSkinProcessIdentity -ProcessId ([int]$candidateWatcherIdentity.processId)
+      if (-not (Test-DreamSkinProcessIdentity -Expected $candidateWatcherIdentity -Current $currentWatcherIdentity)) { continue }
+      $script:attemptWatcherIdentity = $candidateWatcherIdentity
       $watcherHealthy = $true
       break
     } catch {}

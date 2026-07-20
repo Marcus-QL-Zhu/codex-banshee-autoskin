@@ -45,7 +45,7 @@ test("Banshee is a schema-v2 artless whitelisted pack theme", () => {
   assert.equal(theme.stylePack, "banshee");
   assert.equal(theme.artMode, "none");
   assert.equal(theme.art, undefined);
-  assert.match(theme.tokens["--dream-banshee-wave-cycle"], /^10s$/);
+  assert.match(theme.tokens["--dream-banshee-wave-cycle"], /^20s$/);
   assert.equal(theme.tokens["--dream-banshee-energy-core"], "#d9a23e");
   assert.equal(theme.tokens["--dream-banshee-accent-gold"], "#f0c56f");
   assert.equal(theme.tokens["--dream-banshee-emission-deep-rgb"], "143, 50, 6");
@@ -105,8 +105,8 @@ test("Banshee selectors are pack-scoped and its motion/accessibility fallbacks e
   assert.doesNotMatch(cavityRestLightRule, /animation|filter|drop-shadow/);
   assert.match(css, /animation:dream-banshee-cavity-pulse var\(--dream-banshee-wave-cycle\) linear infinite/);
   assert.match(css, /0% \{ opacity:1; transform:translateY\(-256\.876%\); \}/);
-  assert.match(css, /31\.99% \{ opacity:1; transform:translateY\(93\.289%\); \}/);
-  assert.match(css, /32%,100% \{ opacity:0; transform:translateY\(-256\.876%\); \}/);
+  assert.match(css, /15\.995% \{ opacity:1; transform:translateY\(93\.289%\); \}/);
+  assert.match(css, /16%,100% \{ opacity:0; transform:translateY\(-256\.876%\); \}/);
   assert.match(css, /transform-box:view-box/);
   assert.match(css, /\.dream-banshee-cavity-pulse-band[\s\S]*?animation:none !important;[\s\S]*?opacity:0 !important;/);
   const hiddenSuggestions = css.match(/\[data-dream-surface="cards"\]\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
@@ -145,10 +145,10 @@ test("Banshee selectors are pack-scoped and its motion/accessibility fallbacks e
   assert.equal((composerEnergy.match(/linear-gradient/g) ?? []).length, 2);
   assert.match(composerEnergy, /background-size:2% 100%,2% 100%/);
   const composerWave = css.match(/@keyframes dream-banshee-wave \{([\s\S]*?)\n\}/)?.[1] ?? "";
-  assert.match(composerWave, /4\.8%/);
-  assert.match(composerWave, /11\.52%/);
-  assert.match(composerWave, /29\.76%/);
-  assert.match(composerWave, /30%,100% \{\s*opacity:0/);
+  assert.match(composerWave, /2\.4%/);
+  assert.match(composerWave, /5\.76%/);
+  assert.match(composerWave, /14\.88%/);
+  assert.match(composerWave, /15%,100% \{\s*opacity:0/);
   assert.match(composerWave, /background-size:33% 100%,33% 100%/);
   assert.match(composerWave, /background-position:34% 0,66% 0/);
   assert.match(composerWave, /background-size:24% 100%,24% 100%/);
@@ -164,11 +164,12 @@ test("Banshee selectors are pack-scoped and its motion/accessibility fallbacks e
   assert.match(centerCavityWave, /background-size:300% 100%/);
   assert.doesNotMatch(centerCavityWave, /background-position:0 0,100% 0/);
   assert.doesNotMatch(centerCavityWave, /mask-size/);
-  assert.match(centerCavityWave, /2\.65%/);
-  assert.match(centerCavityWave, /15\.88%/);
-  assert.match(centerCavityWave, /30%,100% \{\s*opacity:0/);
+  assert.match(centerCavityWave, /1\.325%/);
+  assert.match(centerCavityWave, /7\.94%/);
+  assert.match(centerCavityWave, /15%,100% \{\s*opacity:0/);
   assert.doesNotMatch(css, /(^|[\s,>])svg\b/m);
   assert.doesNotMatch(css, /outline\s*:\s*none/i);
+  assert.doesNotMatch(css, /\[data-dream-pack-ready="banshee-v1"\]\s+:focus-visible\s*\{/);
   assert.doesNotMatch(css, /@import|url\(\s*["']?https?:/i);
   const awakeningTokens = css.match(/\[data-dream-fast="on"\]\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
   assert.match(awakeningTokens, /--dream-banshee-emission-deep-rgb:0,52,58/);
@@ -176,11 +177,14 @@ test("Banshee selectors are pack-scoped and its motion/accessibility fallbacks e
   assert.match(awakeningTokens, /--dream-banshee-emission-body-rgb:64,200,176/);
   assert.match(awakeningTokens, /--dream-banshee-emission-crest-rgb:184,255,228/);
   assert.match(awakeningTokens, /--dream-banshee-emission-bloom-rgb:64,200,176/);
-  const fastFileReference = css.match(/\[data-dream-fast="on"\] \[data-file-reference="true"\] \.inline-mention-brand-aware\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
-  assert.match(fastFileReference, /--inline-mention-base-color:color-mix\(in srgb,rgb\(var\(--dream-banshee-emission-body-rgb\)\) 82%,var\(--dream-banshee-text-primary\) 18%\) !important/);
-  assert.match(fastFileReference, /--inline-mention-resolved-base-color:var\(--inline-mention-base-color\) !important/);
-  assert.match(fastFileReference, /--inline-mention-color:var\(--inline-mention-resolved-base-color\) !important/);
-  assert.doesNotMatch(fastFileReference, /(?:^|\n)\s*(?:color|pointer-events|display|visibility):/);
+  const fastMentionColors = css.match(/\[data-dream-fast="on"\] \[data-file-reference="true"\] \.inline-mention-brand-aware,[\s\S]*?a\[class~="group\/inline-mention"\]\[href\^="http:\/\/"\] \.inline-mention-brand-aware\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
+  assert.match(css, /\[data-dream-fast="on"\] \[data-dream-surface="main"\] a\[class~="group\/inline-mention"\]\[href\^="https:\/\/"\] \.inline-mention-brand-aware/);
+  assert.match(css, /\[data-dream-fast="on"\] \[data-dream-surface="main"\] a\[class~="group\/inline-mention"\]\[href\^="http:\/\/"\] \.inline-mention-brand-aware/);
+  assert.match(fastMentionColors, /--inline-mention-base-color:color-mix\(in srgb,rgb\(var\(--dream-banshee-emission-body-rgb\)\) 82%,var\(--dream-banshee-text-primary\) 18%\) !important/);
+  assert.match(fastMentionColors, /--inline-mention-resolved-base-color:var\(--inline-mention-base-color\) !important/);
+  assert.match(fastMentionColors, /--inline-mention-color:var\(--inline-mention-resolved-base-color\) !important/);
+  assert.doesNotMatch(fastMentionColors, /(?:^|\n)\s*(?:color|pointer-events|display|visibility|text-decoration):/);
+  assert.doesNotMatch(css, /\[data-dream-fast="on"\][^{]*(?:^|[\s,>])a\s*\{[^}]*\bcolor\s*:/m);
   const fastSliderRange = css.match(/\[data-dream-fast="on"\] \[data-model-picker-power-slider\] \[data-fast-mode="true"\] \[class\*="_Range_"\]\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
   assert.match(fastSliderRange, /background-color:var\(--dream-banshee-energy-core\) !important/);
   const fastSliderParticles = css.match(/\[data-dream-fast="on"\] \[data-model-picker-power-slider\] \[data-fast-mode="true"\] \[class\*="_TrackParticle_"\]\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
@@ -211,7 +215,7 @@ test("legacy Dream structure is isolated behind its own pack class", () => {
 
 test("renderer supports artless switching, pack cleanup, neutral chrome, and one epoch", () => {
   const source = read("assets/renderer-inject.js");
-  assert.match(source, /const STYLE_VERSION = "42"/);
+  assert.match(source, /const STYLE_VERSION = "44"/);
   assert.match(source, /THEME_ART_MODES/);
   assert.match(source, /bansheeRuntime\.artVariables/);
   assert.match(source, /cls\.startsWith\("dream-pack-"\)/);
@@ -339,12 +343,12 @@ test("renderer supports artless switching, pack cleanup, neutral chrome, and one
   assert.match(spec, /old short frame `seam-travel` crest remains removed completely/);
   assert.match(spec, /completes its breathing pass in exactly `3s`/i);
   assert.match(spec, /centered gradient canvas equal to `300%` of the cavity width/i);
-  assert.match(spec, /one shared `10s` global cycle/);
+  assert.match(spec, /one shared `20s` global cycle/);
   assert.match(spec, /all dynamic zones begin brightening within ≤100ms/);
   assert.match(spec, /continuous vertical luminance field/);
   assert.match(spec, /never a stack of visible lamp or tube primitives/);
   assert.match(spec, /independent upper\/lower vertical conduit strokes are removed/i);
-  assert.match(spec, /native file-reference mentions rendered inside conversation content/i);
+  assert.match(spec, /native file-reference mentions and HTTP\(S\) web-link mentions rendered inside conversation content/i);
   assert.match(spec, /suggestion-shortcut group is intentionally suppressed/);
 });
 

@@ -149,7 +149,7 @@ This fork adds an artless dark structural pack:
 .\scripts\set-theme.ps1 banshee-armor fullscreen
 ```
 
-It preserves the official Codex renderer and restyles native controls in place. The pack uses abstract blue-black armor planes, cut panel seams, and one synchronized 10-second gold energy wave. It contains no character, machine, emblem, or franchise artwork. The original image-theme workflow in `THEME-SPEC.md` remains unchanged. Engine-extension requirements and the pre/post-restart acceptance gates are documented separately in `BANSHEE-SPEC.md`.
+It preserves the official Codex renderer and restyles native controls in place. The pack uses abstract blue-black armor planes, cut panel seams, and one synchronized 20-second gold energy cycle whose approved active passes retain their original speed. It contains no character, machine, emblem, or franchise artwork. The original image-theme workflow in `THEME-SPEC.md` remains unchanged. Engine-extension requirements and the pre/post-restart acceptance gates are documented separately in `BANSHEE-SPEC.md`.
 
 Before restarting Codex, run:
 
