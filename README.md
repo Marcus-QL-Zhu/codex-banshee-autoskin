@@ -1,8 +1,41 @@
-# Codex AutoSkin
+# Codex AutoSkin · Banshee Armored Shell
 
-**发一张图给你的 Codex，它自己给自己换肤。**
+## Codex 自动换肤 · 报丧女妖装甲外壳
 
-这是 Windows Codex 桌面端的换肤引擎 2.3.0：不改任何官方文件，通过 Chromium DevTools Protocol（CDP）把皮肤"注入"到官方渲染器里，随时一键还原。主题是纯数据（一个文件夹：`theme.json` + 一张图），而配套的 [THEME-SPEC.md](THEME-SPEC.md) 是一份**写给 AI agent 读的定制规范**——把这个仓库和一张图丢给你的 Codex / Claude，它就能照着规范自己产出一套完整主题、自己截图调参、自己交付。你的 Codex，自己给自己换肤。
+**A reversible, native-preserving armored theme engine for the Windows Codex desktop app.**
+
+**一个安全可逆、完整保留原生功能的 Windows Codex 装甲主题引擎。**
+
+Codex AutoSkin applies an independent Banshee-inspired visual system to the official Codex renderer through a local Chrome DevTools Protocol connection. It does not modify `ChatGPT.exe`, `app.asar`, or files inside `WindowsApps`; native controls, account data, accessibility behavior, and Codex features remain owned by the original application. The included armored shell combines blue-black plates, chamfered seams, recessed cavities, synchronized energy pulses, and a Fast-mode awakening palette—without using character, mobile-suit, insignia, or official franchise artwork.
+
+Codex AutoSkin 通过本地 Chrome DevTools Protocol 连接，为官方 Codex 渲染器加载一套独立的“报丧女妖”设计语言外壳。它不会修改 `ChatGPT.exe`、`app.asar` 或 `WindowsApps` 中的官方文件，并保留原生控件、账号数据、无障碍行为及全部 Codex 功能。内置装甲主题由深蓝黑装甲面、斜切接缝、镂空结构、同步能量脉冲和 Fast 觉醒配色组成，同时不使用角色、机体、徽章或官方作品素材。
+
+## Preview / 效果预览
+
+| Awakened Fast Mode / Fast 觉醒模式 | Sealed Normal Mode / 常规封闭模式 |
+|---|---|
+| ![Banshee awakened Fast mode](docs/banshee-awakened-fast.png) | ![Banshee sealed normal mode](docs/banshee-sealed-normal.png) |
+
+## Core features / 主要特性
+
+- **One-click Windows installation / Windows 一键安装** — extract the repository and run `Install.cmd`; no separate Node.js installation is required. / 解压仓库后运行 `Install.cmd` 即可，无需另外安装 Node.js。
+- **Native feature preservation / 保留原生功能** — microphone, Fast mode, model and reasoning selectors, attachments, approvals, send/stop controls, menus, dialogs, and keyboard navigation remain native. / 麦克风、Fast、模型与推理选择、附件、审批、发送与停止、菜单、弹窗和键盘导航均保持原生。
+- **Safe and reversible / 安全可逆** — no official Codex files are patched; live restore and complete uninstall shortcuts are included. / 不修改任何 Codex 官方文件，并提供即时恢复与完整卸载入口。
+- **Armored visual language / 装甲化视觉语言** — blue-black armor planes, mechanical chamfers, panel seams, recessed cavities, and restrained amber energy. / 深蓝黑装甲面、机械斜切、装甲接缝、镂空结构与克制的琥珀能量光效。
+- **Fast awakening mode / Fast 觉醒模式** — enabling native Fast mode switches owned energy surfaces, task markers, file references, and web links to a cyan-green psychoframe palette. / 开启原生 Fast 模式后，能量结构、任务标记、文件引用和网页链接会联动切换为青绿色精神骨架配色。
+- **Synchronized motion / 同步动态光效** — top, side, and composer pulses share one global clock for a coherent, quiet energy rhythm. / 顶部、侧面与输入框光带共享全局时钟，形成统一而安静的能量脉动。
+- **Automatic recovery / 自动恢复** — a guarded watcher restores the selected skin after normal Codex restarts or updates. / Codex 正常重启或更新后，受保护的 watcher 会自动恢复已保存主题。
+- **Fail-closed compatibility / 失败安全兼容** — unknown renderer structures fall back to palette-only styling instead of force-modifying unverified controls. / 无法可靠识别新版界面结构时，仅应用基础配色，不强行修改未知控件。
+
+> Community project, not affiliated with OpenAI, Bandai Namco, or the Gundam franchise.
+>
+> 本项目为社区创作，与 OpenAI、Bandai Namco 或 Gundam 系列权利方无关。
+
+---
+
+这是 Windows Codex 桌面端的换肤引擎 2.3.0：不改任何官方文件，通过 Chromium DevTools Protocol（CDP）把皮肤“注入”到官方渲染器里，随时一键还原。主题是纯数据（一个文件夹：`theme.json` + 一张图），而配套的 [THEME-SPEC.md](THEME-SPEC.md) 是一份**写给 AI agent 读的定制规范**——把这个仓库和一张图丢给你的 Codex / Claude，它就能照着规范自己产出一套完整主题、自己截图调参、自己交付。你的 Codex，自己给自己换肤。
+
+## Additional bundled themes / 其他内置主题
 
 | Aurora Veil（内置 demo） | Ember Bloom（内置 demo） |
 |---|---|

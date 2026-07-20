@@ -5,6 +5,7 @@ All notable changes to Codex AutoSkin are documented in this file. The project f
 ## [Unreleased]
 
 - Release hardening and documentation corrections that have not yet been tagged.
+- English-first bilingual project overview and public screenshots for normal and Fast awakening modes.
 
 ## [2.3.0] - 2026-07-19
 
