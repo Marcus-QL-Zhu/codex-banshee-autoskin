@@ -25,6 +25,51 @@ test('capability evidence accepts named independent signals and rejects one-sign
   })).node, native);
 });
 
+test('adaptive relocation prefers exact selectors and accepts one high-confidence structural fallback', () => {
+  const exact = { id: 'exact' };
+  const relocated = { id: 'relocated' };
+  const weak = { id: 'weak' };
+  const evidence = (node) => ({
+    rendered: { match: true, weight: 3 },
+    composerRelationship: { match: node !== weak, weight: 3 },
+    shellGeometry: { match: node !== weak, weight: 2 },
+    sidebarRelationship: { match: node !== weak, weight: 2 },
+    semanticClass: { match: node === exact, weight: 1 },
+  });
+  const primary = runtime.adaptiveRelocateCandidate([exact], [exact, relocated], evidence);
+  assert.equal(primary.node, exact);
+  assert.equal(primary.source, 'primary');
+  const fallback = runtime.adaptiveRelocateCandidate([], [relocated, weak], evidence, {
+    minimumScore: .72, minimumMargin: .12, minimumSignals: 3,
+  });
+  assert.equal(fallback.state, 'verified');
+  assert.equal(fallback.node, relocated);
+  assert.equal(fallback.source, 'adaptive');
+});
+
+test('adaptive relocation remains fail-closed for weak and ambiguous candidates', () => {
+  const a = { id: 'a' }, b = { id: 'b' };
+  const weak = runtime.adaptiveRelocateCandidate([], [a], () => ({
+    rendered: { match: true, weight: 3 },
+    relationship: { match: false, weight: 4 },
+    geometry: { match: false, weight: 3 },
+  }));
+  assert.equal(weak.state, 'unknown');
+  const ambiguous = runtime.adaptiveRelocateCandidate([], [a, b], () => ({
+    rendered: { match: true, weight: 3 },
+    relationship: { match: true, weight: 4 },
+    geometry: { match: true, weight: 3 },
+  }));
+  assert.equal(ambiguous.state, 'ambiguous');
+  assert.equal(ambiguous.node, null);
+  const hiddenExact = runtime.adaptiveRelocateCandidate([a], [a], () => ({
+    stableClass: { match: true, weight: 1 },
+    rendered: { match: false, weight: 3 },
+    relationship: { match: false, weight: 3 },
+  }));
+  assert.equal(hiddenExact.state, 'unknown');
+});
+
 test('strict native parity detects state, rectangle, and minimum hit-area changes', () => {
   const attributes = new Map([
     ['aria-label', 'Fast mode'],
@@ -123,11 +168,13 @@ test('renderer safety gates and observers are present in shipped sources', () =>
   assert.match(renderer, /root\.removeAttribute\('data-dream-pack-ready'\);[\s\S]*?restoreOwned\(\);[\s\S]*?Route transitions/);
   assert.match(renderer, /fastObserver\.observe\(observedFastNode/);
   assert.match(renderer, /resizeObserver\.observe\(nextObservedComposer\)/);
+  assert.match(renderer, /adaptiveRelocateCandidate/);
   assert.match(renderer, /THEME_ART_HASHES/);
   assert.match(injector, /session\.appliedPaletteOnly === desiredPaletteOnly/);
   assert.match(injector, /topHit = stack\.find/);
   assert.match(injector, /requestTimeoutMs = 10000/);
   assert.match(injector, /CDP socket open timed out/);
+  assert.match(injector, /\(!bansheeExpected \|\| bansheeActive\)/);
   assert.match(setTheme, /fetchTargetsFromLoopback, requireSingleMainRendererTarget/);
   assert.match(setTheme, /CDP socket open timed out/);
 });

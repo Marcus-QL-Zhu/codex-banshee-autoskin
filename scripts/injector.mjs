@@ -834,7 +834,8 @@ async function verifySession(session) {
       svgViewBox: node.querySelector('svg')?.getAttribute('viewBox') || null,
       box: box(node),
     }));
-    const mainNode = document.querySelector('main.main-surface');
+    const mainNode = document.querySelector('[data-dream-surface="main"]') ||
+      document.querySelector('main.main-surface');
     const mainRect = mainNode?.getBoundingClientRect() ?? null;
     const topBandLimit = mainRect ? Math.min(innerHeight, mainRect.top + 180) : 180;
     const describeTopNode = (node) => {
@@ -999,6 +1000,9 @@ async function verifySession(session) {
     const markedCapabilitiesPass = Object.values(capabilities).every((control) =>
       !control.enhanced || (control.tagName === 'BUTTON' && control.svgPresent && control.hitPass && Boolean(control.box))
     );
+    const bansheeExpected = document.documentElement.classList.contains('dream-pack-banshee');
+    const bansheeActive = bansheeExpected &&
+      document.documentElement.getAttribute('data-dream-pack-ready') === 'banshee-v1';
     const result = {
       installed: document.documentElement.classList.contains('codex-dream-skin'),
       version: state?.version ?? null,
@@ -1054,9 +1058,9 @@ async function verifySession(session) {
         titleAnchorAncestry: describeAncestry(titleAnchor),
         offscreenToolbarAncestry: describeAncestry(offscreenToolbarAnchor),
       },
+      bansheeExpected,
+      bansheeActive,
     };
-    const bansheeActive = document.documentElement.classList.contains('dream-pack-banshee') &&
-      document.documentElement.getAttribute('data-dream-pack-ready') === 'banshee-v1';
     const suggestionsSuppressed = bansheeActive && result.suggestionsPresent &&
       result.suggestionSurface?.display === 'none' && result.cards.length === 0;
     result.suggestionsSuppressed = suggestionsSuppressed;
@@ -1065,6 +1069,7 @@ async function verifySession(session) {
       ['banner', 'fullscreen'].includes(result.layout) &&
       !result.legacyControlsPresent &&
       result.chromePointerEvents === 'none' && Boolean(result.composer) && Boolean(result.sidebar) &&
+      (!bansheeExpected || bansheeActive) &&
       (!bansheeActive || (result.wave.pass && markedCapabilitiesPass && result.fastAwakening.pass)) &&
       result.topRegion.pass &&
       (!result.homePresent || (Boolean(result.hero) &&

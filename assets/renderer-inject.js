@@ -9,7 +9,7 @@
   const INJECTION_ID = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const LAYOUT_STORAGE_KEY = "codex-dream-skin.layout";
   const THEME_STORAGE_KEY = "codex-dream-skin.theme";
-  const STYLE_VERSION = "44";
+  const STYLE_VERSION = "45";
   const LAYOUTS = new Set(["banner", "fullscreen"]);
   // Sidebar "new task" row gets a marker class so the structure CSS can restyle
   // it as a capsule. Text matching only; the real button stays fully native.
@@ -334,9 +334,31 @@
       [...document.querySelectorAll('aside')],
       (node) => ({ stableClass: node.classList.contains('app-shell-left-panel'), rendered: isRenderedSurface(node) })
     );
-    const mainResult = bansheeRuntime.classifyCandidates(
-      [...document.querySelectorAll('main')],
-      (node) => ({ stableClass: node.classList.contains('main-surface'), rendered: isRenderedSurface(node) })
+    const allMainCandidates = [...document.querySelectorAll('main')];
+    const sidebarProbe = document.querySelector('aside.app-shell-left-panel');
+    const sidebarProbeBox = sidebarProbe?.getBoundingClientRect() ?? null;
+    const mainResult = bansheeRuntime.adaptiveRelocateCandidate(
+      allMainCandidates.filter((node) => node.classList.contains('main-surface')),
+      allMainCandidates,
+      (node) => {
+        const rect = node.getBoundingClientRect();
+        const className = typeof node.className === 'string' ? node.className : '';
+        return {
+          tag: { match: node.tagName === 'MAIN', weight: 1 },
+          rendered: { match: isRenderedSurface(node), weight: 3 },
+          composerRelationship: { match: Boolean(node.querySelector('.composer-surface-chrome')), weight: 3 },
+          shellGeometry: {
+            match: rect.width >= innerWidth * .45 && rect.height >= innerHeight * .45,
+            weight: 2,
+          },
+          sidebarRelationship: {
+            match: !sidebarProbeBox || (rect.left >= sidebarProbeBox.right - 8 && rect.right <= innerWidth + 8),
+            weight: 2,
+          },
+          semanticClass: { match: /main(?:content)?surface/i.test(className), weight: 1 },
+        };
+      },
+      { minimumScore: .72, minimumMargin: .12, minimumSignals: 4 }
     );
     const composerResult = bansheeRuntime.classifyCandidates(
       [...document.querySelectorAll(".composer-surface-chrome")],

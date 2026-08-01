@@ -8,10 +8,13 @@
     return (hash >>> 0).toString(16).padStart(8, "0");
   };
 
+  const evidenceMatched = (value) => value && typeof value === 'object' && Object.hasOwn(value, 'match')
+    ? Boolean(value.match)
+    : Boolean(value);
   const evidenceScore = (evidence) => {
-    if (Array.isArray(evidence)) return evidence.filter(Boolean).length;
+    if (Array.isArray(evidence)) return evidence.filter(evidenceMatched).length;
     if (evidence && typeof evidence === 'object') {
-      return Object.values(evidence).filter(Boolean).length;
+      return Object.values(evidence).filter(evidenceMatched).length;
     }
     return Number(evidence) || 0;
   };
@@ -25,6 +28,34 @@
     if (verified.length === 1) return { state: "verified", node: verified[0] };
     if (verified.length > 1 || candidates.length > 1) return { state: "ambiguous", node: null };
     return { state: "unknown", node: null };
+  };
+
+  // Bounded adaptive relocation: exact selectors first, then a weighted,
+  // fail-closed structural match. Weak or tied candidates are never selected.
+  const adaptiveRelocateCandidate = (primaryCandidates, fallbackCandidates, evidenceFor, options = {}) => {
+    const primary = classifyCandidates(primaryCandidates, evidenceFor);
+    if (primary.state === "verified") return { ...primary, source: "primary", score: 1, margin: 1 };
+    if (primary.state === "ambiguous") return { ...primary, source: "primary", score: 0, margin: 0 };
+    const minimumScore = Number(options.minimumScore ?? 0.72);
+    const minimumMargin = Number(options.minimumMargin ?? 0.12);
+    const minimumSignals = Number(options.minimumSignals ?? 3);
+    const scored = [...new Set(fallbackCandidates ?? [])].map((candidate) => {
+      const evidence = evidenceFor(candidate) ?? {};
+      const entries = Array.isArray(evidence)
+        ? evidence.map((match) => ({ match: Boolean(match), weight: 1 }))
+        : Object.values(evidence).map((entry) => entry && typeof entry === "object"
+          ? { match: Boolean(entry.match), weight: Math.max(0, Number(entry.weight) || 0) }
+          : { match: Boolean(entry), weight: 1 });
+      const totalWeight = entries.reduce((total, entry) => total + entry.weight, 0);
+      const matchedWeight = entries.reduce((total, entry) => total + (entry.match ? entry.weight : 0), 0);
+      return { candidate, score: totalWeight > 0 ? matchedWeight / totalWeight : 0, signals: entries.filter((entry) => entry.match).length };
+    }).sort((left, right) => right.score - left.score);
+    const best = scored[0];
+    const runnerUp = scored[1];
+    const margin = best ? best.score - (runnerUp?.score ?? 0) : 0;
+    if (!best || best.score < minimumScore || best.signals < minimumSignals) return { state: "unknown", node: null, source: "adaptive", score: best?.score ?? 0, margin };
+    if (runnerUp && margin < minimumMargin) return { state: "ambiguous", node: null, source: "adaptive", score: best.score, margin };
+    return { state: "verified", node: best.candidate, source: "adaptive", score: best.score, margin };
   };
 
   const snapshotControl = (node, styleFor, hitTestFor) => {
@@ -178,5 +209,5 @@
     return Math.round(normalized * Math.max(0, Number(travelMs) || 0));
   };
 
-  return { artVariables, classifyCandidates, compareControl, createDebouncedScheduler, createOwnershipRegistry, fastModeState, hashText, hitTestControl, isAmberStatusColor, isBansheeWaveAnimation, isFastAwakeningActive, isIdleCompletedStatusDot, propagationDelay, selectCapabilityEnhancements, snapshotControl };
+  return { adaptiveRelocateCandidate, artVariables, classifyCandidates, compareControl, createDebouncedScheduler, createOwnershipRegistry, fastModeState, hashText, hitTestControl, isAmberStatusColor, isBansheeWaveAnimation, isFastAwakeningActive, isIdleCompletedStatusDot, propagationDelay, selectCapabilityEnhancements, snapshotControl };
 })()

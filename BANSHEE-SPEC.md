@@ -261,6 +261,8 @@ Before each structural reconciliation, synchronously close the ready gate and ca
 
 - Runtime must expose a renderer/build fingerprint when available.
 - Maintain a compatibility table of known selectors/signatures with the last verified Codex build.
+- Required surfaces use a two-stage locator inspired by Scrapling's adaptive relocation model: try the known exact selector first, then score only a bounded same-role candidate set using independent tag, semantic-class, containment, neighboring-surface, rendered-geometry, and accessibility signals. A fallback activates only above an explicit confidence threshold and with a sufficient lead over the runner-up; weak or tied matches are `unknown`/`ambiguous` and remain palette-only.
+- The live health check must require `data-dream-pack-ready="banshee-v1"` whenever the active theme uses the Banshee pack. Style/chrome nodes existing without that structural gate is an unhealthy palette-only fallback, not a successful full-theme verification.
 - Unknown builds are allowed, but structural rules activate only after capability probes pass. Multiple plausible main renderers or ambiguous surfaces remain palette-only.
 - Loss of one capability disables only its associated structural enhancement.
 
