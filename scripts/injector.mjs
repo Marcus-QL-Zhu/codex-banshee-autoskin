@@ -761,7 +761,8 @@ async function verifySession(session) {
         box: box(node),
       };
     });
-    const composerNode = document.querySelector('.composer-surface-chrome');
+    const composerNode = document.querySelector('[data-dream-surface="composer"]') ||
+      document.querySelector('.composer-surface-chrome');
     const composerStyle = composerNode ? getComputedStyle(composerNode) : null;
     const composerAncestry = [];
     for (let node = composerNode, depth = 0; node && depth < 7; node = node.parentElement, depth += 1) {
@@ -823,7 +824,9 @@ async function verifySession(session) {
         box: box(node),
       };
     };
-    const composerControlHints = [...document.querySelectorAll('.composer-surface-chrome button')].map((node) => ({
+    const composerControlRoot = document.querySelector('[data-dream-surface="composer"]') ||
+      document.querySelector('.composer-surface-chrome');
+    const composerControlHints = [...(composerControlRoot?.querySelectorAll('button') ?? [])].map((node) => ({
       ariaLabel: node.getAttribute('aria-label') || null,
       title: node.getAttribute('title') || null,
       controlText: (node.innerText || '').trim().replace(/\s+/g, ' ').slice(0, 40) || null,
@@ -944,12 +947,13 @@ async function verifySession(session) {
       : [];
     const threadHeaderControls = threadHeaderControlNodes.map(describeTopNode);
     const threadHeaderTitle = threadHeaderNode
-      ? [...threadHeaderNode.querySelectorAll('span')]
+      ? [...threadHeaderNode.querySelectorAll('button, span')]
           .filter((node) => {
             const rect = node.getBoundingClientRect();
-            return rect.width > 0 && rect.height > 0 && [...node.childNodes].some((child) =>
-              child.nodeType === Node.TEXT_NODE && (child.textContent || '').trim().length > 0
-            );
+            const directText = [...node.childNodes].some((child) =>
+              child.nodeType === Node.TEXT_NODE && (child.textContent || '').trim().length > 0);
+            return rect.width > 0 && rect.height > 0 && threadHeaderRect && directText &&
+              rect.left >= threadHeaderRect.left && rect.left < threadHeaderRect.left + threadHeaderRect.width / 2;
           })
           .sort((left, right) => left.getBoundingClientRect().left - right.getBoundingClientRect().left)[0] ?? null
       : null;

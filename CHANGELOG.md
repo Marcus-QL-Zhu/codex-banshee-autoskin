@@ -8,6 +8,9 @@ All notable changes to Codex AutoSkin are documented in this file. The project f
 - English-first bilingual project overview and public screenshots for normal and Fast awakening modes.
 - Adaptive, confidence-scored main-surface relocation for Codex DOM class changes, with fail-closed ambiguity handling.
 - Full-theme health verification now treats a missing Banshee structural-ready gate as unhealthy instead of accepting palette-only fallback as success.
+- Restored full structural injection on Codex 26.803 after the native composer shell moved from `composer-surface-chrome` to a hashed `ComposerLayoutRoot` class, using bounded confidence-scored editor-ancestry relocation.
+- Restored the Codex 26.803 conversation header safe rectangle so the title menu and native summary, bottom-panel, and sidebar toggles stay visible and clickable.
+- Read and restore `config.toml` explicitly as UTF-8 on Windows PowerShell 5.1, preventing non-ASCII project paths from being rewritten as invalid TOML.
 
 ## [2.3.0] - 2026-07-19
 

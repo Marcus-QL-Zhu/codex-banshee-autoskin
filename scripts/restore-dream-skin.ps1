@@ -33,7 +33,7 @@ if ($RestoreBaseTheme) {
   }
   $config = [string]$transaction.configPath
   if (-not (Test-Path -LiteralPath $config -PathType Leaf)) { throw "Codex config not found: $config" }
-  $currentContent = Get-Content -LiteralPath $config -Raw
+  $currentContent = [IO.File]::ReadAllText($config, [Text.UTF8Encoding]::new($false))
   # The scoped helper preserves a setting when currentLine -ne [string]$change.installedValue.
   # Its warning remains compatible with the release audit: Preserved user-modified setting.
   $configRestore = Restore-DreamSkinDesktopSettings -Content $currentContent -Changes @($transaction.changes)

@@ -215,7 +215,7 @@ test("legacy Dream structure is isolated behind its own pack class", () => {
 
 test("renderer supports artless switching, pack cleanup, neutral chrome, and one epoch", () => {
   const source = read("assets/renderer-inject.js");
-  assert.match(source, /const STYLE_VERSION = "45"/);
+  assert.match(source, /const STYLE_VERSION = "47"/);
   assert.match(source, /THEME_ART_MODES/);
   assert.match(source, /bansheeRuntime\.artVariables/);
   assert.match(source, /cls\.startsWith\("dream-pack-"\)/);
@@ -297,6 +297,8 @@ test("renderer supports artless switching, pack cleanup, neutral chrome, and one
   assert.match(source, /crownButtons\.length === 2/);
   assert.match(source, /attributeFilter: \["aria-pressed"\]/);
   assert.match(source, /\[threadHeaderResult, "thread-header"\]/);
+  assert.match(source, /threadHeaderCandidates\.filter\(\(node\) => node\.classList\.contains\('app-header-tint'\)\)/);
+  assert.match(source, /toolbarGeometry/);
   assert.match(source, /dream-banshee-spine-shoulder-fill/);
   assert.match(source, /M410 51H500L510 61H751L761 51H851L841 66H761L751 71H510L500 66H420Z/);
   assert.match(source, /M105 41H211M226 51H410L420 61H500L510 66H751L761 61H841L851 51H1035M1050 41H1156/);

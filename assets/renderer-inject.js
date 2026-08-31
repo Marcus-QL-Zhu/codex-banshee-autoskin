@@ -9,7 +9,7 @@
   const INJECTION_ID = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const LAYOUT_STORAGE_KEY = "codex-dream-skin.layout";
   const THEME_STORAGE_KEY = "codex-dream-skin.theme";
-  const STYLE_VERSION = "45";
+  const STYLE_VERSION = "47";
   const LAYOUTS = new Set(["banner", "fullscreen"]);
   // Sidebar "new task" row gets a marker class so the structure CSS can restyle
   // it as a capsule. Text matching only; the real button stays fully native.
@@ -346,7 +346,10 @@
         return {
           tag: { match: node.tagName === 'MAIN', weight: 1 },
           rendered: { match: isRenderedSurface(node), weight: 3 },
-          composerRelationship: { match: Boolean(node.querySelector('.composer-surface-chrome')), weight: 3 },
+          composerRelationship: {
+            match: Boolean(node.querySelector('.composer-surface-chrome, textarea, [contenteditable="true"], [role="textbox"]')),
+            weight: 3,
+          },
           shellGeometry: {
             match: rect.width >= innerWidth * .45 && rect.height >= innerHeight * .45,
             weight: 2,
@@ -360,28 +363,71 @@
       },
       { minimumScore: .72, minimumMargin: .12, minimumSignals: 4 }
     );
-    const composerResult = bansheeRuntime.classifyCandidates(
-      [...document.querySelectorAll(".composer-surface-chrome")],
-      (node) => ({
-        editor: Boolean(node.querySelector("textarea, [contenteditable='true']")),
-        inMain: Boolean(mainResult.node?.contains(node)),
-        rendered: isRenderedSurface(node),
-      })
+    const composerEditors = mainResult.node
+      ? [...mainResult.node.querySelectorAll('textarea, [contenteditable="true"], [role="textbox"]')]
+          .filter(isRenderedSurface)
+      : [];
+    const composerFallbackCandidates = [...new Set(composerEditors.flatMap((editor) => {
+      const candidates = [];
+      for (let node = editor.parentElement; node && node !== mainResult.node && candidates.length < 10; node = node.parentElement) {
+        const className = typeof node.className === 'string' ? node.className : '';
+        if (node.tagName === 'DIV' && /composer/i.test(className)) candidates.push(node);
+      }
+      return candidates;
+    }))];
+    const composerResult = bansheeRuntime.adaptiveRelocateCandidate(
+      [...document.querySelectorAll('.composer-surface-chrome')],
+      composerFallbackCandidates,
+      (node) => {
+        const rect = node.getBoundingClientRect();
+        const className = typeof node.className === 'string' ? node.className : '';
+        return {
+          editor: { match: Boolean(node.querySelector('textarea, [contenteditable="true"], [role="textbox"]')), weight: 3 },
+          inMain: { match: Boolean(mainResult.node?.contains(node)), weight: 2 },
+          rendered: { match: isRenderedSurface(node), weight: 3 },
+          semanticRoot: { match: /composer(?:layout)?root/i.test(className), weight: 3 },
+          controls: { match: node.querySelectorAll('button').length >= 2, weight: 2 },
+          composerGeometry: {
+            match: rect.width >= 280 && rect.height >= 56 && rect.height <= Math.min(360, innerHeight * .5),
+            weight: 2,
+          },
+          bottomRelationship: { match: rect.bottom >= innerHeight * .65 && rect.bottom <= innerHeight + 16, weight: 2 },
+        };
+      },
+      { minimumScore: .72, minimumMargin: .12, minimumSignals: 5 }
     );
     const cardsResult = bansheeRuntime.classifyCandidates(
       [...document.querySelectorAll(".group\\/home-suggestions")],
       (node) => ({ buttons: node.querySelectorAll('button').length > 0, inHome: Boolean(node.closest('[role="main"]')) })
     );
     const threadHeaderCandidates = mainResult.node
-      ? [...mainResult.node.querySelectorAll(":scope > header.app-header-tint")]
+      ? [...mainResult.node.querySelectorAll(':scope > header')]
       : [];
-    const threadHeaderResult = bansheeRuntime.classifyCandidates(
+    const threadHeaderResult = bansheeRuntime.adaptiveRelocateCandidate(
+      threadHeaderCandidates.filter((node) => node.classList.contains('app-header-tint')),
       threadHeaderCandidates,
-      (node) => ({
-        directChild: node.parentElement === mainResult.node,
-        controls: Boolean(node.querySelector('button')),
-        rendered: isRenderedSurface(node),
-      })
+      (node) => {
+        const rect = node.getBoundingClientRect();
+        const className = typeof node.className === 'string' ? node.className : '';
+        const controls = [...node.querySelectorAll('button')];
+        return {
+          directChild: { match: node.parentElement === mainResult.node, weight: 3 },
+          rendered: { match: isRenderedSurface(node), weight: 3 },
+          controls: { match: controls.length >= 2, weight: 2 },
+          titleCluster: {
+            match: controls.some((button) => Boolean((button.innerText || '').trim()) ||
+              Boolean(button.getAttribute('aria-label') || button.getAttribute('title'))),
+            weight: 2,
+          },
+          toolbarGeometry: {
+            match: rect.width >= (mainResult.node?.getBoundingClientRect().width ?? innerWidth) * .55 &&
+              rect.height >= 28 && rect.height <= 80,
+            weight: 2,
+          },
+          semanticClass: { match: /(?:app-header|draggable|h-toolbar)/i.test(className), weight: 1 },
+        };
+      },
+      { minimumScore: .74, minimumMargin: .14, minimumSignals: 5 }
     );
     const homeCandidates = document.querySelectorAll('[role="main"]:has([data-testid="home-icon"])');
     const home = homeCandidates.length === 1 ? homeCandidates[0] : null;

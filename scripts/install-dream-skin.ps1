@@ -23,7 +23,7 @@ $BackupPath = Join-Path $StateRoot 'config.before-dream-skin.toml'
 Assert-DreamSkinStateRootSafe -StateRoot $StateRoot
 Assert-DreamSkinPort -Port $Port -AllowZero
 if (-not (Test-Path -LiteralPath $ConfigPath)) { throw "Codex config not found: $ConfigPath" }
-$content = Get-Content -LiteralPath $ConfigPath -Raw
+$content = [IO.File]::ReadAllText($ConfigPath, [Text.UTF8Encoding]::new($false))
 $previousTransaction = $null
 $previousTransactionRaw = $null
 if (Test-Path -LiteralPath $TransactionPath) {
@@ -95,7 +95,7 @@ function Undo-DreamSkinInstallAttempt {
     } catch { Write-Warning "Could not roll back shortcut $($record.path): $($_.Exception.Message)" }
   }
   try {
-    $currentConfig = Get-Content -LiteralPath $ConfigPath -Raw
+    $currentConfig = [IO.File]::ReadAllText($ConfigPath, [Text.UTF8Encoding]::new($false))
     if ($currentConfig -eq $script:attemptInstalledConfigContent) {
       Write-DreamSkinTextAtomic -Path $ConfigPath -Content $script:attemptOriginalConfigContent
     } else {
