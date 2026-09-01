@@ -167,14 +167,34 @@ function Get-DreamSkinProcessIdentity([int]$ProcessId) {
   try {
     $process = Get-Process -Id $ProcessId -ErrorAction Stop
     $cim = $null
-    if ($ProcessId -eq $PID) {
-      $cim = [pscustomobject]@{ ExecutablePath = [string]$process.Path; CommandLine = [Environment]::CommandLine }
-    } else {
-      try { $cim = Get-CimInstance Win32_Process -Filter "ProcessId = $ProcessId" -ErrorAction Stop } catch {}
+    # Prefer one canonical CIM representation for both self-captured and
+    # externally verified identities. [Environment]::CommandLine can preserve
+    # quoting differently from Win32_Process.CommandLine, producing a different
+    # hash for the very same watcher process.
+    try { $cim = Get-CimInstance Win32_Process -Filter "ProcessId = $ProcessId" -ErrorAction Stop } catch {}
+    if (-not $cim -and $ProcessId -eq $PID) {
+      # The environment representation is not byte-for-byte comparable with
+      # Win32_Process.CommandLine (notably around nested quote escaping). Leave
+      # the optional hash empty and retain the PID + exact start time + image
+      # path identity rather than persisting a hash that can never validate.
+      $cim = [pscustomobject]@{ ExecutablePath = [string]$process.Path; CommandLine = '' }
     }
     return ConvertTo-DreamSkinProcessIdentity -CimProcess $cim -Process $process
   } catch {
     return $null
+  }
+}
+
+function Test-DreamSkinProcessStartTimeEqual([object]$Left, [object]$Right) {
+  try {
+    # PowerShell 7 converts ISO JSON timestamps to DateTime objects while
+    # Windows PowerShell 5.1 leaves them as strings. Compare the represented
+    # UTC instant so both hosts validate the same persisted identity.
+    $leftTime = ([datetime]$Left).ToUniversalTime()
+    $rightTime = ([datetime]$Right).ToUniversalTime()
+    return $leftTime.Ticks -eq $rightTime.Ticks
+  } catch {
+    return $false
   }
 }
 
@@ -184,7 +204,7 @@ function Test-DreamSkinProcessIdentity([object]$Expected, [object]$Current) {
     if ($Expected.PSObject.Properties.Name -notcontains $field -or $Current.PSObject.Properties.Name -notcontains $field) { return $false }
   }
   $basicMatches = [int]$Expected.processId -eq [int]$Current.processId -and
-    [string]$Expected.startTimeUtc -eq [string]$Current.startTimeUtc -and
+    (Test-DreamSkinProcessStartTimeEqual $Expected.startTimeUtc $Current.startTimeUtc) -and
     (Test-DreamSkinPathEqual ([string]$Expected.executablePath) ([string]$Current.executablePath))
   if (-not $basicMatches) { return $false }
   $expectedHash = [string]$Expected.commandLineSha256
@@ -256,7 +276,7 @@ function Stop-DreamSkinOwnedProcess([object]$Expected, [switch]$Force) {
   if (-not (Test-DreamSkinProcessIdentity -Expected $Expected -Current $current)) { return $false }
   try {
     $process = Get-Process -Id ([int]$Expected.processId) -ErrorAction Stop
-    if ($process.StartTime.ToUniversalTime().ToString('o') -ne [string]$Expected.startTimeUtc) { return $false }
+    if (-not (Test-DreamSkinProcessStartTimeEqual $process.StartTime.ToUniversalTime() $Expected.startTimeUtc)) { return $false }
     if (-not $Force) {
       [void]$process.CloseMainWindow()
       return $true

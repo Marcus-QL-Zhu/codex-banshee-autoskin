@@ -47,6 +47,9 @@ try {
     commandLineSha256 = 'abc'
   }
   Assert-True (Test-DreamSkinProcessIdentity -Expected $expected -Current $same) 'Exact process identity should pass.'
+  $jsonConverted = $same.PSObject.Copy()
+  $jsonConverted.startTimeUtc = [datetime]'2026-07-19T01:02:03.0000000Z'
+  Assert-True (Test-DreamSkinProcessIdentity -Expected $expected -Current $jsonConverted) 'PowerShell 7 JSON DateTime conversion must preserve process identity.'
   $stalePid = $same.PSObject.Copy()
   $stalePid.startTimeUtc = '2026-07-19T01:02:04.0000000Z'
   Assert-True (-not (Test-DreamSkinProcessIdentity -Expected $expected -Current $stalePid)) 'PID reuse with a different start time must fail closed.'

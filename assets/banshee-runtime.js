@@ -164,11 +164,13 @@
     const pressed = result.node.getAttribute?.("aria-pressed");
     if (pressed === "true") return "on";
     if (pressed === "false") return "off";
-    const nativeInlineIcon = [...(result.node.querySelectorAll?.("svg") ?? [])].some((icon) =>
-      String(icon.getAttribute?.("class") ?? "").includes("ModelPickerTriggerInlineFastIcon") &&
-      icon.getAttribute?.("viewBox") === "0 0 24 24" &&
-      Boolean(icon.querySelector?.('path[fill="currentColor"]'))
-    );
+    const nativeInlineIcon = [...(result.node.querySelectorAll?.("svg") ?? [])].some((icon) => {
+      const className = String(icon.getAttribute?.("class") ?? "");
+      const supportedFastClass = className.includes("ModelPickerTriggerInlineFastIcon") ||
+        className.includes("ModelPickerTriggerInlineModeIcon");
+      return supportedFastClass && icon.getAttribute?.("viewBox") === "0 0 24 24" &&
+        Boolean(icon.querySelector?.('path[fill="currentColor"]'));
+    });
     return nativeInlineIcon ? "on" : "off";
   };
   const isFastAwakeningActive = (result, parity) => fastModeState(result, parity) === "on";

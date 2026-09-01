@@ -809,10 +809,13 @@ async function verifySession(session) {
       const stack = document.elementsFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2);
       const topHit = stack.find((candidate) => getComputedStyle(candidate).pointerEvents !== 'none') ?? null;
       const hitPass = Boolean(topHit && (topHit === node || node.contains(topHit)));
-      const nativeFastIndicator = key === 'fast-mode' && [...node.querySelectorAll('svg')].some((icon) =>
-        String(icon.getAttribute('class') || '').includes('ModelPickerTriggerInlineFastIcon') &&
-        icon.getAttribute('viewBox') === '0 0 24 24' && Boolean(icon.querySelector('path[fill="currentColor"]'))
-      );
+      const nativeFastIndicator = key === 'fast-mode' && [...node.querySelectorAll('svg')].some((icon) => {
+        const className = String(icon.getAttribute('class') || '');
+        const supportedFastClass = className.includes('ModelPickerTriggerInlineFastIcon') ||
+          className.includes('ModelPickerTriggerInlineModeIcon');
+        return supportedFastClass && icon.getAttribute('viewBox') === '0 0 24 24' &&
+          Boolean(icon.querySelector('path[fill="currentColor"]'));
+      });
       return {
         enhanced: true,
         tagName: node.tagName,

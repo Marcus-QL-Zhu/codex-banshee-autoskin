@@ -11,6 +11,7 @@ All notable changes to Codex AutoSkin are documented in this file. The project f
 - Restored full structural injection on Codex 26.803 after the native composer shell moved from `composer-surface-chrome` to a hashed `ComposerLayoutRoot` class, using bounded confidence-scored editor-ancestry relocation.
 - Restored the Codex 26.803 conversation header safe rectangle so the title menu and native summary, bottom-panel, and sidebar toggles stay visible and clickable.
 - Read and restore `config.toml` explicitly as UTF-8 on Windows PowerShell 5.1, preventing non-ASCII project paths from being rewritten as invalid TOML.
+- Restored Fast awakening-palette detection on Codex 26.825 after the native speed selector renamed its inline Fast lightning class from `ModelPickerTriggerInlineFastIcon` to `ModelPickerTriggerInlineModeIcon`.
 
 ## [2.3.0] - 2026-07-19
 

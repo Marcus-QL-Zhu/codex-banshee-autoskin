@@ -47,7 +47,8 @@ html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"][dat
 
 html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"][data-dream-fast="on"] [data-fast-mode-enabled="true"],
 html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"][data-dream-fast="on"] [data-fast-mode-enabled="true"] [class*="_FastModeIcon_"],
-html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"][data-dream-fast="on"] [data-dream-capability="fast-mode"] [class*="ModelPickerTriggerInlineFastIcon"] {
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"][data-dream-fast="on"] [data-dream-capability="fast-mode"] [class*="ModelPickerTriggerInlineFastIcon"],
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"][data-dream-fast="on"] [data-dream-capability="fast-mode"] [class*="ModelPickerTriggerInlineModeIcon"] {
   color:var(--dream-banshee-energy-core) !important;
 }
 

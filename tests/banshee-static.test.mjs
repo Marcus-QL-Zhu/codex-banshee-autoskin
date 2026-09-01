@@ -189,7 +189,9 @@ test("Banshee selectors are pack-scoped and its motion/accessibility fallbacks e
   assert.match(fastSliderRange, /background-color:var\(--dream-banshee-energy-core\) !important/);
   const fastSliderParticles = css.match(/\[data-dream-fast="on"\] \[data-model-picker-power-slider\] \[data-fast-mode="true"\] \[class\*="_TrackParticle_"\]\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
   assert.match(fastSliderParticles, /background-color:rgba\(var\(--dream-banshee-emission-crest-rgb\),\.78\) !important/);
-  const fastMarkerRule = css.match(/\[data-dream-fast="on"\] \[data-fast-mode-enabled="true"\],[\s\S]*?\[class\*="ModelPickerTriggerInlineFastIcon"\]\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
+  assert.match(css, /\[data-dream-fast="on"\] \[data-dream-capability="fast-mode"\] \[class\*="ModelPickerTriggerInlineFastIcon"\]/);
+  assert.match(css, /\[data-dream-fast="on"\] \[data-dream-capability="fast-mode"\] \[class\*="ModelPickerTriggerInlineModeIcon"\]/);
+  const fastMarkerRule = css.match(/\[data-dream-fast="on"\] \[data-fast-mode-enabled="true"\],[\s\S]*?\[class\*="ModelPickerTriggerInlineFastIcon"\],[\s\S]*?\[class\*="ModelPickerTriggerInlineModeIcon"\]\s*\{([\s\S]*?)\n\}/)?.[1] ?? "";
   assert.match(fastMarkerRule, /color:var\(--dream-banshee-energy-core\) !important/);
   for (const fastNativeBlock of [fastSliderRange, fastSliderParticles, fastMarkerRule]) {
     assert.doesNotMatch(fastNativeBlock, /(?:^|\n)\s*(?:pointer-events|display|visibility|width|height|transform):/);
@@ -215,7 +217,7 @@ test("legacy Dream structure is isolated behind its own pack class", () => {
 
 test("renderer supports artless switching, pack cleanup, neutral chrome, and one epoch", () => {
   const source = read("assets/renderer-inject.js");
-  assert.match(source, /const STYLE_VERSION = "47"/);
+  assert.match(source, /const STYLE_VERSION = "48"/);
   assert.match(source, /THEME_ART_MODES/);
   assert.match(source, /bansheeRuntime\.artVariables/);
   assert.match(source, /cls\.startsWith\("dream-pack-"\)/);
@@ -507,6 +509,18 @@ test("runtime capability classifier is double-signal and fail-closed", () => {
   };
   const modelPicker = { getAttribute: () => null, querySelectorAll: () => [inlineIcon] };
   assert.equal(runtime.fastModeState({ state: "verified", node: modelPicker }, { pass: true }), "on");
+  const currentInlineIcon = {
+    getAttribute: (name) => name === "class" ? "_ModelPickerTriggerInlineModeIcon_hash" : name === "viewBox" ? "0 0 24 24" : null,
+    querySelector: (selector) => selector === 'path[fill="currentColor"]' ? {} : null,
+  };
+  const currentModelPicker = { getAttribute: () => null, querySelectorAll: () => [currentInlineIcon] };
+  assert.equal(runtime.fastModeState({ state: "verified", node: currentModelPicker }, { pass: true }), "on");
+  const nonFastModeIcon = {
+    getAttribute: (name) => name === "class" ? "_ModelPickerTriggerInlineModeIcon_hash" : name === "viewBox" ? "0 0 20 20" : null,
+    querySelector: (selector) => selector === 'path[fill="currentColor"]' ? {} : null,
+  };
+  const nonFastModelPicker = { getAttribute: () => null, querySelectorAll: () => [nonFastModeIcon] };
+  assert.equal(runtime.fastModeState({ state: "verified", node: nonFastModelPicker }, { pass: true }), "off");
   assert.equal(runtime.fastModeState({ state: "verified", node: { getAttribute: () => null, querySelectorAll: () => [] } }, { pass: true }), "off");
   assert.equal(runtime.fastModeState({ state: "verified", node: modelPicker }, { pass: false }), "unavailable");
 });

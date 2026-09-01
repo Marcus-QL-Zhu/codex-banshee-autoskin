@@ -311,7 +311,10 @@ if ($NoAutoRecover) {
   )
   $script:attemptWatcherProcess = $watcherProcess
   $watcherHealthy = $false
-  for ($attempt = 0; $attempt -lt 75; $attempt++) {
+  # Store-package verification and CIM process identity can be slow immediately
+  # after a Codex update. Keep the launch bounded, but allow enough time for the
+  # watcher to publish and for this process to verify its ownership record.
+  for ($attempt = 0; $attempt -lt 150; $attempt++) {
     Start-Sleep -Milliseconds 200
     $watcherProcess.Refresh()
     if ($watcherProcess.HasExited) { break }
@@ -334,7 +337,7 @@ if ($NoAutoRecover) {
     throw 'Watcher exited normally because another watcher still owns the singleton mutex; the previous installation must be stopped before upgrade.'
   }
   if (-not $watcherHealthy -and $watcherProcess.HasExited) { throw "Watcher exited before acknowledging readiness (exit code $($watcherProcess.ExitCode))." }
-  if (-not $watcherHealthy) { throw 'Watcher did not acknowledge readiness within 15 seconds.' }
+  if (-not $watcherHealthy) { throw 'Watcher did not acknowledge readiness within 30 seconds.' }
 }
 
 $transaction.shortcuts = $shortcutRecords

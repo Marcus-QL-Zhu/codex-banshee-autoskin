@@ -167,6 +167,7 @@ test('renderer safety gates and observers are present in shipped sources', () =>
   assert.doesNotMatch(css, /\[data-app-action-sidebar-thread-row\] span\.absolute\.inset-0/);
   assert.match(renderer, /root\.removeAttribute\('data-dream-pack-ready'\);[\s\S]*?restoreOwned\(\);[\s\S]*?Route transitions/);
   assert.match(renderer, /fastObserver\.observe\(observedFastNode/);
+  assert.match(read('assets/banshee-runtime.js'), /ModelPickerTriggerInlineFastIcon[\s\S]*?ModelPickerTriggerInlineModeIcon/);
   assert.match(renderer, /resizeObserver\.observe\(nextObservedComposer\)/);
   assert.match(renderer, /adaptiveRelocateCandidate/);
   assert.match(renderer, /composerFallbackCandidates/);
@@ -181,6 +182,7 @@ test('renderer safety gates and observers are present in shipped sources', () =>
   assert.match(injector, /\(!bansheeExpected \|\| bansheeActive\)/);
   assert.match(injector, /\[data-dream-surface="composer"\]/);
   assert.match(injector, /threadHeaderNode\.querySelectorAll\('button, span'\)/);
+  assert.match(injector, /ModelPickerTriggerInlineFastIcon[\s\S]*?ModelPickerTriggerInlineModeIcon/);
   assert.match(setTheme, /fetchTargetsFromLoopback, requireSingleMainRendererTarget/);
   assert.match(setTheme, /CDP socket open timed out/);
   const installer = read('scripts/install-dream-skin.ps1');

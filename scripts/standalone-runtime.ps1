@@ -18,6 +18,13 @@ function Resolve-DreamSkinContainedPath([string]$Path, [string]$Parent, [string]
 }
 
 function Get-TrustedCodexStorePackage {
+  # Hidden Windows PowerShell watcher sessions have occasionally failed the
+  # first command-discovery autoload after a Store update. Import the built-in
+  # module explicitly so signature verification remains fail-closed without
+  # depending on module autoload timing.
+  if (-not (Get-Module Microsoft.PowerShell.Security)) {
+    Import-Module Microsoft.PowerShell.Security -ErrorAction Stop
+  }
   $package = Get-AppxPackage OpenAI.Codex | Sort-Object Version -Descending | Select-Object -First 1
   if (-not $package) { throw 'The OpenAI.Codex Store package is not installed.' }
   if ($package.Name -ne 'OpenAI.Codex' -or
