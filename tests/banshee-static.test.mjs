@@ -217,7 +217,7 @@ test("legacy Dream structure is isolated behind its own pack class", () => {
 
 test("renderer supports artless switching, pack cleanup, neutral chrome, and one epoch", () => {
   const source = read("assets/renderer-inject.js");
-  assert.match(source, /const STYLE_VERSION = "48"/);
+  assert.match(source, /const STYLE_VERSION = "49"/);
   assert.match(source, /THEME_ART_MODES/);
   assert.match(source, /bansheeRuntime\.artVariables/);
   assert.match(source, /cls\.startsWith\("dream-pack-"\)/);
@@ -289,15 +289,17 @@ test("renderer supports artless switching, pack cleanup, neutral chrome, and one
   assert.match(source, /viewBox="0 0 1261 941" preserveAspectRatio="none"/);
   assert.match(source, /dream-banshee-top-plate-fill/);
   assert.match(source, /threadHeaderResult/);
-  assert.match(source, /bansheeRuntime\.isFastAwakeningActive\(fastModeResult, fastModeParity\)/);
+  assert.match(source, /bansheeRuntime\.isFastAwakeningActive\(fastModeResult, fastModeParity, fastPopupResult\)/);
   assert.match(source, /data-codex-intelligence-trigger/);
   assert.match(source, /data-composer-navigation-target/);
   assert.match(source, /root\.setAttribute\("data-dream-fast", "on"\)/);
   assert.match(source, /const SIDEBAR_SEARCH_LABELS = new Set\(\["Search", "\\u641c\\u7d22"\]\)/);
   assert.match(source, /data-dream-sidebar-crown-controls/);
   assert.match(source, /for \(let node = searchCandidates\[0\]\.parentElement; node && node !== sidePanel; node = node\.parentElement\)/);
-  assert.match(source, /crownButtons\.length === 2/);
-  assert.match(source, /attributeFilter: \["aria-pressed"\]/);
+  assert.match(source, /crownButtons\.length >= 2 && crownButtons\.length <= 3/);
+  assert.match(source, /buttonsInNode\.length < 2 \|\| buttonsInNode\.length > 3/);
+  assert.match(source, /\[role="menuitemcheckbox"\]\[data-fast-mode-enabled\]/);
+  assert.match(source, /attributeFilter: \["aria-pressed", "aria-checked", "data-fast-mode-enabled", "data-fast-mode"\]/);
   assert.match(source, /\[threadHeaderResult, "thread-header"\]/);
   assert.match(source, /threadHeaderCandidates\.filter\(\(node\) => node\.classList\.contains\('app-header-tint'\)\)/);
   assert.match(source, /toolbarGeometry/);
@@ -523,6 +525,12 @@ test("runtime capability classifier is double-signal and fail-closed", () => {
   assert.equal(runtime.fastModeState({ state: "verified", node: nonFastModelPicker }, { pass: true }), "off");
   assert.equal(runtime.fastModeState({ state: "verified", node: { getAttribute: () => null, querySelectorAll: () => [] } }, { pass: true }), "off");
   assert.equal(runtime.fastModeState({ state: "verified", node: modelPicker }, { pass: false }), "unavailable");
+  const popupOn = { getAttribute: (name) => name === "data-fast-mode-enabled" || name === "aria-checked" ? "true" : null };
+  const popupOff = { getAttribute: (name) => name === "data-fast-mode-enabled" || name === "aria-checked" ? "false" : null };
+  const popupMismatch = { getAttribute: (name) => name === "data-fast-mode-enabled" ? "true" : name === "aria-checked" ? "false" : null };
+  assert.equal(runtime.fastModeState({ state: "verified", node: nonFastModelPicker }, { pass: true }, { state: "verified", node: popupOn }), "on");
+  assert.equal(runtime.fastModeState({ state: "verified", node: modelPicker }, { pass: true }, { state: "verified", node: popupOff }), "off");
+  assert.equal(runtime.fastModeState({ state: "verified", node: modelPicker }, { pass: true }, { state: "verified", node: popupMismatch }), "unavailable");
 });
 
 test("native control parity preserves identity and SVG while allowing state changes", () => {

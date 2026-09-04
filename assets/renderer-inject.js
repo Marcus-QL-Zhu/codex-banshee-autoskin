@@ -9,7 +9,7 @@
   const INJECTION_ID = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const LAYOUT_STORAGE_KEY = "codex-dream-skin.layout";
   const THEME_STORAGE_KEY = "codex-dream-skin.theme";
-  const STYLE_VERSION = "48";
+  const STYLE_VERSION = "49";
   const LAYOUTS = new Set(["banner", "fullscreen"]);
   // Sidebar "new task" row gets a marker class so the structure CSS can restyle
   // it as a capsule. Text matching only; the real button stays fully native.
@@ -470,6 +470,17 @@
       return [dedicatedFastControl || nativeModelTrigger, Boolean(button.querySelector("svg")),
         dedicatedFastControl ? button.hasAttribute("aria-pressed") : nativeModelTrigger];
     });
+    const fastPopupResult = bansheeRuntime.classifyCandidates(
+      [...document.querySelectorAll('[role="menuitemcheckbox"][data-fast-mode-enabled]')],
+      (node) => {
+        const enabled = node.getAttribute('data-fast-mode-enabled');
+        const checked = node.getAttribute('aria-checked');
+        return [
+          (enabled === 'true' || enabled === 'false') && enabled === checked,
+          Boolean(node.querySelector('svg[class*="_FastModeIcon_"]')),
+        ];
+      }
+    );
     const nextFastNode = fastModeResult.state === 'verified' ? fastModeResult.node : null;
     if (fastObserver && observedFastNode !== nextFastNode) {
       fastObserver.disconnect();
@@ -554,8 +565,8 @@
       }
     }
     const fastAwakeningActive = bansheeActive && enhancedCapabilities.has("fast-mode") &&
-      bansheeRuntime.isFastAwakeningActive(fastModeResult, fastModeParity);
-    const fastModeState = bansheeRuntime.fastModeState(fastModeResult, fastModeParity);
+      bansheeRuntime.isFastAwakeningActive(fastModeResult, fastModeParity, fastPopupResult);
+    const fastModeState = bansheeRuntime.fastModeState(fastModeResult, fastModeParity, fastPopupResult);
     if (fastAwakeningActive) root.setAttribute("data-dream-fast", "on");
     else root.removeAttribute("data-dream-fast");
 
@@ -584,6 +595,7 @@
         fastMode: {
           state: fastModeResult.state,
           availability: fastModeState,
+          popupState: fastPopupResult.state,
           parity: fastModeParity?.pass ?? null,
           awakening: fastAwakeningActive,
         },
@@ -617,7 +629,7 @@
         for (let node = searchCandidates[0].parentElement; node && node !== sidePanel; node = node.parentElement) {
           const rect = node.getBoundingClientRect();
           const buttonsInNode = [...node.querySelectorAll("button")];
-          if (buttonsInNode.length !== 2 ||
+          if (buttonsInNode.length < 2 || buttonsInNode.length > 3 ||
               rect.width < sidebarBox.width * 0.7 ||
               rect.height < 24 || rect.height > 40) continue;
           crownControls = node;
@@ -627,7 +639,7 @@
       const crownBox = crownControls?.getBoundingClientRect();
       const crownButtons = crownControls ? [...crownControls.querySelectorAll("button")] : [];
       const crownVerified = crownControls && crownBox &&
-        crownButtons.length === 2 &&
+        crownButtons.length >= 2 && crownButtons.length <= 3 &&
         crownBox.width >= sidebarBox.width * 0.7 &&
         crownBox.height >= 24 && crownBox.height <= 40 &&
         crownBox.top >= sidebarBox.top && crownBox.top <= sidebarBox.top + 24;
@@ -797,7 +809,12 @@
     for (const mutation of mutations) metrics.addedNodes += mutation.addedNodes?.length ?? 0;
     scheduleEnsure();
   });
-  observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ["aria-pressed"] });
+  observer.observe(document.documentElement, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ["aria-pressed", "aria-checked", "data-fast-mode-enabled", "data-fast-mode"],
+  });
   const timer = setInterval(ensure, 5000);
   window[STATE_KEY] = {
     ensure,

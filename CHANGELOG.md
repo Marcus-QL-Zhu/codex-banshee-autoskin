@@ -4,6 +4,7 @@ All notable changes to Codex AutoSkin are documented in this file. The project f
 
 ## [Unreleased]
 
+- Restored immediate Fast awakening-palette updates while the redesigned model popup remains open, and re-centered the expanded three-control sidebar crown used by current Codex builds.
 - Release hardening and documentation corrections that have not yet been tagged.
 - English-first bilingual project overview and public screenshots for normal and Fast awakening modes.
 - Adaptive, confidence-scored main-surface relocation for Codex DOM class changes, with fail-closed ambiguity handling.

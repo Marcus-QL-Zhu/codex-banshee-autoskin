@@ -995,9 +995,20 @@ async function verifySession(session) {
       microphone: nativeControl('microphone'),
       fastMode: nativeControl('fast-mode'),
     };
-    const fastAwakeningExpected = capabilities.fastMode.enhanced &&
-      (capabilities.fastMode.ariaPressed === 'true' ||
-        (capabilities.fastMode.ariaPressed === null && capabilities.fastMode.nativeFastIndicator));
+    const popupFastCandidates = [...document.querySelectorAll('[role="menuitemcheckbox"][data-fast-mode-enabled]')]
+      .filter((node) => {
+        const enabled = node.getAttribute('data-fast-mode-enabled');
+        return (enabled === 'true' || enabled === 'false') && enabled === node.getAttribute('aria-checked') &&
+          Boolean(node.querySelector('svg[class*="_FastModeIcon_"]'));
+      });
+    const popupFastState = popupFastCandidates.length === 1
+      ? popupFastCandidates[0].getAttribute('data-fast-mode-enabled')
+      : null;
+    const fastAwakeningExpected = popupFastState !== null
+      ? popupFastState === 'true'
+      : capabilities.fastMode.enhanced &&
+        (capabilities.fastMode.ariaPressed === 'true' ||
+          (capabilities.fastMode.ariaPressed === null && capabilities.fastMode.nativeFastIndicator));
     const fastAwakeningActive = document.documentElement.getAttribute('data-dream-fast') === 'on';
     const fastAwakening = {
       expected: fastAwakeningExpected,

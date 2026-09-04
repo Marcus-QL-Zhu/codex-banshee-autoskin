@@ -159,7 +159,15 @@
   const selectCapabilityEnhancements = (entries) => entries
     .filter((entry) => entry?.result?.state === "verified" && entry?.parity?.pass === true)
     .map((entry) => entry.key);
-  const fastModeState = (result, parity) => {
+  const fastModeState = (result, parity, popupResult = null) => {
+    if (popupResult?.state === "verified" && popupResult.node) {
+      const enabled = popupResult.node.getAttribute?.("data-fast-mode-enabled");
+      const checked = popupResult.node.getAttribute?.("aria-checked");
+      if ((enabled === "true" || enabled === "false") && enabled === checked) {
+        return enabled === "true" ? "on" : "off";
+      }
+      return "unavailable";
+    }
     if (result?.state !== "verified" || parity?.pass !== true || !result.node) return "unavailable";
     const pressed = result.node.getAttribute?.("aria-pressed");
     if (pressed === "true") return "on";
@@ -173,7 +181,7 @@
     });
     return nativeInlineIcon ? "on" : "off";
   };
-  const isFastAwakeningActive = (result, parity) => fastModeState(result, parity) === "on";
+  const isFastAwakeningActive = (result, parity, popupResult = null) => fastModeState(result, parity, popupResult) === "on";
   const hitTestControl = (node, stack, styleFor) => {
     const top = [...(stack ?? [])].find((candidate) => (styleFor?.(candidate)?.pointerEvents ?? "auto") !== "none");
     return Boolean(top && (top === node || node?.contains?.(top)));
