@@ -9,7 +9,7 @@
   const INJECTION_ID = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const LAYOUT_STORAGE_KEY = "codex-dream-skin.layout";
   const THEME_STORAGE_KEY = "codex-dream-skin.theme";
-  const STYLE_VERSION = "49";
+  const STYLE_VERSION = "50";
   const LAYOUTS = new Set(["banner", "fullscreen"]);
   // Sidebar "new task" row gets a marker class so the structure CSS can restyle
   // it as a capsule. Text matching only; the real button stays fully native.
@@ -17,6 +17,15 @@
   const SIDEBAR_SEARCH_LABELS = new Set(["Search", "\u641c\u7d22"]);
   const MICROPHONE_LABELS = new Set(["Microphone", "Voice input", "Dictation", "麦克风", "语音输入", "听写"]);
   const FAST_MODE_LABELS = new Set(["Fast mode", "快速模式"]);
+  const fastPopupEvidence = (node) => {
+    const enabled = node?.getAttribute?.("data-fast-mode-enabled");
+    const checked = node?.getAttribute?.("aria-checked");
+    return [
+      (enabled === "true" || enabled === "false") && enabled === checked,
+      Boolean(node?.closest?.('[role="menu"][data-radix-menu-content][data-state="open"]')),
+      Boolean(node?.querySelector?.("svg")),
+    ];
+  };
   const OWNED_ATTRIBUTE_NAMES = [
     'data-dream-owner', 'data-dream-surface', 'data-dream-capability',
     'data-dream-status-dot', 'data-dream-sidebar-crown-controls',
@@ -472,14 +481,7 @@
     });
     const fastPopupResult = bansheeRuntime.classifyCandidates(
       [...document.querySelectorAll('[role="menuitemcheckbox"][data-fast-mode-enabled]')],
-      (node) => {
-        const enabled = node.getAttribute('data-fast-mode-enabled');
-        const checked = node.getAttribute('aria-checked');
-        return [
-          (enabled === 'true' || enabled === 'false') && enabled === checked,
-          Boolean(node.querySelector('svg[class*="_FastModeIcon_"]')),
-        ];
-      }
+      fastPopupEvidence
     );
     const nextFastNode = fastModeResult.state === 'verified' ? fastModeResult.node : null;
     if (fastObserver && observedFastNode !== nextFastNode) {
@@ -786,6 +788,9 @@
     state?.observer?.disconnect();
     state?.resizeObserver?.disconnect();
     state?.fastObserver?.disconnect();
+    if (state?.fastPopupClickListener) {
+      document.removeEventListener("click", state.fastPopupClickListener, true);
+    }
     if (state?.timer) clearInterval(state.timer);
     state?.scheduler?.cancel?.();
     for (const assets of Object.values(state?.artUrls || {})) {
@@ -799,6 +804,22 @@
   const metrics = { ensureRuns: 0, globalScans: 0, mutationBatches: 0, addedNodes: 0 };
   const scheduler = bansheeRuntime.createDebouncedScheduler(setTimeout, clearTimeout, ensure, 180);
   const scheduleEnsure = scheduler.schedule;
+  const fastPopupClickListener = (event) => {
+    const rootElement = document.documentElement;
+    const toggle = event.target?.closest?.('[role="menuitemcheckbox"][data-fast-mode-enabled]');
+    if (!toggle || !fastPopupEvidence(toggle).every(Boolean)) return;
+    const candidates = [...document.querySelectorAll('[role="menuitemcheckbox"][data-fast-mode-enabled]')]
+      .filter((node) => fastPopupEvidence(node).every(Boolean));
+    const liveBanshee = rootElement.classList.contains("dream-pack-banshee") &&
+      rootElement.getAttribute("data-dream-pack-ready") === "banshee-v1";
+    if (!liveBanshee || candidates.length !== 1 || candidates[0] !== toggle) return;
+    if (toggle.getAttribute("data-fast-mode-enabled") === "false") {
+      rootElement.setAttribute("data-dream-fast", "on");
+    } else {
+      rootElement.removeAttribute("data-dream-fast");
+    }
+  };
+  document.addEventListener("click", fastPopupClickListener, true);
   let observedShell = null;
   let observedComposer = null;
   const resizeObserver = typeof ResizeObserver === "function" ? new ResizeObserver(scheduleEnsure) : null;
@@ -822,6 +843,7 @@
     observer,
     timer,
     scheduler,
+    fastPopupClickListener,
     metrics,
     resizeObserver,
     fastObserver,

@@ -183,7 +183,7 @@ test('renderer safety gates and observers are present in shipped sources', () =>
   assert.match(injector, /\[data-dream-surface="composer"\]/);
   assert.match(injector, /threadHeaderNode\.querySelectorAll\('button, span'\)/);
   assert.match(injector, /ModelPickerTriggerInlineFastIcon[\s\S]*?ModelPickerTriggerInlineModeIcon/);
-  assert.match(injector, /popupFastCandidates[\s\S]*?data-fast-mode-enabled[\s\S]*?aria-checked/);
+  assert.match(injector, /popupFastCandidates[\s\S]*?data-fast-mode-enabled[\s\S]*?aria-checked[\s\S]*?data-radix-menu-content/);
   assert.match(setTheme, /fetchTargetsFromLoopback, requireSingleMainRendererTarget/);
   assert.match(setTheme, /CDP socket open timed out/);
   const installer = read('scripts/install-dream-skin.ps1');

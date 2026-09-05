@@ -217,7 +217,7 @@ test("legacy Dream structure is isolated behind its own pack class", () => {
 
 test("renderer supports artless switching, pack cleanup, neutral chrome, and one epoch", () => {
   const source = read("assets/renderer-inject.js");
-  assert.match(source, /const STYLE_VERSION = "49"/);
+  assert.match(source, /const STYLE_VERSION = "50"/);
   assert.match(source, /THEME_ART_MODES/);
   assert.match(source, /bansheeRuntime\.artVariables/);
   assert.match(source, /cls\.startsWith\("dream-pack-"\)/);
@@ -299,6 +299,10 @@ test("renderer supports artless switching, pack cleanup, neutral chrome, and one
   assert.match(source, /crownButtons\.length >= 2 && crownButtons\.length <= 3/);
   assert.match(source, /buttonsInNode\.length < 2 \|\| buttonsInNode\.length > 3/);
   assert.match(source, /\[role="menuitemcheckbox"\]\[data-fast-mode-enabled\]/);
+  assert.match(source, /fastPopupEvidence[\s\S]*?data-radix-menu-content[\s\S]*?querySelector\?\.\("svg"\)/);
+  assert.match(source, /fastPopupClickListener[\s\S]*?document\.addEventListener\("click", fastPopupClickListener, true\)/);
+  assert.match(source, /fastPopupClickListener = \(event\) => \{[\s\S]*?const rootElement = document\.documentElement/);
+  assert.match(source, /document\.removeEventListener\("click", state\.fastPopupClickListener, true\)/);
   assert.match(source, /attributeFilter: \["aria-pressed", "aria-checked", "data-fast-mode-enabled", "data-fast-mode"\]/);
   assert.match(source, /\[threadHeaderResult, "thread-header"\]/);
   assert.match(source, /threadHeaderCandidates\.filter\(\(node\) => node\.classList\.contains\('app-header-tint'\)\)/);

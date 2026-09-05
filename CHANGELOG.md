@@ -4,6 +4,7 @@ All notable changes to Codex AutoSkin are documented in this file. The project f
 
 ## [Unreleased]
 
+- Restored immediate Fast awakening-palette updates on Codex 26.901 after the popup lightning adopted a generic icon class and Fast toggles began replacing their subtree, using verified native menu/state parity plus capture-phase prediction instead of a CSS-module icon name or the general layout debounce.
 - Restored immediate Fast awakening-palette updates while the redesigned model popup remains open, and re-centered the expanded three-control sidebar crown used by current Codex builds.
 - Release hardening and documentation corrections that have not yet been tagged.
 - English-first bilingual project overview and public screenshots for normal and Fast awakening modes.

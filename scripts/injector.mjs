@@ -999,7 +999,8 @@ async function verifySession(session) {
       .filter((node) => {
         const enabled = node.getAttribute('data-fast-mode-enabled');
         return (enabled === 'true' || enabled === 'false') && enabled === node.getAttribute('aria-checked') &&
-          Boolean(node.querySelector('svg[class*="_FastModeIcon_"]'));
+          Boolean(node.closest('[role="menu"][data-radix-menu-content][data-state="open"]')) &&
+          Boolean(node.querySelector('svg'));
       });
     const popupFastState = popupFastCandidates.length === 1
       ? popupFastCandidates[0].getAttribute('data-fast-mode-enabled')
