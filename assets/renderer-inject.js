@@ -13,7 +13,7 @@
   const LAYOUTS = new Set(["banner", "fullscreen"]);
   // Sidebar "new task" row gets a marker class so the structure CSS can restyle
   // it as a capsule. Text matching only; the real button stays fully native.
-  const NEW_TASK_LABELS = ["新建任务", "New task"];
+  const NEW_TASK_LABELS = ["新建任务", "新对话", "New task", "New chat"];
   const SIDEBAR_SEARCH_LABELS = new Set(["Search", "\u641c\u7d22"]);
   const MICROPHONE_LABELS = new Set(["Microphone", "Voice input", "Dictation", "麦克风", "语音输入", "听写"]);
   const FAST_MODE_LABELS = new Set(["Fast mode", "快速模式"]);
@@ -469,6 +469,11 @@
     );
     const homeCandidates = document.querySelectorAll('[role="main"]:has([data-testid="home-icon"])');
     const home = homeCandidates.length === 1 ? homeCandidates[0] : null;
+    // Suggestion cards are an optional home surface. Recent Codex builds can
+    // keep an empty, zero-height suggestion rail mounted. It is not a visible
+    // surface and must not disable the otherwise verified native shell.
+    const hasHomeSuggestionRail = [...document.querySelectorAll(".group\\/home-suggestions")]
+      .some((node) => isRenderedSurface(node) && node.querySelector('button'));
     const composerHost = (() => {
       if (!home || !composerResult.node || !home.contains(composerResult.node)) return null;
       const composerWidth = composerResult.node.getBoundingClientRect().width;
@@ -482,12 +487,13 @@
     const contextWrapper = composerStack?.firstElementChild ?? null;
     const composerContext = composerHost &&
       contextWrapper &&
+      !contextWrapper.contains(composerResult.node) &&
       composerStack?.lastElementChild?.contains(composerResult.node) &&
       contextWrapper.firstElementChild?.getBoundingClientRect().width > 0
         ? contextWrapper.firstElementChild
         : null;
     const requiredResults = [sideResult, mainResult, composerResult];
-    if (home) requiredResults.push(cardsResult);
+    if (home && hasHomeSuggestionRail) requiredResults.push(cardsResult);
     const verifiedShell = requiredResults.every((result) => result.state === "verified") &&
       !window.__CODEX_DREAM_SKIN_PALETTE_ONLY__;
     const sidePanel = sideResult.node;
@@ -556,6 +562,10 @@
         [threadHeaderResult, "thread-header"],
       ]) {
         if (result.state !== "verified") continue;
+        // The 26.9xx home route reuses a header-shaped toolbar without a
+        // thread title. Keep that native home toolbar out of the thread-only
+        // Banshee positioning and title verification contract.
+        if (surface === "thread-header" && home) continue;
         setOwnedAttribute(result.node, "data-dream-surface", surface);
         setOwnedAttribute(result.node, "data-dream-owner", INJECTION_ID);
       }

@@ -405,14 +405,23 @@ test("installer is dark-first, persists a port, and restores with compare-and-sw
   assert.match(lifecycle, /function Remove-DreamSkinDirectoryTreeLongPath/);
   assert.match(startScript, /Ensure-DreamSkinStandaloneRuntime/);
   assert.ok(startScript.indexOf("Ensure-DreamSkinStandaloneRuntime") < startScript.indexOf("Stop-CodexCompletely"));
+  assert.match(startScript, /Get-DreamSkinTrustedCodexProcesses -ExecutablePaths \$TrustedCodexExecutables\)/);
+  assert.match(startScript, /-not \$ProfilePath -and \$mainProcesses\.Count/);
+  assert.match(startScript, /CODEX_ELECTRON_USER_DATA_PATH = \[IO\.Path\]::GetFullPath\(\$ProfilePath\)/);
   assert.match(startScript, /Start-Process -FilePath \$StandaloneRuntime\.Executable -WorkingDirectory \$StandaloneRuntime\.Root/);
   assert.match(startScript, /StringComparison\]::OrdinalIgnoreCase/);
   assert.match(startScript, /\$maxLaunchAttempts = 1/);
   assert.match(startScript, /automatic retry is disabled/);
   assert.match(startScript, /Get-NetTCPConnection/);
+  assert.match(startScript, /netstat\.exe/);
+  assert.match(startScript, /Get-Process -Id \$processId/);
+  assert.match(startScript, /\$listenerProcessId = \[int\]\$Matches\.processId/);
+  assert.match(startScript, /\[IO\.Path\]::GetFullPath\(\$path\)/);
   assert.match(startScript, /-StorePackageFullName \$Package\.PackageFullName -StoreExecutable \$Package\.Executable/);
   assert.match(lifecycle, /IPackageDebugSettings/);
   assert.match(lifecycle, /TerminateAllProcesses/);
+  assert.match(lifecycle, /0x80004001/);
+  assert.match(lifecycle, /verified PID\/start-time\/executable-path shutdown loop below/);
   assert.doesNotMatch(lifecycle, /Get-CimInstance Win32_Process -Filter "Name = 'ChatGPT\.exe'"/);
   assert.match(watcher, /function Sync-DreamSkinStandaloneRuntime/);
   assert.match(watcher, /function Update-DreamSkinRuntimeRecord/);
@@ -535,6 +544,14 @@ test("runtime capability classifier is double-signal and fail-closed", () => {
   assert.equal(runtime.fastModeState({ state: "verified", node: nonFastModelPicker }, { pass: true }, { state: "verified", node: popupOn }), "on");
   assert.equal(runtime.fastModeState({ state: "verified", node: modelPicker }, { pass: true }, { state: "verified", node: popupOff }), "off");
   assert.equal(runtime.fastModeState({ state: "verified", node: modelPicker }, { pass: true }, { state: "verified", node: popupMismatch }), "unavailable");
+});
+
+test("missing or empty optional home suggestion rail does not disable the Banshee shell", () => {
+  const source = read("assets/renderer-inject.js");
+  assert.match(source, /const hasHomeSuggestionRail = \[\.\.\.document\.querySelectorAll/);
+  assert.match(source, /\.some\(\(node\) => isRenderedSurface\(node\) && node\.querySelector\('button'\)\)/);
+  assert.match(source, /if \(home && hasHomeSuggestionRail\) requiredResults\.push\(cardsResult\)/);
+  assert.match(source, /surface === "thread-header" && home\) continue/);
 });
 
 test("native control parity preserves identity and SVG while allowing state changes", () => {

@@ -29,19 +29,42 @@ $TrustedCodexExecutables = @($Package.Executable, $StandaloneRuntime.Executable)
 $TrustedCodexExecutables = @($TrustedCodexExecutables | Sort-Object -Unique)
 
 function Test-CodexPortOwner([int]$CandidatePort) {
+  $listenerProcessIds = @()
   try {
     $listeners = @(Get-NetTCPConnection -State Listen -LocalPort $CandidatePort -ErrorAction Stop | Where-Object {
       $_.LocalAddress -in @('127.0.0.1', '::1')
     })
     foreach ($listener in $listeners) {
-      $owner = Get-CimInstance Win32_Process -Filter "ProcessId = $([int]$listener.OwningProcess)" -ErrorAction Stop
-      $path = [string]$owner.ExecutablePath
-      if ($owner.Name -eq 'ChatGPT.exe' -and
+      $listenerProcessIds += [int]$listener.OwningProcess
+    }
+  } catch {}
+  if (-not $listenerProcessIds.Count) {
+    # Some managed Windows sessions deny Get-NetTCPConnection/CIM access to
+    # the elevated app process. netstat exposes only the listening PID; still
+    # require Get-Process to resolve the exact trusted executable path below.
+    $netstatPath = Join-Path $env:WINDIR 'System32\netstat.exe'
+    try {
+      foreach ($line in @(& $netstatPath -ano -p tcp 2>$null)) {
+        if ($line -match '^\s*TCP\s+(?<local>\S+)\s+\S+\s+LISTENING\s+(?<processId>\d+)\s*$') {
+          $localAddress = [string]$Matches.local
+          $listenerProcessId = [int]$Matches.processId
+          if ($localAddress -match "^(127\.0\.0\.1|\[?::1\]?):$CandidatePort$") {
+            $listenerProcessIds += $listenerProcessId
+          }
+        }
+      }
+    } catch {}
+  }
+  foreach ($processId in @($listenerProcessIds | Sort-Object -Unique)) {
+    try {
+      $owner = Get-Process -Id $processId -ErrorAction Stop
+      $path = [string]$owner.Path
+      if ($owner.ProcessName -eq 'ChatGPT' -and $path -and
           [string]::Equals([IO.Path]::GetFullPath($path), [IO.Path]::GetFullPath($StandaloneRuntime.Executable), [StringComparison]::OrdinalIgnoreCase)) {
         return $true
       }
-    }
-  } catch {}
+    } catch {}
+  }
   return $false
 }
 function Test-CodexDebugPort([int]$CandidatePort) {
@@ -61,7 +84,7 @@ function Stop-CodexCompletely {
 }
 
 $debugReady = Test-CodexDebugPort $Port
-$mainProcesses = @(Get-DreamSkinTrustedCodexProcesses -ExecutablePaths $TrustedCodexExecutables -VisibleOnly)
+$mainProcesses = @(Get-DreamSkinTrustedCodexProcesses -ExecutablePaths $TrustedCodexExecutables)
 
 if (-not $debugReady -and -not (Test-DreamSkinLoopbackPortFree -Port $Port)) {
   throw "Dream Skin port $Port is occupied by an unrelated process; Codex was left untouched. Reinstall to allocate a new port."
@@ -71,19 +94,27 @@ if (-not $debugReady -and -not $ProfilePath -and $mainProcesses.Count -gt 0) {
   if (-not $RestartExisting) {
     throw "Codex is already running without dream-skin debugging on port $Port. Close Codex or rerun with -RestartExisting."
   }
+  # Legacy shared-profile launches require a restart. Explicit profiles use
+  # Codex's own userData override below and leave the official app running.
   Stop-CodexCompletely
 }
 
 function Start-CodexWithDebugPort {
-  $arguments = @("--remote-debugging-port=$Port")
+  $arguments = @("--remote-debugging-address=127.0.0.1", "--remote-debugging-port=$Port")
+  $previousUserDataPath = $env:CODEX_ELECTRON_USER_DATA_PATH
   if ($ProfilePath) {
     New-Item -ItemType Directory -Force -Path $ProfilePath | Out-Null
-    $arguments += "--user-data-dir=$ProfilePath"
+    $arguments += "`"--user-data-dir=$ProfilePath`""
   }
   try {
+    # Codex sets app.userData before acquiring its single-instance lock.
+    # --user-data-dir alone is overwritten by that bootstrap code.
+    if ($ProfilePath) { $env:CODEX_ELECTRON_USER_DATA_PATH = [IO.Path]::GetFullPath($ProfilePath) }
     Start-Process -FilePath $StandaloneRuntime.Executable -WorkingDirectory $StandaloneRuntime.Root -ArgumentList $arguments
   } catch [System.InvalidOperationException] {
     throw "Windows denied launch of the verified per-user Codex runtime. $($_.Exception.Message)"
+  } finally {
+    $env:CODEX_ELECTRON_USER_DATA_PATH = $previousUserDataPath
   }
 }
 
@@ -141,14 +172,16 @@ if (-not $injectorIdentity) {
 } | ForEach-Object { Write-DreamSkinJsonAtomic -Path $StatePath -Value $_ }
 
 $verified = $false
+$verificationPath = Join-Path $StateRoot 'verify-result.json'
+$verificationErrorPath = Join-Path $StateRoot 'verify-error.log'
 for ($attempt = 0; $attempt -lt 45; $attempt++) {
   Start-Sleep -Milliseconds 700
-  & $node $Injector --verify --port $Port *> $null
+  & $node $Injector --verify --port $Port 1> $verificationPath 2> $verificationErrorPath
   if ($LASTEXITCODE -eq 0) { $verified = $true; break }
 }
 if (-not $verified) {
   [void](Stop-DreamSkinOwnedProcess -Expected $injectorIdentity -Force)
   Remove-Item -LiteralPath $StatePath -Force -ErrorAction SilentlyContinue
-  throw 'Dream skin launched but verification failed. See injector logs.'
+  throw "Dream skin launched but verification failed. See $verificationPath and $verificationErrorPath."
 }
 Write-Host "Codex Dream Skin is active on port $Port."

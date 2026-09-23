@@ -1035,13 +1035,16 @@ async function verifySession(session) {
       chromePointerEvents: getComputedStyle(document.getElementById('codex-dream-skin-chrome') || document.body).pointerEvents,
       homePresent: Boolean(home),
       suggestionsPresent: Boolean(suggestions),
+      suggestionsRendered: Boolean(suggestions && suggestions.getBoundingClientRect().width > 0 &&
+        suggestions.getBoundingClientRect().height > 0 && getComputedStyle(suggestions).display !== 'none' &&
+        getComputedStyle(suggestions).visibility !== 'hidden'),
       suggestionSurface: suggestions ? {
         box: box(suggestions),
         className: typeof suggestions.className === 'string' ? suggestions.className : null,
         display: getComputedStyle(suggestions).display,
         columns: getComputedStyle(suggestions).gridTemplateColumns,
       } : null,
-      hero: box(home?.firstElementChild?.firstElementChild?.firstElementChild),
+      hero: box(home?.querySelector('[data-testid="home-icon"]') ?? home?.firstElementChild?.firstElementChild?.firstElementChild),
       cards,
       cardDiagnostics,
       composer: box(composerNode),
@@ -1092,7 +1095,7 @@ async function verifySession(session) {
       (!bansheeActive || (result.wave.pass && markedCapabilitiesPass && result.fastAwakening.pass)) &&
       result.topRegion.pass &&
       (!result.homePresent || (Boolean(result.hero) &&
-        (!result.suggestionsPresent || result.suggestionsSuppressed || (result.cards.length >= 1 && result.cards.length <= 4 &&
+        (!result.suggestionsRendered || result.suggestionsSuppressed || (result.cards.length >= 1 && result.cards.length <= 4 &&
           result.cards.every((card) => card.width > 0 && card.height > 0)))));
     return result;
   })()`);

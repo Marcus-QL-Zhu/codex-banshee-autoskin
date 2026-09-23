@@ -462,7 +462,16 @@ function Stop-DreamSkinTrustedCodexProcesses([string[]]$ExecutablePaths, [string
     $storeIsAllowed = @($ExecutablePaths | Where-Object { Test-DreamSkinPathEqual ([string]$_) $StoreExecutable }).Count -gt 0
     if (-not $storeIsAllowed) { throw 'Store package executable is outside the verified Codex executable set.' }
     $storeRunning = @(Get-DreamSkinTrustedCodexProcesses -ExecutablePaths @($StoreExecutable)).Count -gt 0
-    if ($storeRunning) { [void](Stop-DreamSkinStorePackageProcesses -PackageFullName $StorePackageFullName -Terminator $PackageTerminator) }
+    if ($storeRunning) {
+      try {
+        [void](Stop-DreamSkinStorePackageProcesses -PackageFullName $StorePackageFullName -Terminator $PackageTerminator)
+      } catch {
+        if ($_.Exception.Message -notmatch '\(0x80004001\)') { throw }
+        # Some Windows package implementations return E_NOTIMPL here. The
+        # verified PID/start-time/executable-path shutdown loop below is the
+        # narrowly scoped fallback; every process is revalidated before kill.
+      }
+    }
   }
   $deadline = (Get-Date).AddSeconds(12)
   $observedEmpty = $false

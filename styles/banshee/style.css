@@ -384,6 +384,13 @@ html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [da
   box-shadow:0 0 7px rgba(var(--dream-banshee-emission-bloom-rgb),.5);
 }
 
+/* New Codex builds paint the native body inside the verified composer root. */
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="composer"] > [data-composer-body] {
+  background:transparent !important;
+  border-radius:0 !important;
+  box-shadow:none !important;
+}
+
 html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="composer"] > * {
   position:relative;
   z-index:1;

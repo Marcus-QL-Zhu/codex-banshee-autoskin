@@ -1,6 +1,7 @@
 [CmdletBinding()]
 param(
   [int]$Port = 0,
+  [string]$ProfilePath,
   [ValidatePattern('^[a-f0-9]{32}$')]
   [string]$HealthToken = '',
   [int]$PollSeconds = 2,
@@ -14,6 +15,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $StateRoot = Join-Path $env:LOCALAPPDATA 'CodexDreamSkin'
+if (-not $ProfilePath) { $ProfilePath = Join-Path $StateRoot 'cdp-profile' }
 . (Join-Path $PSScriptRoot 'runtime-state.ps1')
 . (Join-Path $PSScriptRoot 'lifecycle.ps1')
 . (Join-Path $PSScriptRoot 'standalone-runtime.ps1')
@@ -234,7 +236,7 @@ try {
 
     if ($debugReady) {
       Write-WatcherLog 'Debug port is available but injector is missing; restarting injector.'
-      try { & $StartScript -Port $Port | Out-Null } catch { $failed = $true; $failureReason = $_.Exception.Message }
+      try { & $StartScript -Port $Port -ProfilePath $ProfilePath | Out-Null } catch { $failed = $true; $failureReason = $_.Exception.Message }
     } else {
       $trustedExecutables = @(Get-WatcherTrustedCodexExecutables)
       try {
@@ -309,7 +311,7 @@ try {
       Write-WatcherLog 'Detected Codex launched without Dream Skin; restarting it through the skin launcher.'
       $restartTimes.Add((Get-Date))
       try {
-        & $StartScript -Port $Port -RestartExisting | Out-Null
+        & $StartScript -Port $Port -ProfilePath $ProfilePath | Out-Null
         if (Test-DreamDebugPort) {
           Write-WatcherLog 'Codex restarted with Dream Skin.'
         } else {
