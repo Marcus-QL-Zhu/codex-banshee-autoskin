@@ -185,6 +185,8 @@ function Get-WatcherTrustedCodexExecutables {
 
 try {
   while ($true) {
+    # The explicit launcher may have replaced an unavailable port.
+    $Port = Get-DreamSkinPersistedPort -StateRoot $StateRoot -RequestedPort 0
     if (Test-DreamSkinAutoRecoverDisabled -StateRoot $StateRoot) {
       Write-WatcherLog 'Auto-recovery is disabled; watcher is exiting without touching Codex.'
       break
@@ -270,13 +272,7 @@ try {
       $missedProbes = 0
 
       if (-not (Test-DreamSkinLoopbackPortFree -Port $Port)) {
-        $consecutiveFailures++
-        Write-WatcherLog "Recovery skipped because port $Port is owned by an unrelated process; Codex remains open."
-        if ($consecutiveFailures -ge $MaxConsecutiveFailures) {
-          $suspendedUntil = (Get-Date).AddMinutes($CooldownMinutes)
-        }
-        Start-Sleep -Seconds ([Math]::Max(5, $PollSeconds))
-        continue
+        Write-WatcherLog "Port $Port is unavailable; the launcher will allocate a new loopback port without stopping its owner."
       }
 
       # Codex can update from the Store while the watcher remains alive. Refresh
@@ -312,6 +308,7 @@ try {
       $restartTimes.Add((Get-Date))
       try {
         & $StartScript -Port $Port -ProfilePath $ProfilePath | Out-Null
+        $Port = Get-DreamSkinPersistedPort -StateRoot $StateRoot -RequestedPort 0
         if (Test-DreamDebugPort) {
           Write-WatcherLog 'Codex restarted with Dream Skin.'
         } else {

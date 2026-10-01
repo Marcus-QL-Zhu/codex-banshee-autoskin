@@ -87,7 +87,17 @@ $debugReady = Test-CodexDebugPort $Port
 $mainProcesses = @(Get-DreamSkinTrustedCodexProcesses -ExecutablePaths $TrustedCodexExecutables)
 
 if (-not $debugReady -and -not (Test-DreamSkinLoopbackPortFree -Port $Port)) {
-  throw "Dream Skin port $Port is occupied by an unrelated process; Codex was left untouched. Reinstall to allocate a new port."
+  # A terminated app can leave a stale listener, and another application can
+  # legitimately claim our previous port. Allocate without touching its owner.
+  $previousPort = $Port
+  $Port = Get-DreamSkinFreePort
+  $transactionPath = Join-Path $StateRoot 'install-transaction.json'
+  if (Test-Path -LiteralPath $transactionPath) {
+    $transaction = Get-Content -LiteralPath $transactionPath -Raw | ConvertFrom-Json
+    $transaction.port = $Port
+    Write-DreamSkinJsonAtomic -Path $transactionPath -Value $transaction
+  }
+  Write-Host "Dream Skin port $previousPort is unavailable; using loopback port $Port."
 }
 
 if (-not $debugReady -and -not $ProfilePath -and $mainProcesses.Count -gt 0) {
