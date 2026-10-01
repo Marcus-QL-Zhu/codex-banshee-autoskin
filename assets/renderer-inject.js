@@ -520,7 +520,9 @@
     const shellMain = mainResult.node || document.querySelector("main");
 
     const bansheeActive = (THEME_PACKS[activeTheme] ?? "dream") === "banshee" && verifiedShell;
-    const buttons = bansheeActive ? [...document.querySelectorAll("button")] : [];
+    // Inactive cached chats retain composer controls. Only live controls can
+    // participate in capability identity/parity or determine the Fast palette.
+    const buttons = bansheeActive ? [...document.querySelectorAll("button")].filter(isRenderedSurface) : [];
     const classifyControl = (labels) => bansheeRuntime.classifyCandidates(buttons, (button) => {
       const label = (button.getAttribute("aria-label") || button.getAttribute("title") || "").trim();
       return [labels.has(label), Boolean(button.querySelector("svg"))];
@@ -535,7 +537,7 @@
         dedicatedFastControl ? button.hasAttribute("aria-pressed") : nativeModelTrigger];
     });
     const fastPopupResult = bansheeRuntime.classifyCandidates(
-      [...document.querySelectorAll('[role="menuitemcheckbox"][data-fast-mode-enabled]')],
+      [...document.querySelectorAll('[role="menuitemcheckbox"][data-fast-mode-enabled]')].filter(isRenderedSurface),
       fastPopupEvidence
     );
     const nextFastNode = fastModeResult.state === 'verified' ? fastModeResult.node : null;
