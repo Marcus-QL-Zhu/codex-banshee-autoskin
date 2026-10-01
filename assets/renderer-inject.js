@@ -9,7 +9,7 @@
   const INJECTION_ID = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const LAYOUT_STORAGE_KEY = "codex-dream-skin.layout";
   const THEME_STORAGE_KEY = "codex-dream-skin.theme";
-  const STYLE_VERSION = "53";
+  const STYLE_VERSION = "54";
   const LAYOUTS = new Set(["banner", "fullscreen"]);
   // Sidebar "new task" row gets a marker class so the structure CSS can restyle
   // it as a capsule. Text matching only; the real button stays fully native.
@@ -226,6 +226,7 @@
   let lastCapabilityReport = "";
   let reconcileCache = null;
   let shellDirty = true;
+  let headerGeometryRule = null;
   const controlSignature = (node) => node ? [
     node.getAttribute('aria-label'), node.getAttribute('aria-pressed'),
     node.getAttribute('aria-checked'), node.getAttribute('data-fast-mode-enabled'),
@@ -800,6 +801,15 @@
     chrome.style.top = `${Math.round(shellBox.top)}px`;
     chrome.style.width = `${Math.round(shellBox.width)}px`;
     chrome.style.height = `${Math.round(shellBox.height)}px`;
+    // The shoulder band spans y=14..48 in the 941-high SVG. Center the
+    // 32px native controls in that scaled band, retaining the accepted 12px
+    // offset at full size. CSSOM updates avoid mutations on native app nodes.
+    if (!headerGeometryRule || headerGeometryRule.parentStyleSheet !== style.sheet) {
+      const index = style.sheet.insertRule('html.codex-dream-skin.dream-pack-banshee { --dream-header-top: 12px; }', style.sheet.cssRules.length);
+      headerGeometryRule = style.sheet.cssRules[index];
+    }
+    const headerTop = Math.max(0, Math.min(12, shellBox.height * 31 / 941 - 16));
+    headerGeometryRule.style.setProperty('--dream-header-top', `${headerTop.toFixed(2)}px`);
     // The composer exists on both the home route and active conversation routes.
     // Its live verified rectangle occludes the still-continuous footer rail, so
     // the composer reads as a foreground plate rather than a hard-coded gap.
