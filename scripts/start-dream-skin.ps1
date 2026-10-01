@@ -102,6 +102,11 @@ if (-not $debugReady -and -not $ProfilePath -and $mainProcesses.Count -gt 0) {
 function Start-CodexWithDebugPort {
   $arguments = @("--remote-debugging-address=127.0.0.1", "--remote-debugging-port=$Port")
   $previousUserDataPath = $env:CODEX_ELECTRON_USER_DATA_PATH
+  $previousCliPath = $env:CODEX_CLI_PATH
+  $bundledCliPath = Join-Path $StandaloneRuntime.Root 'resources\codex.exe'
+  if (-not (Test-Path -LiteralPath $bundledCliPath -PathType Leaf)) {
+    throw "Bundled Codex CLI is missing: $bundledCliPath"
+  }
   if ($ProfilePath) {
     New-Item -ItemType Directory -Force -Path $ProfilePath | Out-Null
     $arguments += "`"--user-data-dir=$ProfilePath`""
@@ -110,11 +115,15 @@ function Start-CodexWithDebugPort {
     # Codex sets app.userData before acquiring its single-instance lock.
     # --user-data-dir alone is overwritten by that bootstrap code.
     if ($ProfilePath) { $env:CODEX_ELECTRON_USER_DATA_PATH = [IO.Path]::GetFullPath($ProfilePath) }
+    # Follow the verified Store runtime on every launch, even when Explorer or
+    # an older watcher inherited a stale external CLI override.
+    $env:CODEX_CLI_PATH = $bundledCliPath
     Start-Process -FilePath $StandaloneRuntime.Executable -WorkingDirectory $StandaloneRuntime.Root -ArgumentList $arguments
   } catch [System.InvalidOperationException] {
     throw "Windows denied launch of the verified per-user Codex runtime. $($_.Exception.Message)"
   } finally {
     $env:CODEX_ELECTRON_USER_DATA_PATH = $previousUserDataPath
+    $env:CODEX_CLI_PATH = $previousCliPath
   }
 }
 

@@ -70,7 +70,8 @@ html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [da
     inset -5px 0 0 rgba(119,151,194,.24) !important;
 }
 
-html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="sidebar"]::before {
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="sidebar"]:not(:has([data-dream-sidebar-navigation]))::before,
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-sidebar-navigation]::before {
   content:"";
   position:absolute;
   z-index:0;
@@ -86,6 +87,39 @@ html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [da
   border-bottom:1px solid rgba(119,151,194,.4);
   clip-path:polygon(0 0,81% 0,62% 100%,0 100%);
   filter:drop-shadow(0 1px 0 var(--dream-banshee-gap));
+}
+
+/* Keep the new app rail native. The shoulder belongs to the adjacent task list. */
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-sidebar-navigation] {
+  position:relative;
+  isolation:isolate;
+}
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-sidebar-navigation]::before {
+  top:6px;
+  width:min(162px,calc(100% - 64px));
+  height:40px;
+  right:auto;
+  clip-path:polygon(0 0,100% 0,calc(100% - 40px) 100%,0 100%);
+  background:linear-gradient(180deg,rgba(24,39,62,.94),rgba(14,27,46,.98));
+  z-index:-1;
+}
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-sidebar-navigation]::after {
+  content:"";
+  position:absolute;
+  pointer-events:none;
+  top:6px;
+  left:calc(min(162px,100% - 64px) - 40px);
+  width:40px;
+  height:40px;
+  background:linear-gradient(135deg,transparent 47.8%,rgba(var(--dream-banshee-emission-active-rgb),.95) 49%,rgba(var(--dream-banshee-emission-active-rgb),.55) 51%,transparent 52.2%);
+  mask-image:linear-gradient(180deg,transparent,black 32%,black 60%,transparent);
+  z-index:-1;
+}
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-sidebar-rail] {
+  box-shadow:inset -1px 0 rgba(119,151,194,.16);
+}
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-sidebar-navigation] [data-dream-sidebar-crown-controls="true"] {
+  transform:none;
 }
 
 html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="sidebar"]::after {
@@ -278,6 +312,25 @@ html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [da
   min-width:0 !important;
   max-width:none !important;
   z-index:5 !important;
+}
+
+/* Keep the title and controls inside the two top shoulder plates. */
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] header:has([data-dream-modern-thread-header="true"]) {
+  container-type:inline-size;
+}
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-modern-thread-header="true"] {
+  --app-shell-header-height:32px;
+  top:6px !important;
+  inset-inline:8px !important;
+  width:auto !important;
+}
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-modern-thread-header="true"] [data-app-shell-titlebar-content] {
+  max-width:calc(17cqw - 16px);
+}
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] header:has([data-dream-modern-thread-header="true"]) > [data-app-shell-header-slot="end"] {
+  --app-shell-header-height:32px;
+  top:6px !important;
+  transform:translateX(-8px);
 }
 
 /* The Banshee home shell deliberately suppresses native suggestion shortcuts.

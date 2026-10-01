@@ -9,7 +9,7 @@
   const INJECTION_ID = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const LAYOUT_STORAGE_KEY = "codex-dream-skin.layout";
   const THEME_STORAGE_KEY = "codex-dream-skin.theme";
-  const STYLE_VERSION = "50";
+  const STYLE_VERSION = "53";
   const LAYOUTS = new Set(["banner", "fullscreen"]);
   // Sidebar "new task" row gets a marker class so the structure CSS can restyle
   // it as a capsule. Text matching only; the real button stays fully native.
@@ -29,6 +29,8 @@
   const OWNED_ATTRIBUTE_NAMES = [
     'data-dream-owner', 'data-dream-surface', 'data-dream-capability',
     'data-dream-status-dot', 'data-dream-sidebar-crown-controls',
+    'data-dream-sidebar-rail', 'data-dream-sidebar-navigation',
+    'data-dream-modern-thread-header',
     'data-dream-composer-host', 'data-dream-composer-context',
   ];
   // Canonical Banshee shell geometry is traced in the approved reference's
@@ -467,7 +469,10 @@
       },
       { minimumScore: .74, minimumMargin: .14, minimumSignals: 5 }
     );
-    const homeCandidates = document.querySelectorAll('[role="main"]:has([data-testid="home-icon"])');
+    // Cached routes remain mounted but hidden after navigation in modern Codex.
+    // Only the rendered home in the active main surface can select home layout.
+    const homeCandidates = [...document.querySelectorAll('[role="main"]:has([data-testid="home-icon"])')]
+      .filter(node => isRenderedSurface(node) && mainResult.node?.contains(node));
     const home = homeCandidates.length === 1 ? homeCandidates[0] : null;
     // Suggestion cards are an optional home surface. Recent Codex builds can
     // keep an empty, zero-height suggestion rail mounted. It is not a visible
@@ -497,6 +502,21 @@
     const verifiedShell = requiredResults.every((result) => result.state === "verified") &&
       !window.__CODEX_DREAM_SKIN_PALETTE_ONLY__;
     const sidePanel = sideResult.node;
+    const modernHeaderCandidates = [...document.querySelectorAll('header[data-app-shell-titlebar="true"][data-app-shell-header-layout="thread-edge-scroll"] [data-app-shell-main-titlebar="true"]')]
+      .filter(node => isRenderedSurface(node) && node.querySelector('[role="toolbar"] [data-app-shell-titlebar-content]'));
+    const modernThreadHeader = modernHeaderCandidates.length === 1 ? modernHeaderCandidates[0] : null;
+    // Modern Codex puts a narrow app rail and the task navigation inside one
+    // aside. Anchor the shoulder plate to the task navigation, not the rail.
+    const sidebarNavs = sidePanel ? [...sidePanel.querySelectorAll('nav')].filter(isRenderedSurface) : [];
+    const sidebarRail = sidebarNavs.find(node => node.classList.contains('group/sidebar-rail'));
+    const sidebarNavigationCandidates = sidebarRail ? sidebarNavs.filter(node => {
+      const railBox = sidebarRail.getBoundingClientRect();
+      const box = node.getBoundingClientRect();
+      return node !== sidebarRail && !sidebarRail.contains(node) &&
+        box.left >= railBox.right - 1 && box.width > railBox.width &&
+        Math.abs(box.top - railBox.top) < 2 && box.height > railBox.height * .8;
+    }) : [];
+    const sidebarNavigation = sidebarNavigationCandidates.length === 1 ? sidebarNavigationCandidates[0] : null;
     const shellMain = mainResult.node || document.querySelector("main");
 
     const bansheeActive = (THEME_PACKS[activeTheme] ?? "dream") === "banshee" && verifiedShell;
@@ -657,6 +677,16 @@
       }
     }
     if (sidePanel && bansheeActive) {
+      if (modernThreadHeader && !home) {
+        setOwnedAttribute(modernThreadHeader, 'data-dream-modern-thread-header', 'true');
+        setOwnedAttribute(modernThreadHeader, 'data-dream-owner', INJECTION_ID);
+      }
+      if (sidebarRail && sidebarNavigation) {
+        for (const [node, name] of [[sidebarRail, 'data-dream-sidebar-rail'], [sidebarNavigation, 'data-dream-sidebar-navigation']]) {
+          setOwnedAttribute(node, name, 'true');
+          setOwnedAttribute(node, 'data-dream-owner', INJECTION_ID);
+        }
+      }
       const sidebarBox = sidePanel.getBoundingClientRect();
       const searchCandidates = [...sidePanel.querySelectorAll("button")].filter((button) => {
         const label = (button.getAttribute("aria-label") || button.getAttribute("title") || "").trim();
@@ -799,7 +829,7 @@
     }
     if (bansheeActive) {
       const controls = [microphoneResult.node, fastModeResult.node].filter(Boolean);
-      const nodes = [sidePanel, shellMain, composer, composerHost, composerContext, threadHeaderResult.node, ...controls].filter(Boolean);
+      const nodes = [sidePanel, sidebarRail, sidebarNavigation, modernThreadHeader, shellMain, composer, composerHost, composerContext, threadHeaderResult.node, ...controls].filter(Boolean);
       reconcileCache = {
         route: location.href, theme: activeTheme, layout: activeLayout,
         sidebar: sidePanel, composer, controls,
@@ -876,9 +906,12 @@
   document.addEventListener("click", fastPopupClickListener, true);
   let observedShell = null;
   let observedComposer = null;
-  const resizeObserver = typeof ResizeObserver === "function" ? new ResizeObserver(scheduleEnsure) : null;
+  // Geometry must not wait behind the trailing mutation debounce: streaming
+  // content can keep resetting it while the window is being resized.
+  const reconcileResize = () => ensure(true);
+  const resizeObserver = typeof ResizeObserver === "function" ? new ResizeObserver(reconcileResize) : null;
   let observedFastNode = null;
-  const windowResizeListener = scheduleEnsure;
+  const windowResizeListener = reconcileResize;
   window.addEventListener('resize', windowResizeListener);
   const fastObserver = typeof MutationObserver === 'function' ? new MutationObserver(scheduleEnsure) : null;
   const observer = new MutationObserver((mutations) => {
