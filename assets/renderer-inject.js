@@ -9,7 +9,7 @@
   const INJECTION_ID = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const LAYOUT_STORAGE_KEY = "codex-dream-skin.layout";
   const THEME_STORAGE_KEY = "codex-dream-skin.theme";
-  const STYLE_VERSION = "60";
+  const STYLE_VERSION = "61";
   const LAYOUTS = new Set(["banner", "fullscreen"]);
   // Sidebar "new task" row gets a marker class so the structure CSS can restyle
   // it as a capsule. Text matching only; the real button stays fully native.
@@ -46,6 +46,11 @@
           <rect width="1261" height="941" fill="#fff"/>
           <rect class="dream-banshee-composer-occluder" x="0" y="0" width="0" height="0" fill="#000"/>
         </mask>
+        <mask id="dream-banshee-lower-seam-mask" maskUnits="userSpaceOnUse" maskContentUnits="userSpaceOnUse" x="0" y="0" width="1261" height="941" style="mask-type:luminance">
+          <rect width="1261" height="941" fill="#fff"/>
+          <path d="M7 700L21 713V836L34 848V717L18 700Z" fill="#000"/>
+          <path transform="translate(1261 0) scale(-1 1)" d="M7 700L21 713V836L34 848V717L18 700Z" fill="#000"/>
+        </mask>
         <clipPath id="dream-banshee-cavity-pulse-clip" clipPathUnits="userSpaceOnUse">
           <path d="M0 65L35 101V188L18 207V700L34 717V848L21 836V713L7 700V214L28 191V108L0 77Z"/>
           <path transform="translate(1261 0) scale(-1 1)" d="M0 65L35 101V188L18 207V700L34 717V848L21 836V713L7 700V214L28 191V108L0 77Z"/>
@@ -73,9 +78,9 @@
       </g>
       <g class="dream-banshee-cavity">
         <path class="dream-banshee-cavity-upper-rail" d="M0 65L35 101V188L18 207V700H7V214L28 191V108L0 77Z"/>
-        <path class="dream-banshee-cavity-lower" d="M8 700L42 717V842L34 848L21 836V713Z"/>
+        <path class="dream-banshee-cavity-lower" d="M7 700L21 713V836L34 848V717L18 700Z"/>
         <path class="dream-banshee-cavity-upper-rail" transform="translate(1261 0) scale(-1 1)" d="M0 65L35 101V188L18 207V700H7V214L28 191V108L0 77Z"/>
-        <path class="dream-banshee-cavity-lower" d="M1253 700L1219 717V842L1227 848L1240 836V713Z"/>
+        <path class="dream-banshee-cavity-lower" transform="translate(1261 0) scale(-1 1)" d="M7 700L21 713V836L34 848V717L18 700Z"/>
       </g>
       <g class="dream-banshee-cavity-rest-light">
         <path class="dream-banshee-cavity-rest-light-side" d="M0 65L35 101V188L18 207V700L34 717V848L21 836V713L7 700V214L28 191V108L0 77Z"/>
@@ -87,16 +92,16 @@
         <path d="M0 65L35 101V188L18 207V700L34 717V848L21 836V713L7 700V214L28 191V108L0 77Z"/>
         <path transform="translate(1261 0) scale(-1 1)" d="M0 65L35 101V188L18 207V700L34 717V848L21 836V713L7 700V214L28 191V108L0 77Z"/>
       </g>
-      <g class="dream-banshee-seam dream-banshee-seam-s1 dream-banshee-seam-outer dream-banshee-seam-rear">
+      <g class="dream-banshee-seam dream-banshee-seam-s1 dream-banshee-seam-outer dream-banshee-seam-rear" mask="url(#dream-banshee-lower-seam-mask)">
         <path d="M5 6H171L226 51H1035L1090 6H1256V932H5Z"/>
         <path d="M9 920H83L108 902H1153L1178 920H1252"/>
       </g>
-      <g class="dream-banshee-seam dream-banshee-seam-s2 dream-banshee-seam-strong dream-banshee-seam-rear">
+      <g class="dream-banshee-seam dream-banshee-seam-s2 dream-banshee-seam-strong dream-banshee-seam-rear" mask="url(#dream-banshee-lower-seam-mask)">
         <path d="M105 41H211M226 51H410L420 61H500L510 66H751L761 61H841L851 51H1035M1050 41H1156"/>
         <path d="M105 41L38 104V185L21 201V704L38 720V847L108 900H1153"/>
         <path d="M1156 41L1223 104V185L1240 201V704L1223 720V847L1153 900"/>
       </g>
-      <g class="dream-banshee-seam dream-banshee-seam-s2 dream-banshee-seam-inner dream-banshee-seam-rear">
+      <g class="dream-banshee-seam dream-banshee-seam-s2 dream-banshee-seam-inner dream-banshee-seam-rear" mask="url(#dream-banshee-lower-seam-mask)">
         <path d="M108 48L48 109V191L32 207V698L48 713V838L116 890H1145"/>
         <path d="M1153 48L1213 109V191L1229 207V698L1213 713V838L1145 890"/>
       </g>
@@ -142,6 +147,8 @@
         paths: [...svg.querySelectorAll('path')].map(node => ({node, d:node.getAttribute('d'), mirrored:node.hasAttribute('transform')})),
         mask: svg.querySelector('mask'),
         maskBase: svg.querySelector('mask > rect'),
+        seamMask: svg.querySelector('#dream-banshee-lower-seam-mask'),
+        seamMaskBase: svg.querySelector('#dream-banshee-lower-seam-mask > rect'),
         pulse: svg.querySelector('.dream-banshee-cavity-pulse-band'),
         center: svg.querySelector('foreignObject'),
       };
@@ -199,8 +206,8 @@
       set(entry.node, 'd', mapPath(d));
       if (entry.mirrored) set(entry.node, 'transform', `translate(${width} 0) scale(-1 1)`);
     }
-    for (const node of [source.mask, source.maskBase, source.pulse]) set(node, 'width', width);
-    for (const node of [source.mask, source.maskBase]) set(node, 'height', height);
+    for (const node of [source.mask, source.maskBase, source.seamMask, source.seamMaskBase, source.pulse]) set(node, 'width', width);
+    for (const node of [source.mask, source.maskBase, source.seamMask, source.seamMaskBase]) set(node, 'height', height);
     set(source.pulse, 'height', 2400 * FRAME_SCALE_Y);
     set(source.center, 'x', x(492));
     set(source.center, 'y', y(49));

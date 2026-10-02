@@ -4,6 +4,7 @@ All notable changes to Codex AutoSkin are documented in this file. The project f
 
 ## [Unreleased]
 
+- Preserve the historical 13-unit lower light band, fit its dark cavity to that same contour instead of the old 21-unit cavity, and mask rear seams only inside the lower band to prevent blue construction lines from splitting its bend.
 - Keep all Banshee ornaments at the afcbc77 full-size 1413 x 864 reference, using one horizontal scale at every height so the side rails stay vertical and uniform in width. Window resizing stretches only straight bridges and vertical rails; narrow panes omit the central ornament rather than compress it, reserve space for content, and keep native controls aligned with the fixed shoulder band.
 - Restrict conversation armor and its toolbar to the conversation viewport when a right panel is open; retain the native right-panel tab strip and controls.
 - Reduced Banshee reconciliation overhead without changing CSS, theme tokens, geometry, or animation timing. Reuse verified shell/control state until a relevant mutation, resize, route change, or watchdog mismatch; ignore native measurement probes and streamed transcript nodes. Full native parity checks remain mandatory on invalidation. Reinjection also removes the previous click/resize listeners.
