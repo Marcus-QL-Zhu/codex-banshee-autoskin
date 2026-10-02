@@ -4,7 +4,7 @@ All notable changes to Codex AutoSkin are documented in this file. The project f
 
 ## [Unreleased]
 
-- Keep Banshee upper ornaments at the accepted 1413 x 864 full-size reference and lower corners at the separately accepted 986 x 705 reference. Window resizing stretches only straight bridges and vertical rails; narrow panes omit the central ornament rather than compress it, reserve space for content, and keep native controls aligned with the fixed shoulder band.
+- Keep all Banshee ornaments at the afcbc77 full-size 1413 x 864 reference, using one horizontal scale at every height so the side rails stay vertical and uniform in width. Window resizing stretches only straight bridges and vertical rails; narrow panes omit the central ornament rather than compress it, reserve space for content, and keep native controls aligned with the fixed shoulder band.
 - Restrict conversation armor and its toolbar to the conversation viewport when a right panel is open; retain the native right-panel tab strip and controls.
 - Reduced Banshee reconciliation overhead without changing CSS, theme tokens, geometry, or animation timing. Reuse verified shell/control state until a relevant mutation, resize, route change, or watchdog mismatch; ignore native measurement probes and streamed transcript nodes. Full native parity checks remain mandatory on invalidation. Reinjection also removes the previous click/resize listeners.
 - Restored immediate Fast awakening-palette updates on Codex 26.901 after the popup lightning adopted a generic icon class and Fast toggles began replacing their subtree, using verified native menu/state parity plus capture-phase prediction instead of a CSS-module icon name or the general layout debounce.

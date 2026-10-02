@@ -9,7 +9,7 @@
   const INJECTION_ID = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const LAYOUT_STORAGE_KEY = "codex-dream-skin.layout";
   const THEME_STORAGE_KEY = "codex-dream-skin.theme";
-  const STYLE_VERSION = "59";
+  const STYLE_VERSION = "60";
   const LAYOUTS = new Set(["banner", "fullscreen"]);
   // Sidebar "new task" row gets a marker class so the structure CSS can restyle
   // it as a capsule. Text matching only; the real button stays fully native.
@@ -129,13 +129,10 @@
       </g>
       </g>
     </svg>`;
-  // Upper ornaments use the accepted full-size 1413 x 864 frame; lower
-  // corners retain the independently accepted 986 x 705 reference.
+  // All ornaments share the afcbc77 full-size 1413 x 864 reference.
   // Only the two horizontal bridges and the long vertical rails stretch.
-  const FRAME_SCALE_X = 986 / 1261;
-  const FRAME_SCALE_Y = 705 / 941;
-  const FRAME_TOP_SCALE_X = 1413 / 1261;
-  const FRAME_TOP_SCALE_Y = 864 / 941;
+  const FRAME_SCALE_X = 1413 / 1261;
+  const FRAME_SCALE_Y = 864 / 941;
   const frameSources = new WeakMap();
   const fitBansheeFrame = (svg, width, height) => {
     if (!svg) return;
@@ -153,28 +150,25 @@
     if (source.width === width && source.height === height) return;
     source.width = width;
     source.height = height;
-    const fixedWidth = (226 * 2 + 441) * FRAME_TOP_SCALE_X;
+    const fixedWidth = (226 * 2 + 441) * FRAME_SCALE_X;
     const compact = width < fixedWidth + 16;
     const x = (value, sourceY = 0) => {
-      // All upper vertices (including the 201/207/214 bevel endpoints) use
-      // one affine transform, just as in afcbc77. Transition between the two
-      // accepted references only inside the feature-free 214..698 rail span.
-      const blend = Math.max(0, Math.min(1, (698 - sourceY) / 484));
-      const scale = value === 5 || value === 1256 ? FRAME_TOP_SCALE_X
-        : FRAME_SCALE_X + (FRAME_TOP_SCALE_X - FRAME_SCALE_X) * blend;
+      // One x scale for every height preserves vertical, constant-width rails
+      // and the authored relationship between the upper and lower bevels.
+      const scale = FRAME_SCALE_X;
       if (value <= 226) return value * scale;
       if (value >= 1035) return width - (1261 - value) * scale;
       if (compact) return 226 * scale + (value - 226) / 809 * (width - 452 * scale);
       const gap = (width - fixedWidth) / 2;
       if (sourceY > 214) return 226 * scale + (value - 226) / 809 * (width - 452 * scale);
       if (value < 410) return 226 * scale + (value - 226) / 184 * gap;
-      if (value <= 851) return width / 2 + (value - 630.5) * FRAME_TOP_SCALE_X;
-      return width / 2 + 220.5 * FRAME_TOP_SCALE_X + (value - 851) / 184 * gap;
+      if (value <= 851) return width / 2 + (value - 630.5) * FRAME_SCALE_X;
+      return width / 2 + 220.5 * FRAME_SCALE_X + (value - 851) / 184 * gap;
     };
     const y = value => {
-      if (value <= 214) return value * FRAME_TOP_SCALE_Y;
+      if (value <= 214) return value * FRAME_SCALE_Y;
       if (value >= 698) return height - (941 - value) * FRAME_SCALE_Y;
-      return 214 * FRAME_TOP_SCALE_Y + (value - 214) / 484 * (height - 214 * FRAME_TOP_SCALE_Y - 243 * FRAME_SCALE_Y);
+      return 214 * FRAME_SCALE_Y + (value - 214) / 484 * (height - 457 * FRAME_SCALE_Y);
     };
     const set = (node, name, value) => {
       const text = String(value);
@@ -916,7 +910,7 @@
       const index = style.sheet.insertRule('html.codex-dream-skin.dream-pack-banshee { --dream-header-top: 12px; }', style.sheet.cssRules.length);
       headerGeometryRule = style.sheet.cssRules[index];
     }
-    const headerTop = Math.min(12, Math.max(0, 31 * FRAME_TOP_SCALE_Y - 16));
+    const headerTop = Math.min(12, Math.max(0, 31 * FRAME_SCALE_Y - 16));
     headerGeometryRule.style.setProperty('--dream-header-top', `${headerTop.toFixed(2)}px`);
     headerGeometryRule.style.setProperty('--dream-conversation-width', `${armorWidth.toFixed(2)}px`);
     headerGeometryRule.style.setProperty('--dream-title-width', `${(1413 * .17 - 16).toFixed(2)}px`);
