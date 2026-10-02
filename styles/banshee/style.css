@@ -325,7 +325,7 @@ html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [da
   width:auto !important;
 }
 html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-modern-thread-header="true"] [data-app-shell-titlebar-content] {
-  max-width:calc(17cqw - 16px);
+  max-width:var(--dream-title-width,calc(17cqw - 16px));
 }
 html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] header:has([data-dream-modern-thread-header="true"]) > [data-app-shell-header-slot="end"] {
   --app-shell-header-height:32px;
@@ -335,12 +335,18 @@ html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] hea
 
 /* Split workspace only: the native right panel keeps its own tab strip and
    controls. The conversation toolbar and armor stop at the pane divider. */
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="main"] [data-app-shell-main-content-layout] {
+  padding-inline:var(--dream-frame-content-inset,0px);
+}
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="main"] [data-app-shell-main-content-layout] > [data-app-shell-thread-edge-divider] {
+  max-width:100%;
+}
 html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] header[data-dream-split-panel="true"] [data-dream-modern-thread-header="true"] {
   inset-inline-end:auto !important;
   width:calc(var(--dream-conversation-width) - 16px) !important;
 }
 html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] header[data-dream-split-panel="true"] [data-dream-modern-thread-header="true"] [data-app-shell-titlebar-content] {
-  max-width:calc(var(--dream-conversation-width) * .17 - 16px);
+  max-width:var(--dream-title-width,calc(var(--dream-conversation-width) * .17 - 16px));
 }
 html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] header[data-dream-split-panel="true"] > [data-app-shell-header-slot="end"] {
   --app-shell-header-height:var(--app-shell-titlebar-height);
@@ -494,6 +500,14 @@ html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] #co
 
 html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] #codex-dream-skin-chrome .dream-banshee-armor-svg path {
   vector-effect:non-scaling-stroke;
+}
+
+/* In a narrow split pane, omit the central ornament rather than deform it. */
+html.codex-dream-skin.dream-pack-banshee #codex-dream-skin-chrome [data-dream-compact-frame="true"] .dream-banshee-spine-shoulder-fill,
+html.codex-dream-skin.dream-pack-banshee #codex-dream-skin-chrome [data-dream-compact-frame="true"] .dream-banshee-spine-plate,
+html.codex-dream-skin.dream-pack-banshee #codex-dream-skin-chrome [data-dream-compact-frame="true"] .dream-banshee-cavity-rest-light-center,
+html.codex-dream-skin.dream-pack-banshee #codex-dream-skin-chrome [data-dream-compact-frame="true"] .dream-banshee-center-cavity-pulse {
+  display:none;
 }
 
 html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] #codex-dream-skin-chrome .dream-banshee-plate-fills {
