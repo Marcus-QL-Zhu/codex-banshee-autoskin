@@ -9,7 +9,7 @@
   const INJECTION_ID = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const LAYOUT_STORAGE_KEY = "codex-dream-skin.layout";
   const THEME_STORAGE_KEY = "codex-dream-skin.theme";
-  const STYLE_VERSION = "58";
+  const STYLE_VERSION = "59";
   const LAYOUTS = new Set(["banner", "fullscreen"]);
   // Sidebar "new task" row gets a marker class so the structure CSS can restyle
   // it as a capsule. Text matching only; the real button stays fully native.
@@ -156,16 +156,17 @@
     const fixedWidth = (226 * 2 + 441) * FRAME_TOP_SCALE_X;
     const compact = width < fixedWidth + 16;
     const x = (value, sourceY = 0) => {
-      // afcbc77 uses V185/V188/V191 for the upper columns: both endpoints
-      // must share one x scale. Switch references only across the authored
-      // diagonal bevel (191..201), never interpolate along those columns.
-      const scale = value <= 9 || value >= 1252 ? FRAME_SCALE_X
-        : sourceY < 201 ? FRAME_TOP_SCALE_X : FRAME_SCALE_X;
+      // All upper vertices (including the 201/207/214 bevel endpoints) use
+      // one affine transform, just as in afcbc77. Transition between the two
+      // accepted references only inside the feature-free 214..698 rail span.
+      const blend = Math.max(0, Math.min(1, (698 - sourceY) / 484));
+      const scale = value === 5 || value === 1256 ? FRAME_TOP_SCALE_X
+        : FRAME_SCALE_X + (FRAME_TOP_SCALE_X - FRAME_SCALE_X) * blend;
       if (value <= 226) return value * scale;
       if (value >= 1035) return width - (1261 - value) * scale;
       if (compact) return 226 * scale + (value - 226) / 809 * (width - 452 * scale);
       const gap = (width - fixedWidth) / 2;
-      if (sourceY >= 201) return 226 * scale + (value - 226) / 809 * (width - 452 * scale);
+      if (sourceY > 214) return 226 * scale + (value - 226) / 809 * (width - 452 * scale);
       if (value < 410) return 226 * scale + (value - 226) / 184 * gap;
       if (value <= 851) return width / 2 + (value - 630.5) * FRAME_TOP_SCALE_X;
       return width / 2 + 220.5 * FRAME_TOP_SCALE_X + (value - 851) / 184 * gap;
