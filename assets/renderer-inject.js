@@ -9,7 +9,7 @@
   const INJECTION_ID = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const LAYOUT_STORAGE_KEY = "codex-dream-skin.layout";
   const THEME_STORAGE_KEY = "codex-dream-skin.theme";
-  const STYLE_VERSION = "56";
+  const STYLE_VERSION = "57";
   const LAYOUTS = new Set(["banner", "fullscreen"]);
   // Sidebar "new task" row gets a marker class so the structure CSS can restyle
   // it as a capsule. Text matching only; the real button stays fully native.
@@ -129,10 +129,13 @@
       </g>
       </g>
     </svg>`;
-  // Lock ornament geometry to the approved 986 x 705 CSS-pixel frame.
+  // Upper ornaments use the accepted full-size 1413 x 864 frame; lower
+  // corners retain the independently accepted 986 x 705 reference.
   // Only the two horizontal bridges and the long vertical rails stretch.
   const FRAME_SCALE_X = 986 / 1261;
   const FRAME_SCALE_Y = 705 / 941;
+  const FRAME_TOP_SCALE_X = 1413 / 1261;
+  const FRAME_TOP_SCALE_Y = 864 / 941;
   const frameSources = new WeakMap();
   const fitBansheeFrame = (svg, width, height) => {
     if (!svg) return;
@@ -150,21 +153,27 @@
     if (source.width === width && source.height === height) return;
     source.width = width;
     source.height = height;
-    const fixedWidth = (226 * 2 + 441) * FRAME_SCALE_X;
+    const fixedWidth = (226 * 2 + 441) * FRAME_TOP_SCALE_X;
     const compact = width < fixedWidth + 16;
-    const x = value => {
-      if (value <= 226) return value * FRAME_SCALE_X;
-      if (value >= 1035) return width - (1261 - value) * FRAME_SCALE_X;
-      if (compact) return 226 * FRAME_SCALE_X + (value - 226) / 809 * (width - 452 * FRAME_SCALE_X);
+    const x = (value, sourceY = 0) => {
+      // Keep outer borders and long rails vertical. The existing upper bevel
+      // joins the enlarged shoulder to the unchanged rail at source y=201.
+      const blend = Math.max(0, Math.min(1, (201 - sourceY) / 16));
+      const scale = value <= 9 || value >= 1252 ? FRAME_SCALE_X
+        : FRAME_SCALE_X + (FRAME_TOP_SCALE_X - FRAME_SCALE_X) * blend;
+      if (value <= 226) return value * scale;
+      if (value >= 1035) return width - (1261 - value) * scale;
+      if (compact) return 226 * scale + (value - 226) / 809 * (width - 452 * scale);
       const gap = (width - fixedWidth) / 2;
-      if (value < 410) return 226 * FRAME_SCALE_X + (value - 226) / 184 * gap;
-      if (value <= 851) return width / 2 + (value - 630.5) * FRAME_SCALE_X;
-      return width / 2 + 220.5 * FRAME_SCALE_X + (value - 851) / 184 * gap;
+      if (sourceY >= 201) return 226 * scale + (value - 226) / 809 * (width - 452 * scale);
+      if (value < 410) return 226 * scale + (value - 226) / 184 * gap;
+      if (value <= 851) return width / 2 + (value - 630.5) * FRAME_TOP_SCALE_X;
+      return width / 2 + 220.5 * FRAME_TOP_SCALE_X + (value - 851) / 184 * gap;
     };
     const y = value => {
-      if (value <= 214) return value * FRAME_SCALE_Y;
+      if (value <= 214) return value * FRAME_TOP_SCALE_Y;
       if (value >= 698) return height - (941 - value) * FRAME_SCALE_Y;
-      return 214 * FRAME_SCALE_Y + (value - 214) / 484 * (height - 457 * FRAME_SCALE_Y);
+      return 214 * FRAME_TOP_SCALE_Y + (value - 214) / 484 * (height - 214 * FRAME_TOP_SCALE_Y - 243 * FRAME_SCALE_Y);
     };
     const set = (node, name, value) => {
       const text = String(value);
@@ -173,12 +182,19 @@
     // The authored contours contain only absolute straight-line commands.
     // Map their vertices rather than stretching the SVG viewport and its art.
     const mapPath = d => {
-      let command = '', coordinate = 0;
-      return d.match(/[MLHVZ]|-?\d+(?:\.\d+)?/g).map(token => {
-        if (/^[MLHVZ]$/.test(token)) { command = token; coordinate = 0; return token; }
-        const horizontal = command === 'H' || (command !== 'V' && coordinate++ % 2 === 0);
-        return (horizontal ? x(Number(token)) : y(Number(token))).toFixed(3);
-      }).join(' ');
+      const tokens = d.match(/[MLHVZ]|-?\d+(?:\.\d+)?/g);
+      const result = [];
+      let command = '', originalX = 0, originalY = 0;
+      for (let index = 0; index < tokens.length;) {
+        if (/^[MLHVZ]$/.test(tokens[index])) command = tokens[index++];
+        if (command === 'Z') { result.push('Z'); continue; }
+        if (command === 'H') originalX = Number(tokens[index++]);
+        else if (command === 'V') originalY = Number(tokens[index++]);
+        else { originalX = Number(tokens[index++]); originalY = Number(tokens[index++]); }
+        result.push(`${command === 'M' ? 'M' : 'L'} ${x(originalX, originalY).toFixed(3)} ${y(originalY).toFixed(3)}`);
+        if (command === 'M') command = 'L';
+      }
+      return result.join(' ');
     };
     set(svg, 'viewBox', `0 0 ${width} ${height}`);
     set(svg, 'data-dream-compact-frame', compact ? 'true' : 'false');
@@ -899,10 +915,10 @@
       const index = style.sheet.insertRule('html.codex-dream-skin.dream-pack-banshee { --dream-header-top: 12px; }', style.sheet.cssRules.length);
       headerGeometryRule = style.sheet.cssRules[index];
     }
-    const headerTop = Math.max(0, 31 * FRAME_SCALE_Y - 16);
+    const headerTop = Math.min(12, Math.max(0, 31 * FRAME_TOP_SCALE_Y - 16));
     headerGeometryRule.style.setProperty('--dream-header-top', `${headerTop.toFixed(2)}px`);
     headerGeometryRule.style.setProperty('--dream-conversation-width', `${armorWidth.toFixed(2)}px`);
-    headerGeometryRule.style.setProperty('--dream-title-width', `${(986 * .17 - 16).toFixed(2)}px`);
+    headerGeometryRule.style.setProperty('--dream-title-width', `${(1413 * .17 - 16).toFixed(2)}px`);
     headerGeometryRule.style.setProperty('--dream-frame-content-inset', armorWidth < 850 ? '24px' : '0px');
     // The composer exists on both the home route and active conversation routes.
     // Its live verified rectangle occludes the still-continuous footer rail, so
