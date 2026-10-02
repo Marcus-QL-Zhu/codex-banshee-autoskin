@@ -9,7 +9,7 @@
   const INJECTION_ID = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const LAYOUT_STORAGE_KEY = "codex-dream-skin.layout";
   const THEME_STORAGE_KEY = "codex-dream-skin.theme";
-  const STYLE_VERSION = "54";
+  const STYLE_VERSION = "55";
   const LAYOUTS = new Set(["banner", "fullscreen"]);
   // Sidebar "new task" row gets a marker class so the structure CSS can restyle
   // it as a capsule. Text matching only; the real button stays fully native.
@@ -31,6 +31,7 @@
     'data-dream-status-dot', 'data-dream-sidebar-crown-controls',
     'data-dream-sidebar-rail', 'data-dream-sidebar-navigation',
     'data-dream-modern-thread-header',
+    'data-dream-split-panel',
     'data-dream-composer-host', 'data-dream-composer-context',
   ];
   // Canonical Banshee shell geometry is traced in the approved reference's
@@ -227,6 +228,7 @@
   let reconcileCache = null;
   let shellDirty = true;
   let headerGeometryRule = null;
+  let observedViewport = null;
   const controlSignature = (node) => node ? [
     node.getAttribute('aria-label'), node.getAttribute('aria-pressed'),
     node.getAttribute('aria-checked'), node.getAttribute('data-fast-mode-enabled'),
@@ -797,9 +799,30 @@
     chrome.setAttribute("inert", "");
     syncThemeMeta();
     const shellBox = shellMain.getBoundingClientRect();
+    // A right panel lives inside the main surface; its width is not part of
+    // the conversation armor. Only opt into split geometry when both native
+    // pane boundaries are rendered and share the same workspace container.
+    const conversationViewport = shellMain.querySelector('[data-app-shell-main-content-layout]');
+    const rightPane = conversationViewport?.parentElement?.querySelector(':scope > aside[data-app-shell-focus-area="right-panel"]');
+    const viewportBox = conversationViewport?.getBoundingClientRect();
+    const splitPanel = Boolean(bansheeActive && verifiedShell && rightPane &&
+      isRenderedSurface(rightPane) && viewportBox?.width > 0 &&
+      viewportBox.right < shellBox.right - 24);
+    if (splitPanel) {
+      for (const node of [shellMain, modernThreadHeader?.closest('header')].filter(Boolean)) {
+        setOwnedAttribute(node, 'data-dream-split-panel', 'true');
+        setOwnedAttribute(node, 'data-dream-owner', INJECTION_ID);
+      }
+    }
+    if (resizeObserver && observedViewport !== conversationViewport) {
+      if (observedViewport) resizeObserver.unobserve(observedViewport);
+      if (conversationViewport) resizeObserver.observe(conversationViewport);
+      observedViewport = conversationViewport;
+    }
+    const armorWidth = splitPanel ? viewportBox.right - shellBox.left : shellBox.width;
     chrome.style.left = `${Math.round(shellBox.left)}px`;
     chrome.style.top = `${Math.round(shellBox.top)}px`;
-    chrome.style.width = `${Math.round(shellBox.width)}px`;
+    chrome.style.width = `${Math.round(armorWidth)}px`;
     chrome.style.height = `${Math.round(shellBox.height)}px`;
     // The shoulder band spans y=14..48 in the 941-high SVG. Center the
     // 32px native controls in that scaled band, retaining the accepted 12px
@@ -810,6 +833,7 @@
     }
     const headerTop = Math.max(0, Math.min(12, shellBox.height * 31 / 941 - 16));
     headerGeometryRule.style.setProperty('--dream-header-top', `${headerTop.toFixed(2)}px`);
+    headerGeometryRule.style.setProperty('--dream-conversation-width', `${armorWidth.toFixed(2)}px`);
     // The composer exists on both the home route and active conversation routes.
     // Its live verified rectangle occludes the still-continuous footer rail, so
     // the composer reads as a foreground plate rather than a hard-coded gap.
@@ -819,7 +843,7 @@
       const composerBox = composer.getBoundingClientRect();
       chrome.style.setProperty("--dream-composer-top", `${Math.round(composerBox.top - shellBox.top)}px`);
       if (composerOccluder) {
-        const scaleX = 1261 / Math.max(1, shellBox.width);
+        const scaleX = 1261 / Math.max(1, armorWidth);
         const scaleY = 941 / Math.max(1, shellBox.height);
         const padding = 1;
         composerOccluder.setAttribute("x", String(Math.max(0, Math.floor((composerBox.left - shellBox.left) * scaleX) - padding)));

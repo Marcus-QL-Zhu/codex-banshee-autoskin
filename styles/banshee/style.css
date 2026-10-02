@@ -333,6 +333,27 @@ html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] hea
   transform:translateX(-8px);
 }
 
+/* Split workspace only: the native right panel keeps its own tab strip and
+   controls. The conversation toolbar and armor stop at the pane divider. */
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] header[data-dream-split-panel="true"] [data-dream-modern-thread-header="true"] {
+  inset-inline-end:auto !important;
+  width:calc(var(--dream-conversation-width) - 16px) !important;
+}
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] header[data-dream-split-panel="true"] [data-dream-modern-thread-header="true"] [data-app-shell-titlebar-content] {
+  max-width:calc(var(--dream-conversation-width) * .17 - 16px);
+}
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] header[data-dream-split-panel="true"] > [data-app-shell-header-slot="end"] {
+  --app-shell-header-height:var(--app-shell-titlebar-height);
+  top:var(--app-shell-page-header-offset,0px) !important;
+  transform:none;
+}
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-split-panel="true"] [data-app-shell-main-content-layout] {
+  padding-inline:24px;
+}
+html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-split-panel="true"] [data-app-shell-main-content-layout] > [data-app-shell-thread-edge-divider] {
+  max-width:100%;
+}
+
 /* The Banshee home shell deliberately suppresses native suggestion shortcuts.
    The group itself collapses so no empty card rail remains in layout. */
 html.codex-dream-skin.dream-pack-banshee[data-dream-pack-ready="banshee-v1"] [data-dream-surface="cards"] {
