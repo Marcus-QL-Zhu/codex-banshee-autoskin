@@ -9,7 +9,7 @@
   const INJECTION_ID = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const LAYOUT_STORAGE_KEY = "codex-dream-skin.layout";
   const THEME_STORAGE_KEY = "codex-dream-skin.theme";
-  const STYLE_VERSION = "57";
+  const STYLE_VERSION = "58";
   const LAYOUTS = new Set(["banner", "fullscreen"]);
   // Sidebar "new task" row gets a marker class so the structure CSS can restyle
   // it as a capsule. Text matching only; the real button stays fully native.
@@ -156,11 +156,11 @@
     const fixedWidth = (226 * 2 + 441) * FRAME_TOP_SCALE_X;
     const compact = width < fixedWidth + 16;
     const x = (value, sourceY = 0) => {
-      // Keep outer borders and long rails vertical. The existing upper bevel
-      // joins the enlarged shoulder to the unchanged rail at source y=201.
-      const blend = Math.max(0, Math.min(1, (201 - sourceY) / 16));
+      // afcbc77 uses V185/V188/V191 for the upper columns: both endpoints
+      // must share one x scale. Switch references only across the authored
+      // diagonal bevel (191..201), never interpolate along those columns.
       const scale = value <= 9 || value >= 1252 ? FRAME_SCALE_X
-        : FRAME_SCALE_X + (FRAME_TOP_SCALE_X - FRAME_SCALE_X) * blend;
+        : sourceY < 201 ? FRAME_TOP_SCALE_X : FRAME_SCALE_X;
       if (value <= 226) return value * scale;
       if (value >= 1035) return width - (1261 - value) * scale;
       if (compact) return 226 * scale + (value - 226) / 809 * (width - 452 * scale);
