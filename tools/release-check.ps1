@@ -7,7 +7,7 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $RepoRoot = Split-Path -Parent $PSScriptRoot
-$ExpectedVersion = [version]'2.3.0'
+$ExpectedVersion = [version]'2.3.2'
 $MaximumTrackedBytes = 5MB
 
 function Invoke-Checked([string]$Label, [scriptblock]$Command) {
@@ -45,11 +45,11 @@ try {
     if (-not (Test-Path -LiteralPath $required -PathType Leaf)) { throw "Required release file is missing: $required" }
   }
 
-  Require-Match 'README.md' 'v2\.3\.0' 'README version'
+  Require-Match 'README.md' 'v2\.3\.2' 'README version'
   Require-Match 'README.md' 'synchronized 20-second gold energy cycle' 'Banshee cycle documentation'
-  Require-Match 'SKILL.md' '(?m)^version:\s*2\.3\.0\s*$' 'Skill version'
+  Require-Match 'SKILL.md' '(?m)^version:\s*2\.3\.2\s*$' 'Skill version'
   Require-Match 'agents/openai.yaml' '\$codex-autoskin\b' 'Skill invocation name'
-  Require-Match 'assets/renderer-inject.js' 'version:\s*"2\.3\.0"' 'Renderer version'
+  Require-Match 'assets/renderer-inject.js' 'version:\s*"2\.3\.2"' 'Renderer version'
   Require-Match 'themes/banshee-armor/theme.json' '"--dream-banshee-wave-cycle"\s*:\s*"20s"' 'Banshee theme cycle'
 
   $releaseFiles = @(& git -c core.quotepath=false ls-files --cached --others --exclude-standard | Sort-Object -Unique)
@@ -92,8 +92,7 @@ try {
   }
 
   if (-not $HygieneOnly) {
-    Invoke-Checked 'Banshee static tests' { & node tests\banshee-static.test.mjs }
-    Invoke-Checked 'Renderer safety tests' { & node tests\renderer-safety.test.mjs }
+    Invoke-Checked 'JavaScript tests' { & node --test tests\*.test.mjs }
     Invoke-Checked 'PowerShell shortcut-state test' { & powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\shortcut-state.test.ps1 }
     Invoke-Checked 'PowerShell Windows lifecycle test' { & powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\windows-lifecycle.test.ps1 }
     Invoke-Checked 'Offline payload validation' { & node scripts\injector.mjs --check }

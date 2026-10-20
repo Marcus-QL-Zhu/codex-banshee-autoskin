@@ -4,6 +4,8 @@ All notable changes to Codex AutoSkin are documented in this file. The project f
 
 ## [Unreleased]
 
+- Cache Banshee light frames in small, isolated canvas layers at 24fps during the existing active pass. Stop updates while dark or hidden, bound the cache to 64 MiB, and restore timers, observers and layers on skin cleanup. Native controls, armor geometry and the 20-second cycle remain intact. GPU occupancy fell from about 91% to 15% peak in a local Intel UHD foreground test; this is not a 100x claim.
+
 - Preserve the historical 13-unit lower light band, fit its dark cavity to that same contour instead of the old 21-unit cavity, and mask rear seams only inside the lower band to prevent blue construction lines from splitting its bend.
 - Keep all Banshee ornaments at the afcbc77 full-size 1413 x 864 reference, using one horizontal scale at every height so the side rails stay vertical and uniform in width. Window resizing stretches only straight bridges and vertical rails; narrow panes omit the central ornament rather than compress it, reserve space for content, and keep native controls aligned with the fixed shoulder band.
 - Restrict conversation armor and its toolbar to the conversation viewport when a right panel is open; retain the native right-panel tab strip and controls.

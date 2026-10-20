@@ -630,10 +630,11 @@ function buildThemeCss(themes) {
 }
 
 async function loadPayload() {
-  const [{ themes, defaultTheme }, template, bansheeRuntime] = await Promise.all([
+  const [{ themes, defaultTheme }, template, bansheeRuntime, bansheeLights] = await Promise.all([
     loadThemes(),
     fs.readFile(path.join(root, "assets", "renderer-inject.js"), "utf8"),
     fs.readFile(path.join(root, "assets", "banshee-runtime.js"), "utf8"),
+    fs.readFile(path.join(root, "assets", "banshee-lights.js"), "utf8"),
   ]);
   const structureCss = await loadPackCss(themes);
   const css = `${structureCss}\n\n/* --- generated theme token blocks --- */\n\n${buildThemeCss(themes)}\n`;
@@ -654,7 +655,8 @@ async function loadPayload() {
     .replace("__DREAM_CSS_JSON__", () => JSON.stringify(css))
     .replace("__DREAM_ART_ASSETS_JSON__", () => JSON.stringify(artAssets))
     .replace("__DREAM_MANIFEST_JSON__", () => JSON.stringify(manifest))
-    .replace("__BANSHEE_RUNTIME_FACTORY__", () => bansheeRuntime.trim());
+    .replace("__BANSHEE_RUNTIME_FACTORY__", () => bansheeRuntime.trim())
+    .replace("__BANSHEE_LIGHTS_FACTORY__", () => bansheeLights.trim());
 }
 
 async function connectTarget(target) {
@@ -981,7 +983,14 @@ async function verifySession(session) {
     const waveDelaysMs = [...new Set(waveAnimations.map((animation) =>
       Math.round(Number(animation.effect?.getTiming?.().delay) || 0)
     ))].sort((a, b) => a - b);
+    const cachedLights = window.__CODEX_BANSHEE_LIGHTS__;
+    const cachedLightStats = cachedLights?.stats;
+    const cachedLightsPass = Boolean(cachedLightStats?.frames > 0 &&
+      cachedLightStats.fps === 24 && cachedLightStats.cacheBytes <= 64 * 1024 * 1024 &&
+      document.querySelectorAll('#codex-dream-skin-chrome .banshee-raster-light').length >= 5);
     const wave = {
+      engine: cachedLightsPass ? 'cached-24fps' : 'legacy-css',
+      cachedLightStats: cachedLightStats ?? null,
       reducedMotion,
       animationCount: waveAnimations.length,
       startTimeCount: waveStartTimes.length,
@@ -989,7 +998,8 @@ async function verifySession(session) {
       delaysMs: waveDelaysMs,
       pass: reducedMotion
         ? waveAnimations.length === 0 || waveStartSkewMs === 0
-        : waveAnimations.length >= 5 && waveStartTimes.length === waveAnimations.length && waveStartSkewMs <= 1,
+        : (cachedLightsPass && waveAnimations.length === 0) ||
+          (waveAnimations.length >= 5 && waveStartTimes.length === waveAnimations.length && waveStartSkewMs <= 1),
     };
     const capabilities = {
       microphone: nativeControl('microphone'),

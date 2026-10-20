@@ -1,4 +1,4 @@
-((cssText, artAssets, manifest, bansheeRuntime) => {
+((cssText, artAssets, manifest, bansheeRuntime, installBansheeLights) => {
   const STATE_KEY = "__CODEX_DREAM_SKIN_STATE__";
   const STYLE_ID = "codex-dream-skin-style";
   const CHROME_ID = "codex-dream-skin-chrome";
@@ -9,7 +9,8 @@
   const INJECTION_ID = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const LAYOUT_STORAGE_KEY = "codex-dream-skin.layout";
   const THEME_STORAGE_KEY = "codex-dream-skin.theme";
-  const STYLE_VERSION = "61";
+  const STYLE_VERSION = "62";
+  window.__CODEX_BANSHEE_LIGHTS__?.cleanup();
   const LAYOUTS = new Set(["banner", "fullscreen"]);
   // Sidebar "new task" row gets a marker class so the structure CSS can restyle
   // it as a capsule. Text matching only; the real button stays fully native.
@@ -406,9 +407,24 @@
     syncThemeMeta();
   };
 
+  let lightsStarting = false;
+  const ensureBansheeLights = () => {
+    if (typeof installBansheeLights !== 'function' || lightsStarting ||
+        window.__CODEX_BANSHEE_LIGHTS__ || window.__CODEX_DREAM_SKIN_DISABLED__ ||
+        !document.documentElement.matches('.dream-pack-banshee[data-dream-pack-ready="banshee-v1"]')) return;
+    lightsStarting = true;
+    Promise.resolve().then(() => {
+      if (window.__CODEX_DREAM_SKIN_DISABLED__ ||
+          document.getElementById(CHROME_ID)?.dataset.dreamInjection !== INJECTION_ID) return;
+      return installBansheeLights();
+    }).catch((error) => console.warn('[dream-skin] cached lights unavailable', error))
+      .finally(() => { lightsStarting = false; });
+  };
+
   const ensure = (force = true) => {
     if (window.__CODEX_DREAM_SKIN_DISABLED__) return;
     if (!force && !shellDirty && cacheIsCurrent()) {
+      ensureBansheeLights();
       metrics.cachedPasses += 1;
       return;
     }
@@ -952,6 +968,7 @@
       }
     }
     if (bansheeActive) {
+      ensureBansheeLights();
       const controls = [microphoneResult.node, fastModeResult.node].filter(Boolean);
       const nodes = [sidePanel, sidebarRail, sidebarNavigation, modernThreadHeader, shellMain, composer, composerHost, composerContext, threadHeaderResult.node, ...controls].filter(Boolean);
       reconcileCache = {
@@ -966,6 +983,7 @@
 
   const cleanup = () => {
     window.__CODEX_DREAM_SKIN_DISABLED__ = true;
+    window.__CODEX_BANSHEE_LIGHTS__?.cleanup();
     const rootElement = document.documentElement;
     if (rootElement) {
       for (const cls of [...rootElement.classList]) {
@@ -1080,8 +1098,8 @@
     setLayout: applyLayout,
     get theme() { return activeTheme; },
     setTheme: applyTheme,
-    version: "2.3.1"
+    version: "2.3.2"
   };
   ensure();
-  return { installed: true, version: "2.3.1", layout: activeLayout, theme: activeTheme, themes: [...THEME_ORDER] };
-})(__DREAM_CSS_JSON__, __DREAM_ART_ASSETS_JSON__, __DREAM_MANIFEST_JSON__, __BANSHEE_RUNTIME_FACTORY__)
+  return { installed: true, version: "2.3.2", layout: activeLayout, theme: activeTheme, themes: [...THEME_ORDER] };
+})(__DREAM_CSS_JSON__, __DREAM_ART_ASSETS_JSON__, __DREAM_MANIFEST_JSON__, __BANSHEE_RUNTIME_FACTORY__, __BANSHEE_LIGHTS_FACTORY__)

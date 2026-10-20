@@ -76,7 +76,7 @@ The sections below retain the upstream engine documentation for users who want t
 
 以下内容保留原 AutoSkin 引擎说明，供希望了解底层机制、制作其他主题或参与引擎开发的用户阅读。在本仓库中，安装与启动请优先遵循上方的报丧女妖项目说明。
 
-这是 Windows Codex 桌面端的换肤引擎 2.3.0：不改任何官方文件，通过 Chromium DevTools Protocol（CDP）把皮肤“注入”到官方渲染器里，随时一键还原。主题是纯数据（一个文件夹：`theme.json` + 一张图），而配套的 [THEME-SPEC.md](THEME-SPEC.md) 是一份**写给 AI agent 读的定制规范**——把这个仓库和一张图丢给你的 Codex / Claude，它就能照着规范自己产出一套完整主题、自己截图调参、自己交付。你的 Codex，自己给自己换肤。
+这是 Windows Codex 桌面端的换肤引擎 2.3.2：不改任何官方文件，通过 Chromium DevTools Protocol（CDP）把皮肤“注入”到官方渲染器里，随时一键还原。主题是纯数据（一个文件夹：`theme.json` + 一张图），而配套的 [THEME-SPEC.md](THEME-SPEC.md) 是一份**写给 AI agent 读的定制规范**——把这个仓库和一张图丢给你的 Codex / Claude，它就能照着规范自己产出一套完整主题、自己截图调参、自己交付。你的 Codex，自己给自己换肤。
 
 ## Additional bundled themes / 其他内置主题
 
@@ -93,7 +93,7 @@ The sections below retain the upstream engine documentation for users who want t
 
 **AutoSkin 是我对这个想法的全面重写**：v1 回答的是"能不能给 Codex 换肤"，AutoSkin 回答的是"怎么让**任何人发一张图**就得到一套自己的皮肤"——重点从"肤"挪到了"Auto"。
 
-## 2.3.0 新在哪
+## 2.3.2 新在哪
 
 1. **Manifest 驱动引擎**——主题与引擎彻底解耦。加一个主题 = 往 `themes/` 放一个文件夹，零改码；注入器启动时自动扫描、校验、打包。删掉文件夹主题就消失，引擎代码里没有任何主题名。
 2. **THEME-SPEC.md：规范即生成器**（全项目最大卖点）——这不是给人读的开发文档，而是给 agent 读的作业指导书：28 个取色 token 的逐个取法、四种画面角色的裁剪调参流程、"干净图 vs 带字截图"决策树、逐项验收清单。用户只要把一张图和这个仓库丢给自己的 Codex / Claude，agent 读完 spec 就能独立产出主题并自测交付。**不用等作者更新主题包，你的 agent 就是主题生成器。**
@@ -187,7 +187,7 @@ scripts\restore-dream-skin.ps1 -Uninstall -RestoreBaseTheme
 
 ## License
 
-[MIT](LICENSE) © Vikicc　·　当前版本 **v2.3.0**
+[MIT](LICENSE) © Vikicc　·　当前版本 **v2.3.2**
 
 ---
 
@@ -199,7 +199,7 @@ Codex AutoSkin — a manifest-driven skin engine for the Windows Codex desktop a
 
 It injects CSS/JS into the official renderer over the Chrome DevTools Protocol — no app files are modified, fully reversible, login/session untouched, CDP bound to loopback only.
 
-What's new in 2.3.0:
+What's new in 2.3.2:
 
 - **Manifest-driven engine** — adding a theme = dropping a folder into `themes/` (`theme.json` + one image). Zero engine changes.
 - **[THEME-SPEC.md](THEME-SPEC.md) is the generator** — an agent-readable spec (28 color tokens, crop workflow, decision tree, QA checklist). Hand this repo plus one picture to your Codex/Claude agent and it authors, tunes, and ships a complete theme on its own.
@@ -213,4 +213,4 @@ Quick start: hand this repo to your agent and ask it to install the skin, or ext
 
 Bundled demo art is 100% procedurally generated (`tools/generate-demo-art.py`); no photos of real people in this repo. Do not publish themes using a real person's likeness — keep private themes in the git-ignored `themes-private/`. Decorative community project, not affiliated with OpenAI; Codex and related marks belong to their respective owners.
 
-[MIT](LICENSE) © Vikicc · **v2.3.0**
+[MIT](LICENSE) © Vikicc · **v2.3.2**

@@ -30,3 +30,6 @@ docs/frame-zones-pass2.png
 docs/full-*.png
 docs/screenshot-banshee-rebuild-final-v3.png
 docs/sidebar-top-*.png
+
+# Local rollback copies and scratch analysis are not release sources.
+/work/
